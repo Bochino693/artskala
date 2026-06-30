@@ -1,0 +1,225 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<section class="hero">
+
+<div class="container">
+
+<div class="row align-items-center vh-100">
+
+<div class="col-lg-6">
+
+<span class="badge bg-warning text-dark">
+
+Comunicação Visual Premium
+
+</span>
+
+<h1 class="display-2 fw-bold mt-4">
+
+Sua marca merece ser vista.
+
+</h1>
+
+<p class="lead my-4">
+
+Impressão digital, fachadas comerciais,
+
+banners, brindes personalizados,
+
+adesivos, cartões e muito mais.
+
+</p>
+
+<a href="/products/" class="btn btn-dark btn-lg">
+
+Ver Produtos
+
+</a>
+
+<a href="/projects/" class="btn btn-outline-dark btn-lg">
+
+Projetos
+
+</a>
+
+</div>
+
+</div>
+
+</div>
+
+</section>
+
+<section class="container py-5">
+
+<h2 class="fw-bold mb-5">
+
+Categorias
+
+</h2>
+
+<div class="row">
+
+{% for categoria in categorias %}
+
+<div class="col-md-4 mb-4">
+
+<div class="card border-0 shadow-lg h-100">
+
+<div class="card-body text-center">
+
+<h4>
+
+{{ categoria.nome_categoria }}
+
+</h4>
+
+<p>
+
+{{ categoria.produtos.count }} produtos
+
+</p>
+
+</div>
+
+</div>
+
+</div>
+
+{% endfor %}
+
+</div>
+
+</section>
+
+<section class="container py-5">
+
+<h2 class="fw-bold mb-5">
+
+Produtos em destaque
+
+</h2>
+
+<div class="row">
+
+{% for produto in produtos %}
+
+<div class="col-lg-3 col-md-6 mb-4">
+
+<div class="card border-0 shadow h-100">
+
+{% if produto.imagens.first %}
+
+<img src="{{ produto.imagens.first.imagem.url }}" class="card-img-top">
+
+{% endif %}
+
+<div class="card-body">
+
+<h5>
+
+{{ produto.nome_produto }}
+
+</h5>
+
+<p>
+
+R$ {{ produto.preco }}
+
+</p>
+
+<a href="/products/{{produto.id}}/" class="btn btn-dark w-100">
+
+Ver Produto
+
+</a>
+
+</div>
+
+</div>
+
+</div>
+
+{% endfor %}
+
+</div>
+
+</section>
+
+<section class="bg-light py-5">
+
+<div class="container">
+
+<h2 class="fw-bold mb-5">
+
+Projetos realizados
+
+</h2>
+
+<div class="row">
+
+{% for projeto in projetos %}
+
+<div class="col-lg-4">
+
+<div class="card border-0 shadow">
+
+{% if projeto.imagens.first %}
+
+<img src="{{ projeto.imagens.first.imagem.url }}">
+
+{% endif %}
+
+<div class="card-body">
+
+<h4>
+
+{{ projeto.titulo }}
+
+</h4>
+
+<p>
+
+{{ projeto.descricao|truncatechars:120 }}
+
+</p>
+
+</div>
+
+</div>
+
+</div>
+
+{% endfor %}
+
+</div>
+
+</div>
+
+</section>
+
+<section class="container py-5 text-center">
+
+<h2 class="display-5 fw-bold">
+
+Vamos transformar sua ideia em realidade?
+
+</h2>
+
+<p class="lead">
+
+Solicite um orçamento agora mesmo.
+
+</p>
+
+<a class="btn btn-warning btn-lg">
+
+Solicitar orçamento
+
+</a>
+
+</section>
+
+{% endblock %}
