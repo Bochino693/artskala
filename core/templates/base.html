@@ -19,14 +19,19 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
 
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
     <style>
         :root {
-            --art-yellow: #f6c400;
-            --art-yellow-dark: #d8a900;
+            --art-red: #ef2b35;
+            --art-red-dark: #c91822;
             --art-dark: #111111;
             --art-soft: #f6f7f9;
             --art-muted: #6c757d;
             --art-border: #eeeeee;
+
+            --art-yellow: var(--art-red);
+            --art-yellow-dark: var(--art-red-dark);
         }
 
         * {
@@ -91,7 +96,7 @@
 
         .nav-link:hover {
             color: #111111;
-            background: rgba(246, 196, 0, 0.12);
+            background: rgba(239, 43, 53, 0.10);
         }
 
         .nav-link::after {
@@ -101,7 +106,7 @@
             right: 18px;
             bottom: 5px;
             height: 3px;
-            background: var(--art-yellow);
+            background: var(--art-red);
             border-radius: 999px;
             transform: scaleX(0);
             transform-origin: center;
@@ -114,27 +119,60 @@
 
         .nav-link.active-nav {
             color: #111111;
-            background: rgba(246, 196, 0, 0.20);
-            box-shadow: 0 10px 26px rgba(246, 196, 0, 0.16);
+            background: rgba(239, 43, 53, 0.14);
+            box-shadow: 0 10px 26px rgba(239, 43, 53, 0.12);
         }
 
         .nav-link.active-nav::after {
             transform: scaleX(1);
         }
 
-        .instagram-nav-link {
+        .header-auth-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-left: 22px;
+        }
+
+        .header-auth-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            border-radius: 999px;
+            padding: 11px 22px;
+            font-weight: 900;
+            text-decoration: none;
+            line-height: 1;
+            transition: 0.25s ease;
+            white-space: nowrap;
+        }
+
+        .header-login-btn {
+            color: #111111;
+            border: 1px solid rgba(17, 17, 17, 0.18);
+            background: #ffffff;
+        }
+
+        .header-login-btn:hover {
             background: #111111;
-            color: #ffffff !important;
-            box-shadow: 0 10px 26px rgba(0, 0, 0, 0.12);
+            border-color: #111111;
+            color: #ffffff;
+            transform: translateY(-2px);
         }
 
-        .instagram-nav-link:hover {
-            background: var(--art-yellow);
-            color: #111111 !important;
+        .header-register-btn {
+            color: #ffffff;
+            border: 1px solid var(--art-red);
+            background: var(--art-red);
+            box-shadow: 0 12px 28px rgba(239, 43, 53, 0.22);
         }
 
-        .instagram-nav-link::after {
-            display: none;
+        .header-register-btn:hover {
+            background: var(--art-red-dark);
+            border-color: var(--art-red-dark);
+            color: #ffffff;
+            transform: translateY(-2px);
         }
 
         .btn {
@@ -144,20 +182,153 @@
         }
 
         .btn-warning {
-            background: var(--art-yellow);
-            border-color: var(--art-yellow);
-            color: #111111;
+            background: var(--art-red);
+            border-color: var(--art-red);
+            color: #ffffff;
         }
 
         .btn-warning:hover {
-            background: var(--art-yellow-dark);
-            border-color: var(--art-yellow-dark);
-            color: #111111;
+            background: var(--art-red-dark);
+            border-color: var(--art-red-dark);
+            color: #ffffff;
         }
 
         .btn-outline-dark:hover {
             background: #111111;
             color: #ffffff;
+        }
+
+        .quick-dock {
+            position: fixed;
+            right: 22px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 1050;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .quick-dock-link {
+            position: relative;
+            width: 56px;
+            height: 56px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            color: #111111;
+            background: rgba(255, 255, 255, 0.94);
+            border: 1px solid rgba(0, 0, 0, 0.07);
+            box-shadow: 0 18px 45px rgba(0, 0, 0, 0.12);
+            backdrop-filter: blur(14px);
+            transition: 0.25s ease;
+        }
+
+        .quick-dock-link i {
+            font-size: 1.35rem;
+            line-height: 1;
+        }
+
+        .quick-dock-link:hover {
+            transform: translateX(-5px);
+            color: #ffffff;
+            background: #111111;
+        }
+
+        .quick-dock-link.main-action {
+            background: var(--art-red);
+            color: #ffffff;
+            border-color: var(--art-red);
+        }
+
+        .quick-dock-link.main-action:hover {
+            background: var(--art-red-dark);
+            border-color: var(--art-red-dark);
+        }
+
+        .quick-dock-link.whatsapp-action {
+            background: #20c763;
+            color: #ffffff;
+            border-color: #20c763;
+        }
+
+        .quick-dock-link.instagram-action {
+    background: linear-gradient(
+        135deg,
+        #feda75 0%,
+        #fa7e1e 22%,
+        #d62976 48%,
+        #962fbf 72%,
+        #4f5bd5 100%
+    );
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.18);
+    box-shadow:
+        0 18px 45px rgba(214, 41, 118, 0.28),
+        0 8px 22px rgba(150, 47, 191, 0.18);
+}
+
+.quick-dock-link.instagram-action:hover {
+    background: linear-gradient(
+        135deg,
+        #4f5bd5 0%,
+        #962fbf 25%,
+        #d62976 55%,
+        #fa7e1e 78%,
+        #feda75 100%
+    );
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.22);
+}
+
+.quick-dock-link.instagram-action .quick-dock-label {
+    background: linear-gradient(
+        135deg,
+        #d62976,
+        #962fbf
+    );
+    color: #ffffff;
+}
+
+        .quick-dock-link.whatsapp-action:hover {
+            background: #16994b;
+            border-color: #16994b;
+        }
+
+        .quick-dock-link.admin-action {
+            background: #111111;
+            color: #ffffff;
+            border-color: #111111;
+        }
+
+        .quick-dock-link.admin-action:hover {
+            background: var(--art-red);
+            border-color: var(--art-red);
+        }
+
+        .quick-dock-label {
+            position: absolute;
+            right: 68px;
+            top: 50%;
+            transform: translateY(-50%) translateX(8px);
+            background: #111111;
+            color: #ffffff;
+            border-radius: 999px;
+            padding: 9px 14px;
+            font-size: 0.78rem;
+            font-weight: 900;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: 0.25s ease;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+        }
+
+        .quick-dock-link:hover .quick-dock-label {
+            opacity: 1;
+            transform: translateY(-50%) translateX(0);
         }
 
         .footer-section {
@@ -174,7 +345,19 @@
         }
 
         .footer-contact-link:hover {
-            color: var(--art-yellow);
+            color: var(--art-red);
+        }
+
+        @media (max-width: 1199px) {
+            .header-auth-btn {
+                padding: 10px 17px;
+                font-size: 0.92rem;
+            }
+
+            .nav-link {
+                padding-left: 12px !important;
+                padding-right: 12px !important;
+            }
         }
 
         @media (max-width: 991px) {
@@ -197,8 +380,50 @@
                 width: 44px;
             }
 
-            .navbar .btn {
+            .header-auth-actions {
+                margin-left: 0;
+                margin-top: 18px;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+            }
+
+            .header-auth-btn {
                 width: 100%;
+                padding: 14px 18px;
+            }
+        }
+
+        @media (max-width: 767px) {
+            .quick-dock {
+                top: auto;
+                right: auto;
+                left: 50%;
+                bottom: 16px;
+                transform: translateX(-50%);
+                flex-direction: row;
+                gap: 9px;
+                padding: 10px;
+                background: rgba(255, 255, 255, 0.88);
+                border: 1px solid rgba(0, 0, 0, 0.08);
+                border-radius: 26px;
+                box-shadow: 0 18px 55px rgba(0, 0, 0, 0.18);
+                backdrop-filter: blur(16px);
+            }
+
+            .quick-dock-link {
+                width: 48px;
+                height: 48px;
+                border-radius: 17px;
+                box-shadow: none;
+            }
+
+            .quick-dock-link:hover {
+                transform: translateY(-3px);
+            }
+
+            .quick-dock-label {
+                display: none;
             }
         }
 
@@ -214,6 +439,10 @@
             .art-brand-logo {
                 height: 48px;
                 max-width: 170px;
+            }
+
+            .header-auth-actions {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -294,38 +523,123 @@
                     </a>
                 </li>
 
-                <li class="nav-item">
-                    <a
-                        href="https://www.instagram.com/artskalaa/"
-                        target="_blank"
-                        rel="noopener"
-                        class="nav-link instagram-nav-link"
-                    >
-                        Instagram
-                    </a>
-                </li>
-
             </ul>
 
             {% endwith %}
 
-            <div class="ms-lg-4 mt-3 mt-lg-0 d-flex flex-column flex-lg-row gap-2">
+            {% if not request.user.is_authenticated %}
 
-                <a href="{% url 'login' %}" class="btn btn-outline-dark">
-                    Entrar
-                </a>
+                <div class="header-auth-actions">
 
-                <a href="{% url 'cart' %}" class="btn btn-warning fw-bold">
-                    Carrinho
-                </a>
+                    <a href="{% url 'login' %}" class="header-auth-btn header-login-btn">
+                        <i class="bi bi-person"></i>
+                        Entrar
+                    </a>
 
-            </div>
+                    <a href="{% url 'register' %}" class="header-auth-btn header-register-btn">
+                        <i class="bi bi-person-plus"></i>
+                        Cadastrar
+                    </a>
+
+                </div>
+
+            {% endif %}
 
         </div>
 
     </div>
 
 </header>
+
+<nav class="quick-dock" aria-label="Ações rápidas">
+
+    <a
+        href="https://wa.me/5511960827853?text=Ol%C3%A1%2C%20vim%20pelo%20site%20da%20ArtSkala%20e%20gostaria%20de%20solicitar%20um%20or%C3%A7amento."
+        target="_blank"
+        rel="noopener"
+        class="quick-dock-link whatsapp-action"
+        aria-label="WhatsApp"
+    >
+        <i class="bi bi-whatsapp"></i>
+        <span class="quick-dock-label">WhatsApp</span>
+    </a>
+
+    <a
+        href="https://www.instagram.com/artskalaa/"
+        target="_blank"
+        rel="noopener"
+        class="quick-dock-link instagram-action"
+        aria-label="Instagram"
+    >
+        <i class="bi bi-instagram"></i>
+        <span class="quick-dock-label">Instagram</span>
+    </a>
+
+    {% if request.user.is_authenticated %}
+
+        {% if request.user.is_staff or request.user.is_superuser %}
+
+            <a
+                href="{% url 'admin:index' %}"
+                class="quick-dock-link admin-action"
+                aria-label="Painel administrativo"
+            >
+                <i class="bi bi-shield-lock"></i>
+                <span class="quick-dock-label">Admin</span>
+            </a>
+
+            <a
+                href="{% url 'pendings' %}"
+                class="quick-dock-link admin-action"
+                aria-label="Pedidos pendentes"
+            >
+                <i class="bi bi-list-check"></i>
+                <span class="quick-dock-label">Pendentes</span>
+            </a>
+
+        {% endif %}
+
+        <a
+            href="{% url 'profile' %}"
+            class="quick-dock-link"
+            aria-label="Perfil"
+        >
+            <i class="bi bi-person-circle"></i>
+            <span class="quick-dock-label">Perfil</span>
+        </a>
+
+        <a
+            href="{% url 'cart' %}"
+            class="quick-dock-link main-action"
+            aria-label="Carrinho"
+        >
+            <i class="bi bi-cart3"></i>
+            <span class="quick-dock-label">Carrinho</span>
+        </a>
+
+        <a
+            href="{% url 'logout' %}"
+            class="quick-dock-link"
+            aria-label="Sair"
+        >
+            <i class="bi bi-box-arrow-right"></i>
+            <span class="quick-dock-label">Sair</span>
+        </a>
+
+    {% else %}
+
+        <a
+            href="{% url 'cart' %}"
+            class="quick-dock-link main-action"
+            aria-label="Carrinho"
+        >
+            <i class="bi bi-cart3"></i>
+            <span class="quick-dock-label">Carrinho</span>
+        </a>
+
+    {% endif %}
+
+</nav>
 
 <main class="site-main">
 

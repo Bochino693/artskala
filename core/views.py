@@ -1,6 +1,14 @@
-from django.shortcuts import render, get_object_or_404
+
+
+from django.shortcuts import render, get_object_or_404, redirect
+from django.views import View
+from django.db.models import Count, Q
+
+from django.shortcuts import render, get_object_or_404, redirect
 from django.views import View
 from django.contrib.auth.models import User
+from django.contrib.auth import authenticate, login, logout
+from django.contrib import messages
 from django.db.models import Count, Q
 
 from .models import (
@@ -286,12 +294,6 @@ class ProfileView(View):
         return render(request, "profile.html", ctx)
 
 
-class LoginView(View):
-
-    def get(self, request):
-        return render(request, "login.html")
-
-
 class RegisterView(View):
 
     def get(self, request):
@@ -317,3 +319,54 @@ class PendingOrdersView(View):
         }
 
         return render(request, "pendings.html", ctx)
+
+
+class LoginView(View):
+
+    def get(self, request):
+        if request.user.is_authenticated:
+            return render(request, "login.html")
+
+        return render(request, "login.html")
+
+    def post(self, request):
+        username = request.POST.get("username", "").strip()
+        password = request.POST.get("password", "").strip()
+        next_url = request.POST.get("next") or request.GET.get("next")
+
+        if not username or not password:
+            messages.error(request, "Informe seu usuário e sua senha.")
+            return render(request, "login.html")
+
+        usuario = authenticate(
+            request,
+            username=username,
+            password=password
+        )
+
+        if usuario is None:
+            messages.error(request, "Usuário ou senha inválidos.")
+            return render(request, "login.html")
+
+        if not usuario.is_active:
+            messages.error(request, "Este usuário está inativo.")
+            return render(request, "login.html")
+
+        login(request, usuario)
+
+        if next_url:
+            return redirect(next_url)
+
+        if usuario.is_staff or usuario.is_superuser:
+            return redirect("home")
+
+        return redirect("home")
+
+
+class LogoutView(View):
+
+    def get(self, request):
+        logout(request)
+        return redirect("home")
+
+
