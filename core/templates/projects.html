@@ -1,0 +1,738 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block title %}ArtSkala | Projetos Realizados{% endblock %}
+
+{% block content %}
+
+<style>
+    :root {
+        --yellow: #f6c400;
+        --yellow-dark: #d9aa00;
+        --dark: #111111;
+        --soft: #f6f7f9;
+        --muted: #6c757d;
+        --border: #eeeeee;
+        --white: #ffffff;
+    }
+
+    .projects-hero {
+        position: relative;
+        overflow: hidden;
+        background:
+            linear-gradient(
+                90deg,
+                rgba(255, 255, 255, 0.98) 0%,
+                rgba(255, 255, 255, 0.92) 45%,
+                rgba(255, 255, 255, 0.58) 100%
+            ),
+            radial-gradient(circle at 82% 18%, rgba(246, 196, 0, 0.38), transparent 34%),
+            radial-gradient(circle at 12% 88%, rgba(17, 17, 17, 0.07), transparent 28%),
+            url("{% static 'img/home-bg.jpg' %}");
+        background-size: cover;
+        background-position: center right;
+        background-repeat: no-repeat;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .projects-hero::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.66) 100%);
+        pointer-events: none;
+    }
+
+    .projects-hero .container {
+        position: relative;
+        z-index: 1;
+    }
+
+    .projects-hero-row {
+        min-height: 440px;
+        padding-top: 58px;
+        padding-bottom: 58px;
+    }
+
+    .page-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        background: var(--yellow);
+        color: #111111;
+        border-radius: 999px;
+        padding: 11px 18px;
+        font-size: 0.82rem;
+        font-weight: 900;
+        line-height: 1;
+        text-transform: uppercase;
+        letter-spacing: 0.7px;
+        box-shadow: 0 12px 30px rgba(246, 196, 0, 0.24);
+        margin-bottom: 24px;
+    }
+
+    .page-badge::before {
+        content: "";
+        width: 9px;
+        height: 9px;
+        background: #111111;
+        border-radius: 50%;
+    }
+
+    .projects-title {
+        font-size: clamp(2.6rem, 5.5vw, 5.4rem);
+        line-height: 0.96;
+        letter-spacing: -3px;
+        color: var(--dark);
+        margin-bottom: 22px;
+        font-weight: 900;
+    }
+
+    .projects-subtitle {
+        max-width: 760px;
+        font-size: 1.13rem;
+        line-height: 1.8;
+        color: #5c5c5c;
+        margin-bottom: 0;
+    }
+
+    .hero-panel {
+        background: rgba(255, 255, 255, 0.92);
+        backdrop-filter: blur(18px);
+        border: 1px solid rgba(255,255,255,0.85);
+        border-radius: 34px;
+        padding: 34px;
+        box-shadow: 0 25px 60px rgba(17, 17, 17, 0.10);
+    }
+
+    .hero-panel h4 {
+        font-weight: 900;
+        margin-bottom: 18px;
+    }
+
+    .hero-panel p {
+        color: var(--muted);
+        line-height: 1.7;
+        margin-bottom: 22px;
+    }
+
+    .hero-panel-list {
+        display: grid;
+        gap: 12px;
+    }
+
+    .hero-panel-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 15px 16px;
+        background: var(--soft);
+        border-radius: 18px;
+        font-weight: 800;
+        color: #222222;
+    }
+
+    .hero-panel-item span {
+        width: 34px;
+        height: 34px;
+        background: var(--yellow);
+        color: #111111;
+        border-radius: 12px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.85rem;
+        font-weight: 900;
+        flex: 0 0 auto;
+    }
+
+    .projects-section {
+        padding-top: 70px;
+        padding-bottom: 70px;
+        background: #ffffff;
+    }
+
+    .section-tag {
+        display: inline-block;
+        background: #fff4bf;
+        color: #806500;
+        border-radius: 999px;
+        padding: 8px 15px;
+        font-size: 0.78rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.7px;
+        margin-bottom: 14px;
+    }
+
+    .section-title {
+        font-weight: 900;
+        letter-spacing: -1.5px;
+        color: var(--dark);
+    }
+
+    .projects-grid {
+        margin-top: 12px;
+    }
+
+    .project-card {
+        position: relative;
+        height: 100%;
+        border: 0;
+        border-radius: 34px;
+        overflow: hidden;
+        background: #ffffff;
+        box-shadow: 0 18px 48px rgba(0, 0, 0, 0.055);
+        transition: 0.28s ease;
+    }
+
+    .project-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 28px 72px rgba(0, 0, 0, 0.10);
+    }
+
+    .project-image-wrap {
+        position: relative;
+        height: 310px;
+        overflow: hidden;
+        background: var(--soft);
+    }
+
+    .project-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        transition: 0.35s ease;
+    }
+
+    .project-card:hover .project-image {
+        transform: scale(1.055);
+    }
+
+    .project-no-image {
+        width: 100%;
+        height: 100%;
+        background:
+            radial-gradient(circle at 80% 20%, rgba(246, 196, 0, 0.26), transparent 34%),
+            linear-gradient(135deg, #f8f9fa, #e9ecef);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--muted);
+        font-weight: 900;
+    }
+
+    .project-label {
+        position: absolute;
+        left: 22px;
+        top: 22px;
+        background: var(--yellow);
+        color: #111111;
+        border-radius: 999px;
+        padding: 9px 14px;
+        font-size: 0.75rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        box-shadow: 0 12px 26px rgba(0, 0, 0, 0.12);
+    }
+
+    .project-card-body {
+        padding: 28px;
+    }
+
+    .project-title {
+        font-size: 1.35rem;
+        font-weight: 900;
+        line-height: 1.28;
+        color: var(--dark);
+        margin-bottom: 12px;
+    }
+
+    .project-description {
+        color: var(--muted);
+        line-height: 1.7;
+        margin-bottom: 22px;
+    }
+
+    .project-info {
+        display: grid;
+        gap: 10px;
+        margin-bottom: 24px;
+        padding: 18px;
+        background: var(--soft);
+        border-radius: 22px;
+    }
+
+    .project-info-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        color: var(--muted);
+        font-size: 0.92rem;
+    }
+
+    .project-info-row strong {
+        color: #111111;
+        font-weight: 900;
+    }
+
+    .empty-state {
+        background: var(--soft);
+        border: 1px dashed #cfcfcf;
+        border-radius: 34px;
+        padding: 72px 30px;
+        text-align: center;
+    }
+
+    .empty-state h3 {
+        font-weight: 900;
+        color: var(--dark);
+        margin-bottom: 14px;
+    }
+
+    .empty-state p {
+        color: var(--muted);
+        max-width: 680px;
+        margin: 0 auto 24px auto;
+        line-height: 1.7;
+    }
+
+    .process-strip {
+        background:
+            radial-gradient(circle at 90% 10%, rgba(246, 196, 0, 0.18), transparent 30%),
+            var(--soft);
+        padding-top: 70px;
+        padding-bottom: 70px;
+    }
+
+    .process-card {
+        height: 100%;
+        background: #ffffff;
+        border: 1px solid var(--border);
+        border-radius: 30px;
+        padding: 32px;
+        box-shadow: 0 18px 45px rgba(0, 0, 0, 0.04);
+        transition: 0.25s ease;
+    }
+
+    .process-card:hover {
+        transform: translateY(-7px);
+    }
+
+    .process-card span {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--yellow);
+        color: #111111;
+        border-radius: 999px;
+        padding: 8px 14px;
+        font-weight: 900;
+        margin-bottom: 22px;
+    }
+
+    .process-card h5 {
+        font-weight: 900;
+        margin-bottom: 12px;
+    }
+
+    .process-card p {
+        color: var(--muted);
+        line-height: 1.7;
+        margin-bottom: 0;
+    }
+
+    .cta-projects {
+        background:
+            radial-gradient(circle at 20% 20%, rgba(246, 196, 0, 0.42), transparent 30%),
+            #ffffff;
+        border: 1px solid var(--border);
+        border-radius: 40px;
+        padding: 60px 28px;
+        text-align: center;
+        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.04);
+    }
+
+    .cta-projects h2 {
+        font-weight: 900;
+        letter-spacing: -1.4px;
+        color: var(--dark);
+        margin-bottom: 14px;
+    }
+
+    .cta-projects p {
+        color: var(--muted);
+        max-width: 760px;
+        margin: 0 auto 28px auto;
+        line-height: 1.75;
+    }
+
+    @media (max-width: 991px) {
+        .projects-hero-row {
+            min-height: auto;
+            padding-top: 44px;
+            padding-bottom: 44px;
+        }
+
+        .projects-title {
+            letter-spacing: -2px;
+        }
+
+        .project-image-wrap {
+            height: 280px;
+        }
+    }
+
+    @media (max-width: 575px) {
+        .projects-title {
+            font-size: 2.75rem;
+            letter-spacing: -2px;
+        }
+
+        .projects-subtitle {
+            font-size: 1rem;
+            line-height: 1.65;
+        }
+
+        .hero-panel,
+        .project-card-body {
+            padding: 24px;
+        }
+
+        .project-image-wrap {
+            height: 250px;
+        }
+
+        .cta-projects {
+            padding: 44px 22px;
+        }
+    }
+</style>
+
+<section class="projects-hero">
+
+    <div class="container">
+
+        <div class="row align-items-center projects-hero-row g-4">
+
+            <div class="col-lg-7">
+
+                <span class="page-badge">
+                    Projetos ArtSkala
+                </span>
+
+                <h1 class="projects-title">
+                    Projetos que destacam marcas no mundo real.
+                </h1>
+
+                <p class="projects-subtitle">
+                    Veja trabalhos realizados em comunicação visual, fachadas, adesivos,
+                    toldos, banners, vitrines e materiais personalizados. Cada projeto
+                    representa uma solução pensada para valorizar empresas e negócios.
+                </p>
+
+            </div>
+
+            <div class="col-lg-5">
+
+                <div class="hero-panel">
+
+                    <h4>
+                        Do conceito à aplicação
+                    </h4>
+
+                    <p>
+                        Trabalhamos com planejamento, criação, produção e acabamento para
+                        entregar materiais com visual profissional.
+                    </p>
+
+                    <div class="hero-panel-list">
+
+                        <div class="hero-panel-item">
+                            <span>01</span>
+                            Comunicação visual para empresas
+                        </div>
+
+                        <div class="hero-panel-item">
+                            <span>02</span>
+                            Fachadas, toldos e sinalização
+                        </div>
+
+                        <div class="hero-panel-item">
+                            <span>03</span>
+                            Adesivos, banners e personalização
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+<section class="projects-section">
+
+    <div class="container">
+
+        <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-end gap-4 mb-5">
+
+            <div>
+
+                <span class="section-tag">
+                    Portfólio
+                </span>
+
+                <h2 class="section-title mb-2">
+                    Projetos realizados
+                </h2>
+
+                <p class="text-muted mb-0">
+                    Confira alguns trabalhos cadastrados e veja os detalhes de cada projeto.
+                </p>
+
+            </div>
+
+            <a href="{% url 'home' %}#orcamento" class="btn btn-warning">
+                Solicitar orçamento
+            </a>
+
+        </div>
+
+        <div class="row g-4 projects-grid">
+
+            {% for projeto in projetos %}
+
+                <div class="col-xl-4 col-md-6">
+
+                    <div class="project-card">
+
+                        <div class="project-image-wrap">
+
+                            {% if projeto.imagens.first %}
+
+                                <img
+                                    src="{{ projeto.imagens.first.imagem.url }}"
+                                    alt="{{ projeto.titulo }}"
+                                    class="project-image"
+                                >
+
+                            {% else %}
+
+                                <div class="project-no-image">
+                                    Sem imagem
+                                </div>
+
+                            {% endif %}
+
+                            <span class="project-label">
+                                Projeto realizado
+                            </span>
+
+                        </div>
+
+                        <div class="project-card-body">
+
+                            <h3 class="project-title">
+                                {{ projeto.titulo }}
+                            </h3>
+
+                            <p class="project-description">
+                                {{ projeto.descricao|truncatechars:135 }}
+                            </p>
+
+                            <div class="project-info">
+
+                                <div class="project-info-row">
+                                    <span>Cliente</span>
+
+                                    <strong>
+                                        {% if projeto.cliente %}
+                                            {{ projeto.cliente }}
+                                        {% else %}
+                                            Não informado
+                                        {% endif %}
+                                    </strong>
+                                </div>
+
+                                <div class="project-info-row">
+                                    <span>Execução</span>
+
+                                    <strong>
+                                        {% if projeto.data_execucao %}
+                                            {{ projeto.data_execucao|date:"d/m/Y" }}
+                                        {% else %}
+                                            Sob consulta
+                                        {% endif %}
+                                    </strong>
+                                </div>
+
+                            </div>
+
+                            <a href="{% url 'project_detail' projeto.id %}" class="btn btn-dark w-100">
+                                Ver detalhes do projeto
+                            </a>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            {% empty %}
+
+                <div class="col-12">
+
+                    <div class="empty-state">
+
+                        <h3>
+                            Nenhum projeto encontrado
+                        </h3>
+
+                        <p>
+                            Ainda não existem projetos ativos cadastrados. Quando você adicionar
+                            projetos no painel administrativo, eles aparecerão automaticamente aqui.
+                        </p>
+
+                        <a href="{% url 'home' %}#orcamento" class="btn btn-warning">
+                            Solicitar orçamento
+                        </a>
+
+                    </div>
+
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+    </div>
+
+</section>
+
+<section class="process-strip">
+
+    <div class="container">
+
+        <div class="row align-items-center g-5">
+
+            <div class="col-lg-4">
+
+                <span class="section-tag">
+                    Método ArtSkala
+                </span>
+
+                <h2 class="section-title mb-3">
+                    Cada projeto passa por um processo profissional.
+                </h2>
+
+                <p class="text-muted mb-0">
+                    Da ideia inicial à entrega final, buscamos criar soluções bonitas,
+                    funcionais e adequadas para cada tipo de aplicação.
+                </p>
+
+            </div>
+
+            <div class="col-lg-8">
+
+                <div class="row g-4">
+
+                    <div class="col-md-4">
+
+                        <div class="process-card">
+                            <span>01</span>
+
+                            <h5>
+                                Planejamento
+                            </h5>
+
+                            <p>
+                                Entendemos o espaço, objetivo, medidas e necessidades do cliente.
+                            </p>
+                        </div>
+
+                    </div>
+
+                    <div class="col-md-4">
+
+                        <div class="process-card">
+                            <span>02</span>
+
+                            <h5>
+                                Produção
+                            </h5>
+
+                            <p>
+                                Produzimos os materiais com atenção ao acabamento e durabilidade.
+                            </p>
+                        </div>
+
+                    </div>
+
+                    <div class="col-md-4">
+
+                        <div class="process-card">
+                            <span>03</span>
+
+                            <h5>
+                                Resultado
+                            </h5>
+
+                            <p>
+                                Entregamos uma comunicação visual pronta para destacar sua marca.
+                            </p>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+<section class="container py-5">
+
+    <div class="cta-projects">
+
+        <span class="section-tag">
+            Quer aparecer aqui?
+        </span>
+
+        <h2>
+            Vamos criar o próximo projeto da sua empresa.
+        </h2>
+
+        <p>
+            Solicite um orçamento para fachada, toldo, adesivo, banner, vitrine,
+            impressão digital ou qualquer solução personalizada de comunicação visual.
+        </p>
+
+        <div class="d-flex flex-column flex-sm-row justify-content-center gap-3">
+
+            <a href="{% url 'home' %}#orcamento" class="btn btn-warning">
+                Solicitar orçamento
+            </a>
+
+            <a href="{% url 'products' %}" class="btn btn-outline-dark">
+                Ver produtos
+            </a>
+
+        </div>
+
+    </div>
+
+</section>
+
+{% endblock %}

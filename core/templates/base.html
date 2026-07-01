@@ -1,165 +1,478 @@
 {% load static %}
+
 <!DOCTYPE html>
 <html lang="pt-br">
 
 <head>
 
-<meta charset="UTF-8">
+    <meta charset="UTF-8">
 
-<meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<title>{% block title %}ArtSkala{% endblock %}</title>
+    <title>{% block title %}ArtSkala | Comunicação Visual{% endblock %}</title>
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
 
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
 
-<link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <style>
+        :root {
+            --art-yellow: #f6c400;
+            --art-yellow-dark: #d8a900;
+            --art-dark: #111111;
+            --art-soft: #f6f7f9;
+            --art-muted: #6c757d;
+            --art-border: #eeeeee;
+        }
+
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background: #ffffff;
+            color: var(--art-dark);
+        }
+
+        .site-main {
+            margin-top: 92px;
+        }
+
+        .fw-black {
+            font-weight: 900;
+        }
+
+        .navbar {
+            min-height: 92px;
+            padding-top: 14px;
+            padding-bottom: 14px;
+            background: rgba(255, 255, 255, 0.96) !important;
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .art-brand {
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            margin-right: 24px;
+        }
+
+        .art-brand-logo {
+            width: auto;
+            height: 58px;
+            max-width: 220px;
+            object-fit: contain;
+            display: block;
+        }
+
+        .navbar-toggler {
+            border-radius: 14px;
+            padding: 10px 12px;
+            border-color: rgba(0, 0, 0, 0.12);
+        }
+
+        .nav-link {
+            position: relative;
+            font-weight: 800;
+            color: #181818;
+            padding: 11px 16px !important;
+            border-radius: 999px;
+            transition: 0.25s ease;
+        }
+
+        .nav-link:hover {
+            color: #111111;
+            background: rgba(246, 196, 0, 0.12);
+        }
+
+        .nav-link::after {
+            content: "";
+            position: absolute;
+            left: 18px;
+            right: 18px;
+            bottom: 5px;
+            height: 3px;
+            background: var(--art-yellow);
+            border-radius: 999px;
+            transform: scaleX(0);
+            transform-origin: center;
+            transition: 0.25s ease;
+        }
+
+        .nav-link:hover::after {
+            transform: scaleX(1);
+        }
+
+        .nav-link.active-nav {
+            color: #111111;
+            background: rgba(246, 196, 0, 0.20);
+            box-shadow: 0 10px 26px rgba(246, 196, 0, 0.16);
+        }
+
+        .nav-link.active-nav::after {
+            transform: scaleX(1);
+        }
+
+        .instagram-nav-link {
+            background: #111111;
+            color: #ffffff !important;
+            box-shadow: 0 10px 26px rgba(0, 0, 0, 0.12);
+        }
+
+        .instagram-nav-link:hover {
+            background: var(--art-yellow);
+            color: #111111 !important;
+        }
+
+        .instagram-nav-link::after {
+            display: none;
+        }
+
+        .btn {
+            border-radius: 999px;
+            padding: 12px 26px;
+            font-weight: 800;
+        }
+
+        .btn-warning {
+            background: var(--art-yellow);
+            border-color: var(--art-yellow);
+            color: #111111;
+        }
+
+        .btn-warning:hover {
+            background: var(--art-yellow-dark);
+            border-color: var(--art-yellow-dark);
+            color: #111111;
+        }
+
+        .btn-outline-dark:hover {
+            background: #111111;
+            color: #ffffff;
+        }
+
+        .footer-section {
+            margin-top: 80px;
+        }
+
+        .footer-section a {
+            text-decoration: none;
+        }
+
+        .footer-contact-link {
+            color: rgba(255, 255, 255, 0.5);
+            transition: 0.2s ease;
+        }
+
+        .footer-contact-link:hover {
+            color: var(--art-yellow);
+        }
+
+        @media (max-width: 991px) {
+            .navbar-collapse {
+                padding-top: 18px;
+                padding-bottom: 10px;
+            }
+
+            .navbar-nav {
+                gap: 6px;
+            }
+
+            .nav-link {
+                padding: 12px 16px !important;
+            }
+
+            .nav-link::after {
+                left: 16px;
+                right: auto;
+                width: 44px;
+            }
+
+            .navbar .btn {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 575px) {
+            .site-main {
+                margin-top: 82px;
+            }
+
+            .navbar {
+                min-height: 82px;
+            }
+
+            .art-brand-logo {
+                height: 48px;
+                max-width: 170px;
+            }
+        }
+    </style>
 
 </head>
 
 <body>
 
+<header class="navbar navbar-expand-lg navbar-light shadow-sm fixed-top">
 
-<header class="navbar navbar-expand-lg navbar-light bg-white shadow-sm fixed-top">
+    <div class="container">
 
-<div class="container">
+        <a class="navbar-brand art-brand" href="{% url 'home' %}">
+            <img
+                src="{% static 'images/artskala-logo.jpeg' %}"
+                alt="ArtSkala"
+                class="art-brand-logo"
+            >
+        </a>
 
-<a class="navbar-brand fw-bold fs-2" href="/">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menu" aria-controls="menu" aria-expanded="false" aria-label="Abrir menu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
 
-ArtSkala
+        <div class="collapse navbar-collapse" id="menu">
 
-</a>
+            {% with url_name=request.resolver_match.url_name %}
 
-<button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#menu">
+            <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-1">
 
-<span class="navbar-toggler-icon"></span>
+                <li class="nav-item">
+                    <a
+                        id="nav-home"
+                        href="{% url 'home' %}"
+                        class="nav-link {% if url_name == 'home' %}active-nav{% endif %}"
+                    >
+                        Home
+                    </a>
+                </li>
 
-</button>
+                <li class="nav-item">
+                    <a
+                        id="nav-products"
+                        href="{% url 'products' %}"
+                        class="nav-link {% if url_name == 'products' or url_name == 'product_detail' %}active-nav{% endif %}"
+                    >
+                        Produtos
+                    </a>
+                </li>
 
-<div class="collapse navbar-collapse" id="menu">
+                <li class="nav-item">
+                    <a
+                        id="nav-categories"
+                        href="{% url 'categories' %}"
+                        class="nav-link {% if url_name == 'categories' or url_name == 'category_detail' %}active-nav{% endif %}"
+                    >
+                        Categorias
+                    </a>
+                </li>
 
-<ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a
+                        id="nav-projects"
+                        href="{% url 'projects' %}"
+                        class="nav-link {% if url_name == 'projects' or url_name == 'project_detail' %}active-nav{% endif %}"
+                    >
+                        Projetos
+                    </a>
+                </li>
 
-<li class="nav-item">
+                <li class="nav-item">
+                    <a
+                        id="nav-location"
+                        href="{% url 'home' %}#localizacao"
+                        class="nav-link"
+                    >
+                        Localização
+                    </a>
+                </li>
 
-<a href="/" class="nav-link">Home</a>
+                <li class="nav-item">
+                    <a
+                        href="https://www.instagram.com/artskalaa/"
+                        target="_blank"
+                        rel="noopener"
+                        class="nav-link instagram-nav-link"
+                    >
+                        Instagram
+                    </a>
+                </li>
 
-</li>
+            </ul>
 
-<li class="nav-item">
+            {% endwith %}
 
-<a href="/products/" class="nav-link">Produtos</a>
+            <div class="ms-lg-4 mt-3 mt-lg-0 d-flex flex-column flex-lg-row gap-2">
 
-</li>
+                <a href="{% url 'login' %}" class="btn btn-outline-dark">
+                    Entrar
+                </a>
 
-<li class="nav-item">
+                <a href="{% url 'cart' %}" class="btn btn-warning fw-bold">
+                    Carrinho
+                </a>
 
-<a href="/categories/" class="nav-link">Categorias</a>
+            </div>
 
-</li>
+        </div>
 
-<li class="nav-item">
-
-<a href="/projects/" class="nav-link">Projetos</a>
-
-</li>
-
-</ul>
-
-<div class="ms-4">
-
-<a href="/login/" class="btn btn-outline-dark">
-
-Entrar
-
-</a>
-
-<a href="/cart/" class="btn btn-warning">
-
-Carrinho
-
-</a>
-
-</div>
-
-</div>
-
-</div>
+    </div>
 
 </header>
 
+<main class="site-main">
 
-<main style="margin-top:85px;">
+    {% block content %}
 
-{% block content %}
-
-{% endblock %}
+    {% endblock %}
 
 </main>
 
+<footer class="footer-section bg-dark text-white">
 
-<footer class="bg-dark text-white mt-5">
+    <div class="container py-5">
 
-<div class="container py-5">
+        <div class="row g-4">
 
-<div class="row">
+            <div class="col-lg-4">
 
-<div class="col-md-4">
+                <h3 class="fw-bold mb-3">
+                    ArtSkala
+                </h3>
 
-<h4>ArtSkala</h4>
+                <p class="text-white-50 mb-4">
+                    Especialistas em comunicação visual, toldos, adesivos, fachadas,
+                    banners, impressão digital e materiais personalizados.
+                </p>
 
-<p>
+                <a href="{% url 'home' %}#orcamento" class="btn btn-warning fw-bold">
+                    Solicitar orçamento
+                </a>
 
-Especialistas em impressão digital,
+            </div>
 
-comunicação visual e brindes.
+            <div class="col-lg-4">
 
-</p>
+                <h5 class="fw-bold mb-3">
+                    Atendimento
+                </h5>
 
-</div>
+                <p class="text-white-50 mb-2">
+                    Telefone:
+                    <a href="tel:+551122353589" class="footer-contact-link">
+                        11 2235-3589
+                    </a>
+                </p>
 
-<div class="col-md-4">
+                <p class="text-white-50 mb-2">
+                    WhatsApp / Orçamentos:
+                    <a
+                        href="https://wa.me/5511960827853?text=Ol%C3%A1%2C%20vim%20pelo%20site%20da%20ArtSkala%20e%20gostaria%20de%20solicitar%20um%20or%C3%A7amento."
+                        target="_blank"
+                        rel="noopener"
+                        class="footer-contact-link"
+                    >
+                        11 96082-7853
+                    </a>
+                </p>
 
-<h5>Contato</h5>
+                <p class="text-white-50 mb-2">
+                    E-mail:
+                    <a href="mailto:Atendimento@artskala.com.br" class="footer-contact-link">
+                        Atendimento@artskala.com.br
+                    </a>
+                </p>
 
-<p>
+                <p class="text-white-50 mb-0">
+                    Instagram:
+                    <a
+                        href="https://www.instagram.com/artskalaa/"
+                        target="_blank"
+                        rel="noopener"
+                        class="footer-contact-link"
+                    >
+                        @artskalaa
+                    </a>
+                </p>
 
-(00) 99999-9999
+            </div>
 
-</p>
+            <div class="col-lg-4">
 
-<p>
+                <h5 class="fw-bold mb-3">
+                    Endereço
+                </h5>
 
-contato@artskala.com.br
+                <p class="text-white-50 mb-2">
+                    Rua Eduardo Zumkeller, 170
+                </p>
 
-</p>
+                <p class="text-white-50 mb-2">
+                    Galpão 01
+                </p>
 
-</div>
+                <p class="text-white-50 mb-0">
+                    São Paulo - SP
+                </p>
 
-<div class="col-md-4">
+            </div>
 
-<h5>Endereço</h5>
+        </div>
 
-<p>
+        <hr class="border-secondary my-4">
 
-Rua...
+        <div class="d-flex flex-column flex-md-row justify-content-between gap-2">
 
-</p>
+            <p class="text-white-50 mb-0">
+                © {% now "Y" %} ArtSkala. Todos os direitos reservados.
+            </p>
 
-</div>
+            <p class="text-white-50 mb-0">
+                Comunicação visual premium.
+            </p>
 
-</div>
+        </div>
 
-</div>
+    </div>
 
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    function atualizarMenuAtivoPorHash() {
+        const hash = window.location.hash;
+        const navHome = document.getElementById("nav-home");
+        const navLocation = document.getElementById("nav-location");
+
+        if (!navHome || !navLocation) {
+            return;
+        }
+
+        if (hash === "#localizacao") {
+            navHome.classList.remove("active-nav");
+            navLocation.classList.add("active-nav");
+        } else {
+            navLocation.classList.remove("active-nav");
+
+            const pathAtual = window.location.pathname;
+
+            if (pathAtual === "/" || pathAtual === "") {
+                navHome.classList.add("active-nav");
+            }
+        }
+    }
+
+    window.addEventListener("load", atualizarMenuAtivoPorHash);
+    window.addEventListener("hashchange", atualizarMenuAtivoPorHash);
+</script>
 
 </body>
 

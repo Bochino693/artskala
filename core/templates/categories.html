@@ -1,10 +1,518 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends 'base.html' %}
 
-</body>
-</html>
+{% load static %}
+
+{% block title %}ArtSkala | Categorias{% endblock %}
+
+{% block content %}
+
+<style>
+    :root {
+        --yellow: #f6c400;
+        --yellow-dark: #d9aa00;
+        --dark: #111111;
+        --soft: #f6f7f9;
+        --muted: #6c757d;
+        --border: #eeeeee;
+    }
+
+    .categories-hero {
+        position: relative;
+        overflow: hidden;
+        background:
+            linear-gradient(
+                90deg,
+                rgba(255, 255, 255, 0.98) 0%,
+                rgba(255, 255, 255, 0.92) 45%,
+                rgba(255, 255, 255, 0.60) 100%
+            ),
+            radial-gradient(circle at 82% 18%, rgba(246, 196, 0, 0.36), transparent 34%),
+            radial-gradient(circle at 12% 88%, rgba(17, 17, 17, 0.07), transparent 28%),
+            url("{% static 'img/home-bg.jpg' %}");
+        background-size: cover;
+        background-position: center right;
+        background-repeat: no-repeat;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .categories-hero::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.66) 100%);
+        pointer-events: none;
+    }
+
+    .categories-hero .container {
+        position: relative;
+        z-index: 1;
+    }
+
+    .categories-hero-row {
+        min-height: 430px;
+        padding-top: 58px;
+        padding-bottom: 58px;
+    }
+
+    .page-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        background: var(--yellow);
+        color: #111111;
+        border-radius: 999px;
+        padding: 11px 18px;
+        font-size: 0.82rem;
+        font-weight: 900;
+        line-height: 1;
+        text-transform: uppercase;
+        letter-spacing: 0.7px;
+        box-shadow: 0 12px 30px rgba(246, 196, 0, 0.24);
+        margin-bottom: 24px;
+    }
+
+    .page-badge::before {
+        content: "";
+        width: 9px;
+        height: 9px;
+        background: #111111;
+        border-radius: 50%;
+    }
+
+    .categories-title {
+        font-size: clamp(2.6rem, 5.5vw, 5.4rem);
+        line-height: 0.96;
+        letter-spacing: -3px;
+        color: var(--dark);
+        margin-bottom: 22px;
+        font-weight: 900;
+    }
+
+    .categories-subtitle {
+        max-width: 760px;
+        font-size: 1.13rem;
+        line-height: 1.8;
+        color: #5c5c5c;
+        margin-bottom: 0;
+    }
+
+    .hero-panel {
+        background: rgba(255, 255, 255, 0.92);
+        backdrop-filter: blur(18px);
+        border: 1px solid rgba(255,255,255,0.85);
+        border-radius: 34px;
+        padding: 34px;
+        box-shadow: 0 25px 60px rgba(17, 17, 17, 0.10);
+    }
+
+    .hero-panel h4 {
+        font-weight: 900;
+        margin-bottom: 18px;
+    }
+
+    .hero-panel-grid {
+        display: grid;
+        gap: 14px;
+    }
+
+    .hero-stat {
+        background: var(--soft);
+        border-radius: 22px;
+        padding: 20px;
+    }
+
+    .hero-stat strong {
+        display: block;
+        font-size: 2rem;
+        line-height: 1;
+        color: #111111;
+        font-weight: 900;
+        margin-bottom: 8px;
+    }
+
+    .hero-stat span {
+        color: var(--muted);
+        font-weight: 700;
+    }
+
+    .categories-section {
+        padding-top: 70px;
+        padding-bottom: 70px;
+        background: #ffffff;
+    }
+
+    .section-tag {
+        display: inline-block;
+        background: #fff4bf;
+        color: #806500;
+        border-radius: 999px;
+        padding: 8px 15px;
+        font-size: 0.78rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.7px;
+        margin-bottom: 14px;
+    }
+
+    .section-title {
+        font-weight: 900;
+        letter-spacing: -1.5px;
+        color: var(--dark);
+    }
+
+    .category-card {
+        position: relative;
+        height: 100%;
+        border: 0;
+        border-radius: 34px;
+        overflow: hidden;
+        background:
+            radial-gradient(circle at 88% 12%, rgba(246, 196, 0, 0.24), transparent 30%),
+            #ffffff;
+        box-shadow: 0 18px 48px rgba(0, 0, 0, 0.055);
+        transition: 0.28s ease;
+    }
+
+    .category-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 26px 70px rgba(0, 0, 0, 0.09);
+    }
+
+    .category-card-body {
+        position: relative;
+        z-index: 1;
+        padding: 32px;
+    }
+
+    .category-number {
+        width: 62px;
+        height: 62px;
+        background: var(--yellow);
+        color: #111111;
+        border-radius: 22px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 900;
+        font-size: 1.25rem;
+        margin-bottom: 26px;
+    }
+
+    .category-name {
+        font-size: 1.45rem;
+        line-height: 1.3;
+        font-weight: 900;
+        color: var(--dark);
+        margin-bottom: 14px;
+    }
+
+    .category-description {
+        color: var(--muted);
+        line-height: 1.7;
+        margin-bottom: 26px;
+    }
+
+    .category-meta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        margin-bottom: 24px;
+        padding: 16px;
+        background: var(--soft);
+        border-radius: 20px;
+    }
+
+    .category-meta strong {
+        color: #111111;
+        font-size: 1.25rem;
+        font-weight: 900;
+    }
+
+    .category-meta span {
+        color: var(--muted);
+        font-weight: 700;
+        font-size: 0.9rem;
+    }
+
+    .empty-state {
+        background: var(--soft);
+        border: 1px dashed #cfcfcf;
+        border-radius: 34px;
+        padding: 72px 30px;
+        text-align: center;
+    }
+
+    .empty-state h3 {
+        font-weight: 900;
+        color: var(--dark);
+        margin-bottom: 14px;
+    }
+
+    .empty-state p {
+        color: var(--muted);
+        max-width: 680px;
+        margin: 0 auto;
+        line-height: 1.7;
+    }
+
+    .cta-categories {
+        background:
+            radial-gradient(circle at 20% 20%, rgba(246, 196, 0, 0.42), transparent 30%),
+            #ffffff;
+        border: 1px solid var(--border);
+        border-radius: 40px;
+        padding: 60px 28px;
+        text-align: center;
+        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.04);
+    }
+
+    .cta-categories h2 {
+        font-weight: 900;
+        letter-spacing: -1.4px;
+        color: var(--dark);
+        margin-bottom: 14px;
+    }
+
+    .cta-categories p {
+        color: var(--muted);
+        max-width: 760px;
+        margin: 0 auto 28px auto;
+        line-height: 1.75;
+    }
+
+    @media (max-width: 991px) {
+        .categories-hero-row {
+            min-height: auto;
+            padding-top: 44px;
+            padding-bottom: 44px;
+        }
+
+        .categories-title {
+            letter-spacing: -2px;
+        }
+    }
+
+    @media (max-width: 575px) {
+        .categories-title {
+            font-size: 2.75rem;
+            letter-spacing: -2px;
+        }
+
+        .categories-subtitle {
+            font-size: 1rem;
+            line-height: 1.65;
+        }
+
+        .hero-panel,
+        .category-card-body {
+            padding: 26px;
+        }
+
+        .cta-categories {
+            padding: 44px 22px;
+        }
+    }
+</style>
+
+<section class="categories-hero">
+
+    <div class="container">
+
+        <div class="row align-items-center categories-hero-row g-4">
+
+            <div class="col-lg-7">
+
+                <span class="page-badge">
+                    Categorias ArtSkala
+                </span>
+
+                <h1 class="categories-title">
+                    Escolha a solução ideal para sua marca.
+                </h1>
+
+                <p class="categories-subtitle">
+                    Navegue pelas categorias de comunicação visual, toldos, adesivos,
+                    fachadas, banners, brindes e impressão digital. Cada categoria
+                    reúne produtos pensados para destacar sua empresa.
+                </p>
+
+            </div>
+
+            <div class="col-lg-5">
+
+                <div class="hero-panel">
+
+                    <h4>
+                        Resumo do catálogo
+                    </h4>
+
+                    <div class="hero-panel-grid">
+
+                        <div class="hero-stat">
+                            <strong>{{ total_categorias }}</strong>
+                            <span>Categorias cadastradas</span>
+                        </div>
+
+                        <div class="hero-stat">
+                            <strong>{{ total_produtos }}</strong>
+                            <span>Produtos ativos no catálogo</span>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+<section class="categories-section">
+
+    <div class="container">
+
+        <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-end gap-4 mb-5">
+
+            <div>
+                <span class="section-tag">
+                    Catálogo por área
+                </span>
+
+                <h2 class="section-title mb-2">
+                    Todas as categorias
+                </h2>
+
+                <p class="text-muted mb-0">
+                    Clique em uma categoria para ver somente os produtos relacionados.
+                </p>
+            </div>
+
+            <a href="{% url 'products' %}" class="btn btn-dark">
+                Ver todos os produtos
+            </a>
+
+        </div>
+
+        <div class="row g-4">
+
+            {% for categoria in categorias %}
+
+                <div class="col-xl-4 col-md-6">
+
+                    <div class="category-card">
+
+                        <div class="category-card-body">
+
+                            <div class="category-number">
+                                {{ forloop.counter }}
+                            </div>
+
+                            <h3 class="category-name">
+                                {{ categoria.nome_categoria }}
+                            </h3>
+
+                            <p class="category-description">
+                                Veja produtos e soluções desta categoria para aplicar em lojas,
+                                fachadas, eventos, vitrines e projetos personalizados.
+                            </p>
+
+                            <div class="category-meta">
+
+                                <div>
+                                    <strong>{{ categoria.total_produtos }}</strong>
+                                    <span>
+                                        {% if categoria.total_produtos == 1 %}
+                                            produto ativo
+                                        {% else %}
+                                            produtos ativos
+                                        {% endif %}
+                                    </span>
+                                </div>
+
+                                {% if categoria.total_produtos > 0 %}
+                                    <span class="badge bg-success-subtle text-success">
+                                        Disponível
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-warning-subtle text-dark">
+                                        Em breve
+                                    </span>
+                                {% endif %}
+
+                            </div>
+
+                            <a href="{% url 'category_detail' categoria.id %}" class="btn btn-warning w-100">
+                                Ver produtos da categoria
+                            </a>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            {% empty %}
+
+                <div class="col-12">
+
+                    <div class="empty-state">
+
+                        <h3>
+                            Nenhuma categoria encontrada
+                        </h3>
+
+                        <p>
+                            Cadastre categorias ativas no painel administrativo para que elas
+                            apareçam nesta tela automaticamente.
+                        </p>
+
+                    </div>
+
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+        <div class="mt-5">
+
+            <div class="cta-categories">
+
+                <span class="section-tag">
+                    Projeto personalizado
+                </span>
+
+                <h2>
+                    Não encontrou a categoria ideal?
+                </h2>
+
+                <p>
+                    Fale com a ArtSkala. Criamos soluções personalizadas para toldos,
+                    adesivos, fachadas, banners, brindes e comunicação visual completa.
+                </p>
+
+                <div class="d-flex flex-column flex-sm-row justify-content-center gap-3">
+
+                    <a href="{% url 'home' %}#orcamento" class="btn btn-warning">
+                        Solicitar orçamento
+                    </a>
+
+                    <a href="{% url 'projects' %}" class="btn btn-outline-dark">
+                        Ver projetos
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+{% endblock %}

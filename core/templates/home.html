@@ -1,224 +1,1283 @@
 {% extends 'base.html' %}
 
+{% load static %}
+
+{% block title %}ArtSkala | Toldos, Adesivos e Comunicação Visual{% endblock %}
+
 {% block content %}
 
-<section class="hero">
+<style>
+    :root {
+        --yellow: #f6c400;
+        --yellow-dark: #d9aa00;
+        --dark: #111111;
+        --soft: #f6f7f9;
+        --muted: #6c757d;
+        --border: #eeeeee;
+        --white: #ffffff;
+    }
 
-<div class="container">
+    .home-hero {
+        position: relative;
+        overflow: hidden;
+        min-height: calc(100vh - 92px);
+        background:
+            linear-gradient(
+                90deg,
+                rgba(255, 255, 255, 0.98) 0%,
+                rgba(255, 255, 255, 0.92) 42%,
+                rgba(255, 255, 255, 0.58) 68%,
+                rgba(255, 255, 255, 0.20) 100%
+            ),
+            radial-gradient(circle at 78% 18%, rgba(246, 196, 0, 0.45), transparent 34%),
+            radial-gradient(circle at 14% 86%, rgba(17, 17, 17, 0.08), transparent 30%),
+            url("{% static 'img/home-bg.jpg' %}");
+        background-size: cover;
+        background-position: center right;
+        background-repeat: no-repeat;
+    }
 
-<div class="row align-items-center vh-100">
+    .home-hero::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+            linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.76) 100%);
+        pointer-events: none;
+        z-index: 1;
+    }
 
-<div class="col-lg-6">
+    .home-hero .container {
+        position: relative;
+        z-index: 2;
+    }
 
-<span class="badge bg-warning text-dark">
+    .hero-row {
+        min-height: calc(100vh - 92px);
+        padding-top: 72px;
+        padding-bottom: 72px;
+    }
 
-Comunicação Visual Premium
+    .hero-content {
+        max-width: 780px;
+        padding-top: 8px;
+    }
 
-</span>
+    .premium-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        background: var(--yellow);
+        color: #111111;
+        border: 1px solid rgba(17, 17, 17, 0.08);
+        border-radius: 999px;
+        padding: 11px 18px;
+        font-size: 0.82rem;
+        font-weight: 900;
+        line-height: 1;
+        text-transform: uppercase;
+        letter-spacing: 0.7px;
+        box-shadow: 0 12px 30px rgba(246, 196, 0, 0.28);
+        margin-bottom: 28px;
+    }
 
-<h1 class="display-2 fw-bold mt-4">
+    .premium-badge::before {
+        content: "";
+        width: 9px;
+        height: 9px;
+        background: #111111;
+        border-radius: 50%;
+        display: inline-block;
+    }
 
-Sua marca merece ser vista.
+    .home-title {
+        font-size: clamp(3.1rem, 6.8vw, 6.7rem);
+        line-height: 0.92;
+        letter-spacing: -4px;
+        color: #111111;
+        margin-bottom: 28px;
+    }
 
-</h1>
+    .home-subtitle {
+        max-width: 690px;
+        font-size: 1.2rem;
+        line-height: 1.75;
+        color: #555555 !important;
+        margin-bottom: 42px;
+    }
 
-<p class="lead my-4">
+    .hero-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+    }
 
-Impressão digital, fachadas comerciais,
+    .hero-info-card {
+        background: rgba(255, 255, 255, 0.90);
+        backdrop-filter: blur(18px);
+        border-radius: 38px;
+        padding: 42px;
+        border: 1px solid rgba(255, 255, 255, 0.72);
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 28px 80px rgba(17, 17, 17, 0.14);
+    }
 
-banners, brindes personalizados,
+    .hero-info-card::before {
+        content: "";
+        position: absolute;
+        width: 220px;
+        height: 220px;
+        right: -80px;
+        top: -80px;
+        background: var(--yellow);
+        opacity: 0.34;
+        border-radius: 50%;
+    }
 
-adesivos, cartões e muito mais.
+    .hero-info-card::after {
+        content: "";
+        position: absolute;
+        width: 120px;
+        height: 120px;
+        left: -42px;
+        bottom: -42px;
+        background: #111111;
+        opacity: 0.05;
+        border-radius: 50%;
+    }
 
-</p>
+    .hero-label,
+    .hero-info-card h2,
+    .hero-info-card p,
+    .hero-info-card .row {
+        position: relative;
+        z-index: 1;
+    }
 
-<a href="/products/" class="btn btn-dark btn-lg">
+    .hero-label {
+        display: inline-flex;
+        align-items: center;
+        background: #111111;
+        color: #ffffff;
+        border-radius: 999px;
+        padding: 10px 18px;
+        font-weight: 900;
+        margin-bottom: 24px;
+        letter-spacing: -0.2px;
+    }
 
-Ver Produtos
+    .hero-mini-card {
+        background: var(--soft);
+        border-radius: 24px;
+        padding: 22px;
+        min-height: 118px;
+        border: 1px solid rgba(0, 0, 0, 0.04);
+    }
 
-</a>
+    .hero-mini-card strong {
+        display: block;
+        font-size: 1.05rem;
+        margin-bottom: 4px;
+    }
 
-<a href="/projects/" class="btn btn-outline-dark btn-lg">
+    .hero-mini-card span {
+        color: var(--muted);
+        font-size: 0.9rem;
+    }
 
-Projetos
+    .stat-card {
+        height: 100%;
+        background: #ffffff;
+        border: 1px solid var(--border);
+        border-radius: 30px;
+        padding: 36px 26px;
+        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.045);
+    }
 
-</a>
+    .stat-card h3 {
+        color: var(--yellow);
+        font-size: 2.5rem;
+    }
 
-</div>
+    .section-tag {
+        display: inline-block;
+        background: #fff4bf;
+        color: #806500;
+        border-radius: 999px;
+        padding: 8px 15px;
+        font-size: 0.78rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.7px;
+        margin-bottom: 14px;
+    }
 
-</div>
+    .section-heading {
+        max-width: 780px;
+    }
 
-</div>
+    .section-title {
+        letter-spacing: -1.5px;
+    }
+
+    .clean-card,
+    .product-card,
+    .project-card,
+    .process-card,
+    .location-info-card {
+        border-radius: 30px;
+        transition: 0.25s ease;
+        overflow: hidden;
+    }
+
+    .clean-card:hover,
+    .product-card:hover,
+    .project-card:hover,
+    .process-card:hover {
+        transform: translateY(-7px);
+    }
+
+    .category-number {
+        width: 58px;
+        height: 58px;
+        background: var(--yellow);
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 900;
+        font-size: 1.25rem;
+    }
+
+    .home-products {
+        background:
+            radial-gradient(circle at 90% 10%, rgba(246, 196, 0, 0.18), transparent 30%),
+            var(--soft);
+    }
+
+    .product-image {
+        height: 250px;
+        object-fit: cover;
+    }
+
+    .product-no-image,
+    .project-no-image {
+        height: 250px;
+        background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--muted);
+        font-weight: 900;
+    }
+
+    .project-image {
+        height: 280px;
+        object-fit: cover;
+    }
+
+    .process-card {
+        background: #ffffff;
+        border: 1px solid var(--border);
+        padding: 34px;
+        height: 100%;
+        box-shadow: 0 18px 45px rgba(0, 0, 0, 0.04);
+    }
+
+    .process-card span {
+        display: inline-block;
+        background: var(--yellow);
+        color: #111111;
+        border-radius: 999px;
+        padding: 8px 14px;
+        font-weight: 900;
+        margin-bottom: 22px;
+    }
+
+    .projects-area {
+        background: #ffffff;
+    }
+
+    .empty-state {
+        background: var(--soft);
+        border: 1px dashed #cfcfcf;
+        border-radius: 34px;
+        padding: 70px 30px;
+    }
+
+    .instagram-section {
+        background:
+            radial-gradient(circle at 88% 12%, rgba(246, 196, 0, 0.22), transparent 28%),
+            linear-gradient(135deg, #111111 0%, #242424 100%);
+        color: #ffffff;
+    }
+
+    .instagram-card {
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.13);
+        border-radius: 38px;
+        padding: 46px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .instagram-card::before {
+        content: "";
+        position: absolute;
+        width: 220px;
+        height: 220px;
+        right: -80px;
+        top: -80px;
+        background: var(--yellow);
+        opacity: 0.28;
+        border-radius: 50%;
+    }
+
+    .instagram-card-content {
+        position: relative;
+        z-index: 1;
+    }
+
+    .instagram-handle {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        background: var(--yellow);
+        color: #111111;
+        border-radius: 999px;
+        padding: 10px 18px;
+        font-weight: 900;
+        margin-bottom: 24px;
+    }
+
+    .instagram-title {
+        font-size: clamp(2rem, 4vw, 4rem);
+        line-height: 1;
+        letter-spacing: -2px;
+        font-weight: 900;
+        margin-bottom: 20px;
+    }
+
+    .instagram-text {
+        color: rgba(255, 255, 255, 0.72);
+        max-width: 720px;
+        line-height: 1.75;
+        margin-bottom: 30px;
+    }
+
+    .instagram-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+    }
+
+    .instagram-mini {
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 24px;
+        padding: 24px;
+        min-height: 140px;
+    }
+
+    .instagram-mini strong {
+        display: block;
+        color: #ffffff;
+        font-size: 1.1rem;
+        margin-bottom: 8px;
+    }
+
+    .instagram-mini span {
+        color: rgba(255, 255, 255, 0.65);
+    }
+
+    .location-section {
+        background:
+            radial-gradient(circle at 10% 20%, rgba(246, 196, 0, 0.22), transparent 26%),
+            linear-gradient(135deg, #111111 0%, #202020 100%);
+        color: #ffffff;
+    }
+
+    .location-info-card {
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        padding: 36px;
+        height: 100%;
+    }
+
+    .location-info-card p {
+        color: rgba(255, 255, 255, 0.72);
+    }
+
+    .location-line {
+        display: flex;
+        gap: 14px;
+        padding: 18px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .location-line:last-child {
+        border-bottom: 0;
+    }
+
+    .location-icon {
+        min-width: 44px;
+        height: 44px;
+        background: var(--yellow);
+        color: #111111;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 900;
+    }
+
+    .map-card {
+        background: #ffffff;
+        border-radius: 34px;
+        padding: 10px;
+        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.28);
+        overflow: hidden;
+        min-height: 480px;
+    }
+
+    .map-card iframe {
+        width: 100%;
+        height: 480px;
+        border: 0;
+        border-radius: 26px;
+        display: block;
+    }
+
+    .route-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 26px;
+    }
+
+    .cta-home {
+        background:
+            radial-gradient(circle at 20% 20%, rgba(246, 196, 0, 0.45), transparent 30%),
+            #ffffff;
+        border: 1px solid var(--border);
+        border-radius: 42px;
+        padding: 78px 36px;
+    }
+
+    @media (max-width: 991px) {
+        .home-hero {
+            min-height: auto;
+            background:
+                linear-gradient(180deg, rgba(255,255,255,0.97) 0%, rgba(255,255,255,0.90) 100%),
+                url("{% static 'img/home-bg.jpg' %}");
+            background-size: cover;
+            background-position: center;
+        }
+
+        .hero-row {
+            min-height: auto;
+            padding-top: 64px;
+            padding-bottom: 64px;
+        }
+
+        .home-title {
+            letter-spacing: -2px;
+        }
+
+        .hero-info-card {
+            padding: 30px;
+        }
+
+        .instagram-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .instagram-card {
+            padding: 32px;
+        }
+
+        .map-card,
+        .map-card iframe {
+            min-height: 390px;
+            height: 390px;
+        }
+    }
+
+    @media (max-width: 575px) {
+        .hero-row {
+            padding-top: 48px;
+            padding-bottom: 52px;
+        }
+
+        .premium-badge {
+            font-size: 0.72rem;
+            padding: 10px 14px;
+            margin-bottom: 22px;
+        }
+
+        .home-title {
+            font-size: 3rem;
+            letter-spacing: -2px;
+        }
+
+        .home-subtitle {
+            font-size: 1.04rem;
+            line-height: 1.65;
+        }
+
+        .hero-actions {
+            flex-direction: column;
+        }
+
+        .hero-actions .btn {
+            width: 100%;
+        }
+
+        .cta-home {
+            padding: 48px 24px;
+        }
+
+        .location-info-card {
+            padding: 26px;
+        }
+    }
+</style>
+
+<section class="home-hero">
+
+    <div class="container">
+
+        <div class="row align-items-center hero-row">
+
+            <div class="col-lg-7">
+
+                <div class="hero-content">
+
+                    <span class="premium-badge">
+                        Comunicação Visual Premium
+                    </span>
+
+                    <h1 class="home-title fw-black">
+                        Sua marca merece ser vista.
+                    </h1>
+
+                    <p class="lead home-subtitle">
+                        Produzimos toldos, adesivos, fachadas comerciais, banners,
+                        brindes personalizados, cartões, impressão digital e soluções
+                        completas para destacar sua empresa com acabamento profissional.
+                    </p>
+
+                    <div class="hero-actions">
+
+                        <a href="{% url 'products' %}" class="btn btn-dark btn-lg">
+                            Ver Produtos
+                        </a>
+
+                        <a href="{% url 'projects' %}" class="btn btn-outline-dark btn-lg">
+                            Projetos Realizados
+                        </a>
+
+                        <a
+                            href="https://wa.me/5511960827853?text=Ol%C3%A1%2C%20vim%20pelo%20site%20da%20ArtSkala%20e%20gostaria%20de%20solicitar%20um%20or%C3%A7amento."
+                            target="_blank"
+                            rel="noopener"
+                            class="btn btn-warning btn-lg fw-bold"
+                        >
+                            Orçamento pelo WhatsApp
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="col-lg-5 mt-5 mt-lg-0">
+
+                <div class="hero-info-card">
+
+                    <span class="hero-label">
+                        ArtSkala
+                    </span>
+
+                    <h2 class="fw-bold mb-3">
+                        Comunicação visual que valoriza sua empresa.
+                    </h2>
+
+                    <p class="text-muted mb-4">
+                        Criamos materiais bonitos, resistentes e profissionais para lojas,
+                        fachadas, eventos, vitrines e campanhas comerciais.
+                    </p>
+
+                    <div class="row g-3">
+
+                        <div class="col-6">
+                            <div class="hero-mini-card">
+                                <strong>Toldos</strong>
+                                <span>Sob medida</span>
+                            </div>
+                        </div>
+
+                        <div class="col-6">
+                            <div class="hero-mini-card">
+                                <strong>Adesivos</strong>
+                                <span>Personalizados</span>
+                            </div>
+                        </div>
+
+                        <div class="col-6">
+                            <div class="hero-mini-card">
+                                <strong>Fachadas</strong>
+                                <span>Alto impacto</span>
+                            </div>
+                        </div>
+
+                        <div class="col-6">
+                            <div class="hero-mini-card">
+                                <strong>Banners</strong>
+                                <span>Eventos e lojas</span>
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
 
 </section>
 
 <section class="container py-5">
 
-<h2 class="fw-bold mb-5">
+    <div class="row g-4 text-center">
 
-Categorias
+        <div class="col-md-4">
+            <div class="stat-card">
+                <h3 class="fw-black">01</h3>
+                <p class="mb-0 text-muted">Atendimento personalizado</p>
+            </div>
+        </div>
 
-</h2>
+        <div class="col-md-4">
+            <div class="stat-card">
+                <h3 class="fw-black">02</h3>
+                <p class="mb-0 text-muted">Produção sob medida</p>
+            </div>
+        </div>
 
-<div class="row">
+        <div class="col-md-4">
+            <div class="stat-card">
+                <h3 class="fw-black">03</h3>
+                <p class="mb-0 text-muted">Acabamento profissional</p>
+            </div>
+        </div>
 
-{% for categoria in categorias %}
-
-<div class="col-md-4 mb-4">
-
-<div class="card border-0 shadow-lg h-100">
-
-<div class="card-body text-center">
-
-<h4>
-
-{{ categoria.nome_categoria }}
-
-</h4>
-
-<p>
-
-{{ categoria.produtos.count }} produtos
-
-</p>
-
-</div>
-
-</div>
-
-</div>
-
-{% endfor %}
-
-</div>
+    </div>
 
 </section>
 
 <section class="container py-5">
 
-<h2 class="fw-bold mb-5">
+    <div class="section-heading mb-5">
 
-Produtos em destaque
+        <span class="section-tag">
+            Soluções
+        </span>
 
-</h2>
+        <h2 class="section-title fw-black">
+            Categorias
+        </h2>
 
-<div class="row">
+        <p class="text-muted">
+            Escolha o tipo de material ideal para sua loja, empresa ou projeto.
+        </p>
 
-{% for produto in produtos %}
+    </div>
 
-<div class="col-lg-3 col-md-6 mb-4">
+    <div class="row g-4">
 
-<div class="card border-0 shadow h-100">
+        {% for categoria in categorias %}
 
-{% if produto.imagens.first %}
+            <div class="col-lg-4 col-md-6">
 
-<img src="{{ produto.imagens.first.imagem.url }}" class="card-img-top">
+                <div class="card border-0 shadow-sm h-100 clean-card">
 
-{% endif %}
+                    <div class="card-body p-4">
 
-<div class="card-body">
+                        <div class="category-number mb-4">
+                            {{ forloop.counter }}
+                        </div>
 
-<h5>
+                        <h4 class="fw-bold mb-3">
+                            {{ categoria.nome_categoria }}
+                        </h4>
 
-{{ produto.nome_produto }}
+                        <p class="text-muted mb-4">
+                            {% if categoria.produtos.count > 0 %}
+                                {{ categoria.produtos.count }} produtos disponíveis nesta categoria.
+                            {% else %}
+                                Nenhum produto cadastrado nesta categoria no momento.
+                            {% endif %}
+                        </p>
 
-</h5>
+                        {% if categoria.id %}
+                            <a href="{% url 'category_detail' categoria.id %}" class="btn btn-outline-dark w-100">
+                                Ver Categoria
+                            </a>
+                        {% else %}
+                            <a href="{% url 'categories' %}" class="btn btn-outline-dark w-100">
+                                Ver Categoria
+                            </a>
+                        {% endif %}
 
-<p>
+                    </div>
 
-R$ {{ produto.preco }}
+                </div>
 
-</p>
+            </div>
 
-<a href="/products/{{produto.id}}/" class="btn btn-dark w-100">
+        {% empty %}
 
-Ver Produto
+            <div class="col-12">
 
-</a>
+                <div class="empty-state text-center">
 
-</div>
+                    <h3 class="fw-bold">
+                        Nenhuma categoria encontrada
+                    </h3>
 
-</div>
+                    <p class="text-muted mb-0">
+                        Cadastre categorias no painel administrativo para aparecerem aqui.
+                    </p>
 
-</div>
+                </div>
 
-{% endfor %}
+            </div>
 
-</div>
+        {% endfor %}
 
-</section>
-
-<section class="bg-light py-5">
-
-<div class="container">
-
-<h2 class="fw-bold mb-5">
-
-Projetos realizados
-
-</h2>
-
-<div class="row">
-
-{% for projeto in projetos %}
-
-<div class="col-lg-4">
-
-<div class="card border-0 shadow">
-
-{% if projeto.imagens.first %}
-
-<img src="{{ projeto.imagens.first.imagem.url }}">
-
-{% endif %}
-
-<div class="card-body">
-
-<h4>
-
-{{ projeto.titulo }}
-
-</h4>
-
-<p>
-
-{{ projeto.descricao|truncatechars:120 }}
-
-</p>
-
-</div>
-
-</div>
-
-</div>
-
-{% endfor %}
-
-</div>
-
-</div>
+    </div>
 
 </section>
 
-<section class="container py-5 text-center">
+<section class="home-products py-5">
 
-<h2 class="display-5 fw-bold">
+    <div class="container">
 
-Vamos transformar sua ideia em realidade?
+        <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-end gap-3 mb-5">
 
-</h2>
+            <div>
 
-<p class="lead">
+                <span class="section-tag">
+                    Destaques
+                </span>
 
-Solicite um orçamento agora mesmo.
+                <h2 class="section-title fw-black">
+                    Produtos em destaque
+                </h2>
 
-</p>
+                <p class="text-muted mb-0">
+                    Produtos mais procurados para comunicação visual e personalização.
+                </p>
 
-<a class="btn btn-warning btn-lg">
+            </div>
 
-Solicitar orçamento
+            <a href="{% url 'products' %}" class="btn btn-dark">
+                Ver todos
+            </a>
 
-</a>
+        </div>
+
+        <div class="row g-4">
+
+            {% for produto in produtos %}
+
+                <div class="col-xl-3 col-lg-4 col-md-6">
+
+                    <div class="card border-0 shadow-sm h-100 product-card">
+
+                        {% if produto.imagens.first %}
+
+                            <img
+                                src="{{ produto.imagens.first.imagem.url }}"
+                                class="card-img-top product-image"
+                                alt="{{ produto.nome_produto }}"
+                            >
+
+                        {% else %}
+
+                            <div class="product-no-image">
+                                Sem imagem
+                            </div>
+
+                        {% endif %}
+
+                        <div class="card-body p-4 d-flex flex-column">
+
+                            <h5 class="fw-bold mb-2">
+                                {{ produto.nome_produto }}
+                            </h5>
+
+                            <p class="text-muted small flex-grow-1">
+                                {{ produto.descricao_produto|truncatechars:90 }}
+                            </p>
+
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+
+                                <strong class="fs-5">
+                                    R$ {{ produto.preco }}
+                                </strong>
+
+                                {% if produto.estoque > 0 %}
+                                    <span class="badge bg-success-subtle text-success">
+                                        Disponível
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-warning-subtle text-dark">
+                                        Sob consulta
+                                    </span>
+                                {% endif %}
+
+                            </div>
+
+                            <a href="{% url 'product_detail' produto.id %}" class="btn btn-dark w-100">
+                                Ver Produto
+                            </a>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            {% empty %}
+
+                <div class="col-12">
+
+                    <div class="empty-state text-center">
+
+                        <h3 class="fw-bold">
+                            Nenhum produto encontrado
+                        </h3>
+
+                        <p class="text-muted mb-0">
+                            Ainda não existem produtos ativos cadastrados. Quando você cadastrar,
+                            eles aparecerão automaticamente nesta área.
+                        </p>
+
+                    </div>
+
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+    </div>
+
+</section>
+
+<section class="container py-5">
+
+    <div class="row align-items-center g-5">
+
+        <div class="col-lg-5">
+
+            <span class="section-tag">
+                Processo
+            </span>
+
+            <h2 class="section-title fw-black mb-4">
+                Do orçamento à entrega, tudo com padrão profissional.
+            </h2>
+
+            <p class="text-muted mb-4">
+                Atendemos sua necessidade, entendemos as medidas, indicamos materiais
+                adequados e produzimos uma solução visual bonita, funcional e preparada
+                para valorizar sua marca.
+            </p>
+
+            <a
+                href="https://wa.me/5511960827853?text=Ol%C3%A1%2C%20vim%20pelo%20site%20da%20ArtSkala%20e%20gostaria%20de%20solicitar%20um%20or%C3%A7amento."
+                target="_blank"
+                rel="noopener"
+                class="btn btn-warning btn-lg fw-bold"
+            >
+                Quero um orçamento
+            </a>
+
+        </div>
+
+        <div class="col-lg-7">
+
+            <div class="row g-4">
+
+                <div class="col-md-6">
+                    <div class="process-card">
+                        <span>01</span>
+                        <h5 class="fw-bold">Análise</h5>
+                        <p class="text-muted mb-0">
+                            Entendemos o local, objetivo, medida e tipo de aplicação.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="process-card">
+                        <span>02</span>
+                        <h5 class="fw-bold">Criação</h5>
+                        <p class="text-muted mb-0">
+                            Desenvolvemos uma solução alinhada com sua marca.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="process-card">
+                        <span>03</span>
+                        <h5 class="fw-bold">Produção</h5>
+                        <p class="text-muted mb-0">
+                            Produzimos com materiais adequados e bom acabamento.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="process-card">
+                        <span>04</span>
+                        <h5 class="fw-bold">Entrega</h5>
+                        <p class="text-muted mb-0">
+                            Finalizamos o projeto para aplicação ou instalação.
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+<section class="projects-area py-5">
+
+    <div class="container">
+
+        <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-end gap-3 mb-5">
+
+            <div>
+
+                <span class="section-tag">
+                    Portfólio
+                </span>
+
+                <h2 class="section-title fw-black">
+                    Projetos realizados
+                </h2>
+
+                <p class="text-muted mb-0">
+                    Alguns trabalhos feitos para empresas, lojas e clientes.
+                </p>
+
+            </div>
+
+            <a href="{% url 'projects' %}" class="btn btn-outline-dark">
+                Ver projetos
+            </a>
+
+        </div>
+
+        <div class="row g-4">
+
+            {% for projeto in projetos %}
+
+                <div class="col-lg-4 col-md-6">
+
+                    <div class="card border-0 shadow-sm h-100 project-card">
+
+                        {% if projeto.imagens.first %}
+
+                            <img
+                                src="{{ projeto.imagens.first.imagem.url }}"
+                                class="card-img-top project-image"
+                                alt="{{ projeto.titulo }}"
+                            >
+
+                        {% else %}
+
+                            <div class="project-no-image">
+                                Sem imagem
+                            </div>
+
+                        {% endif %}
+
+                        <div class="card-body p-4">
+
+                            <h4 class="fw-bold mb-3">
+                                {{ projeto.titulo }}
+                            </h4>
+
+                            <p class="text-muted mb-4">
+                                {{ projeto.descricao|truncatechars:120 }}
+                            </p>
+
+                            <a href="{% url 'project_detail' projeto.id %}" class="btn btn-dark w-100">
+                                Ver Projeto
+                            </a>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            {% empty %}
+
+                <div class="col-12">
+
+                    <div class="empty-state text-center">
+
+                        <h3 class="fw-bold">
+                            Nenhum projeto encontrado
+                        </h3>
+
+                        <p class="text-muted mb-0">
+                            Quando houver projetos ativos cadastrados, eles aparecerão aqui.
+                        </p>
+
+                    </div>
+
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+    </div>
+
+</section>
+
+<section class="instagram-section py-5">
+
+    <div class="container py-4">
+
+        <div class="instagram-card">
+
+            <div class="instagram-card-content">
+
+                <span class="instagram-handle">
+                    @artskalaa
+                </span>
+
+                <h2 class="instagram-title">
+                    Acompanhe nossos projetos no Instagram.
+                </h2>
+
+                <p class="instagram-text">
+                    Veja bastidores, fachadas prontas, adesivos aplicados, toldos,
+                    banners, vitrines e soluções de comunicação visual feitas pela ArtSkala.
+                    Nosso Instagram é uma vitrine viva dos trabalhos realizados.
+                </p>
+
+                <div class="d-flex flex-column flex-sm-row gap-3 mb-4">
+
+                    <a
+                        href="https://www.instagram.com/artskalaa/"
+                        target="_blank"
+                        rel="noopener"
+                        class="btn btn-warning btn-lg fw-bold"
+                    >
+                        Ver Instagram
+                    </a>
+
+                    <a
+                        href="https://wa.me/5511960827853?text=Ol%C3%A1%2C%20vim%20pelo%20site%20da%20ArtSkala%20e%20gostaria%20de%20solicitar%20um%20or%C3%A7amento."
+                        target="_blank"
+                        rel="noopener"
+                        class="btn btn-outline-light btn-lg fw-bold"
+                    >
+                        Pedir orçamento no WhatsApp
+                    </a>
+
+                </div>
+
+                <div class="instagram-grid mt-4">
+
+                    <div class="instagram-mini">
+                        <strong>Projetos reais</strong>
+                        <span>Veja trabalhos finalizados e aplicações feitas para clientes.</span>
+                    </div>
+
+                    <div class="instagram-mini">
+                        <strong>Bastidores</strong>
+                        <span>Acompanhe produção, impressão, acabamento e instalação.</span>
+                    </div>
+
+                    <div class="instagram-mini">
+                        <strong>Inspiração</strong>
+                        <span>Ideias para fachadas, vitrines, adesivos, banners e toldos.</span>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+<section id="localizacao" class="location-section py-5">
+
+    <div class="container py-4">
+
+        <div class="row align-items-center g-5">
+
+            <div class="col-lg-5">
+
+                <div class="location-info-card">
+
+                    <span class="section-tag">
+                        Localização
+                    </span>
+
+                    <h2 class="section-title fw-black mb-4">
+                        Venha até a ArtSkala.
+                    </h2>
+
+                    <p class="mb-4">
+                        Estamos em São Paulo, com rota pré-programada para facilitar
+                        sua visita, retirada ou atendimento presencial.
+                    </p>
+
+                    <div class="location-line">
+
+                        <div class="location-icon">
+                            01
+                        </div>
+
+                        <div>
+                            <h5 class="fw-bold mb-1">
+                                Endereço
+                            </h5>
+
+                            <p class="mb-0">
+                                Rua Eduardo Zumkeller, 170 - Galpão 01 — São Paulo, Brasil
+                            </p>
+                        </div>
+
+                    </div>
+
+                    <div class="location-line">
+
+                        <div class="location-icon">
+                            02
+                        </div>
+
+                        <div>
+                            <h5 class="fw-bold mb-1">
+                                Rotas rápidas
+                            </h5>
+
+                            <p class="mb-0">
+                                Abra a rota diretamente no Google Maps ou Waze.
+                            </p>
+                        </div>
+
+                    </div>
+
+                    <div class="route-buttons">
+
+                        <a
+                            href="https://www.google.com/maps/dir/?api=1&destination=Rua%20Eduardo%20Zumkeller%2C%20170%20-%20Galp%C3%A3o%2001%20-%20S%C3%A3o%20Paulo%2C%20Brasil"
+                            target="_blank"
+                            rel="noopener"
+                            class="btn btn-warning fw-bold"
+                        >
+                            Rota no Google Maps
+                        </a>
+
+                        <a
+                            href="https://waze.com/ul?q=Rua%20Eduardo%20Zumkeller%2C%20170%20Galp%C3%A3o%2001%20S%C3%A3o%20Paulo%20Brasil&navigate=yes"
+                            target="_blank"
+                            rel="noopener"
+                            class="btn btn-outline-light fw-bold"
+                        >
+                            Abrir no Waze
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="col-lg-7">
+
+                <div class="map-card">
+
+                    <iframe
+                        src="https://www.google.com/maps?q=Rua%20Eduardo%20Zumkeller%2C%20170%20-%20Galp%C3%A3o%2001%20-%20S%C3%A3o%20Paulo%2C%20Brasil&output=embed"
+                        loading="lazy"
+                        referrerpolicy="no-referrer-when-downgrade"
+                        allowfullscreen
+                    ></iframe>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+<section id="orcamento" class="container py-5">
+
+    <div class="cta-home text-center shadow-lg">
+
+        <span class="badge bg-warning text-dark px-3 py-2 mb-4">
+            Atendimento personalizado
+        </span>
+
+        <h2 class="display-5 fw-black mb-3">
+            Vamos transformar sua ideia em realidade?
+        </h2>
+
+        <p class="lead text-muted mb-5">
+            Solicite um orçamento para toldos, fachadas, adesivos, banners,
+            brindes, cartões e comunicação visual completa.
+        </p>
+
+        <div class="d-flex flex-column flex-sm-row justify-content-center gap-3">
+
+            <a href="tel:+551122353589" class="btn btn-dark btn-lg">
+                Ligar: 11 2235-3589
+            </a>
+
+            <a
+                href="https://wa.me/5511960827853?text=Ol%C3%A1%2C%20vim%20pelo%20site%20da%20ArtSkala%20e%20gostaria%20de%20solicitar%20um%20or%C3%A7amento."
+                target="_blank"
+                rel="noopener"
+                class="btn btn-warning btn-lg fw-bold"
+            >
+                Orçamento pelo WhatsApp
+            </a>
+
+            <a href="mailto:Atendimento@artskala.com.br" class="btn btn-outline-dark btn-lg fw-bold">
+                Enviar e-mail
+            </a>
+
+        </div>
+
+    </div>
 
 </section>
 

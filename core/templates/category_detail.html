@@ -2,7 +2,7 @@
 
 {% load static %}
 
-{% block title %}ArtSkala | Produtos{% endblock %}
+{% block title %}ArtSkala | {{ categoria.nome_categoria }}{% endblock %}
 
 {% block content %}
 
@@ -14,10 +14,9 @@
         --soft: #f6f7f9;
         --muted: #6c757d;
         --border: #eeeeee;
-        --white: #ffffff;
     }
 
-    .products-hero {
+    .category-detail-hero {
         position: relative;
         overflow: hidden;
         background:
@@ -25,34 +24,34 @@
                 90deg,
                 rgba(255, 255, 255, 0.98) 0%,
                 rgba(255, 255, 255, 0.92) 45%,
-                rgba(255, 255, 255, 0.70) 100%
+                rgba(255, 255, 255, 0.62) 100%
             ),
-            radial-gradient(circle at 85% 20%, rgba(246, 196, 0, 0.28), transparent 30%),
-            radial-gradient(circle at 15% 90%, rgba(17, 17, 17, 0.05), transparent 26%),
+            radial-gradient(circle at 82% 18%, rgba(246, 196, 0, 0.36), transparent 34%),
+            radial-gradient(circle at 12% 88%, rgba(17, 17, 17, 0.07), transparent 28%),
             url("{% static 'img/home-bg.jpg' %}");
         background-size: cover;
-        background-position: center;
+        background-position: center right;
         background-repeat: no-repeat;
         border-bottom: 1px solid var(--border);
     }
 
-    .products-hero::before {
+    .category-detail-hero::before {
         content: "";
         position: absolute;
         inset: 0;
-        background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.60) 100%);
+        background: linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.66) 100%);
         pointer-events: none;
     }
 
-    .products-hero .container {
+    .category-detail-hero .container {
         position: relative;
         z-index: 1;
     }
 
-    .products-hero-row {
+    .category-detail-row {
         min-height: 430px;
-        padding-top: 54px;
-        padding-bottom: 54px;
+        padding-top: 58px;
+        padding-bottom: 58px;
     }
 
     .page-badge {
@@ -65,6 +64,7 @@
         padding: 11px 18px;
         font-size: 0.82rem;
         font-weight: 900;
+        line-height: 1;
         text-transform: uppercase;
         letter-spacing: 0.7px;
         box-shadow: 0 12px 30px rgba(246, 196, 0, 0.24);
@@ -79,8 +79,8 @@
         border-radius: 50%;
     }
 
-    .products-title {
-        font-size: clamp(2.6rem, 5.5vw, 5.3rem);
+    .category-title {
+        font-size: clamp(2.6rem, 5.5vw, 5.4rem);
         line-height: 0.96;
         letter-spacing: -3px;
         color: var(--dark);
@@ -88,63 +88,56 @@
         font-weight: 900;
     }
 
-    .products-subtitle {
+    .category-subtitle {
         max-width: 760px;
-        font-size: 1.12rem;
+        font-size: 1.13rem;
         line-height: 1.8;
         color: #5c5c5c;
         margin-bottom: 0;
     }
 
-    .products-summary-card {
+    .category-side-card {
         background: rgba(255, 255, 255, 0.92);
         backdrop-filter: blur(18px);
         border: 1px solid rgba(255,255,255,0.85);
         border-radius: 34px;
-        padding: 32px;
+        padding: 34px;
         box-shadow: 0 25px 60px rgba(17, 17, 17, 0.10);
     }
 
-    .products-summary-card h4 {
+    .category-side-card h4 {
         font-weight: 900;
         margin-bottom: 16px;
     }
 
-    .products-summary-card p {
+    .category-side-card p {
         color: var(--muted);
-        margin-bottom: 18px;
+        line-height: 1.7;
+        margin-bottom: 24px;
     }
 
-    .summary-list {
-        display: grid;
-        gap: 12px;
-    }
-
-    .summary-list-item {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 14px 16px;
+    .side-stat {
         background: var(--soft);
-        border-radius: 18px;
-        font-weight: 700;
-        color: #222222;
+        border-radius: 22px;
+        padding: 20px;
+        margin-bottom: 14px;
     }
 
-    .summary-list-item span {
-        width: 34px;
-        height: 34px;
-        background: var(--yellow);
+    .side-stat strong {
+        display: block;
+        font-size: 2rem;
+        line-height: 1;
         color: #111111;
-        border-radius: 12px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 0.85rem;
         font-weight: 900;
+        margin-bottom: 8px;
     }
 
-    .products-section {
+    .side-stat span {
+        color: var(--muted);
+        font-weight: 700;
+    }
+
+    .category-products-section {
         padding-top: 68px;
         padding-bottom: 68px;
         background: #ffffff;
@@ -164,8 +157,8 @@
     }
 
     .section-title {
-        letter-spacing: -1.5px;
         font-weight: 900;
+        letter-spacing: -1.5px;
         color: var(--dark);
     }
 
@@ -200,10 +193,6 @@
         border-color: var(--yellow);
         color: #111111;
         box-shadow: 0 10px 24px rgba(246, 196, 0, 0.20);
-    }
-
-    .products-grid {
-        margin-top: 14px;
     }
 
     .product-card {
@@ -311,22 +300,11 @@
         color: #7a5d00;
     }
 
-    .product-actions {
-        display: grid;
-        gap: 10px;
-    }
-
-    .btn-modern {
-        border-radius: 999px;
-        padding: 12px 20px;
-        font-weight: 800;
-    }
-
     .empty-state {
         background: var(--soft);
         border: 1px dashed #cfcfcf;
         border-radius: 34px;
-        padding: 70px 30px;
+        padding: 72px 30px;
         text-align: center;
     }
 
@@ -343,11 +321,7 @@
         line-height: 1.7;
     }
 
-    .cta-products {
-        padding-top: 10px;
-    }
-
-    .cta-box {
+    .cta-category {
         background:
             radial-gradient(circle at 20% 20%, rgba(246, 196, 0, 0.42), transparent 30%),
             #ffffff;
@@ -358,14 +332,14 @@
         box-shadow: 0 18px 50px rgba(0, 0, 0, 0.04);
     }
 
-    .cta-box h2 {
+    .cta-category h2 {
         font-weight: 900;
         letter-spacing: -1.4px;
         color: var(--dark);
         margin-bottom: 14px;
     }
 
-    .cta-box p {
+    .cta-category p {
         color: var(--muted);
         max-width: 760px;
         margin: 0 auto 28px auto;
@@ -373,93 +347,90 @@
     }
 
     @media (max-width: 991px) {
-        .products-hero-row {
+        .category-detail-row {
             min-height: auto;
-            padding-top: 42px;
-            padding-bottom: 42px;
+            padding-top: 44px;
+            padding-bottom: 44px;
         }
 
-        .products-title {
+        .category-title {
             letter-spacing: -2px;
-        }
-
-        .products-summary-card {
-            padding: 26px;
         }
     }
 
     @media (max-width: 575px) {
-        .products-title {
-            font-size: 2.7rem;
+        .category-title {
+            font-size: 2.75rem;
             letter-spacing: -2px;
         }
 
-        .products-subtitle {
+        .category-subtitle {
             font-size: 1rem;
             line-height: 1.65;
         }
 
+        .category-side-card,
         .product-card-body {
-            padding: 22px;
+            padding: 24px;
         }
 
-        .cta-box {
-            padding: 42px 22px;
+        .cta-category {
+            padding: 44px 22px;
         }
     }
 </style>
 
-<section class="products-hero">
+<section class="category-detail-hero">
 
     <div class="container">
 
-        <div class="row align-items-center products-hero-row g-4">
+        <div class="row align-items-center category-detail-row g-4">
 
             <div class="col-lg-7">
 
                 <span class="page-badge">
-                    Linha de Produtos
+                    Categoria selecionada
                 </span>
 
-                <h1 class="products-title">
-                    Soluções visuais com acabamento profissional.
+                <h1 class="category-title">
+                    {{ categoria.nome_categoria }}
                 </h1>
 
-                <p class="products-subtitle">
-                    Conheça nossa linha de produtos para fachadas, toldos, adesivos, banners,
-                    brindes personalizados, impressão digital e muito mais. Tudo pensado para
-                    valorizar sua marca com visual moderno e impacto comercial.
+                <p class="category-subtitle">
+                    Veja todos os produtos ativos desta categoria. Aqui você encontra
+                    soluções específicas para comunicação visual, personalização,
+                    fachada, decoração, sinalização e projetos sob medida.
                 </p>
 
             </div>
 
             <div class="col-lg-5">
 
-                <div class="products-summary-card">
+                <div class="category-side-card">
 
                     <h4>
-                        ArtSkala Produtos
+                        Resumo da categoria
                     </h4>
 
                     <p>
-                        Trabalhamos com soluções sob medida para empresas, lojas,
-                        comércios, eventos e comunicação visual em geral.
+                        Esta área reúne apenas os produtos relacionados à categoria
+                        selecionada, facilitando sua busca.
                     </p>
 
-                    <div class="summary-list">
-                        <div class="summary-list-item">
-                            <span>01</span>
-                            Fachadas e toldos personalizados
-                        </div>
-                        <div class="summary-list-item">
-                            <span>02</span>
-                            Adesivos e impressão digital
-                        </div>
-                        <div class="summary-list-item">
-                            <span>03</span>
-                            Materiais promocionais e brindes
-                        </div>
+                    <div class="side-stat">
+                        <strong>{{ categoria.total_produtos }}</strong>
+                        <span>
+                            {% if categoria.total_produtos == 1 %}
+                                produto ativo encontrado
+                            {% else %}
+                                produtos ativos encontrados
+                            {% endif %}
+                        </span>
                     </div>
+
+                    <a href="{% url 'categories' %}" class="btn btn-outline-dark w-100">
+                        Voltar para categorias
+                    </a>
 
                 </div>
 
@@ -471,7 +442,7 @@
 
 </section>
 
-<section class="products-section">
+<section class="category-products-section">
 
     <div class="container">
 
@@ -479,38 +450,44 @@
 
             <div>
                 <span class="section-tag">
-                    Catálogo
+                    Produtos filtrados
                 </span>
 
                 <h2 class="section-title mb-2">
-                    Todos os produtos
+                    Produtos de {{ categoria.nome_categoria }}
                 </h2>
 
                 <p class="text-muted mb-0">
-                    Navegue pelas categorias e encontre a melhor solução para seu projeto.
+                    Selecione outra categoria abaixo ou veja os produtos desta seção.
                 </p>
             </div>
 
-            <div class="filter-bar">
-
-                <a href="{% url 'products' %}" class="filter-chip {% if not categoria_ativa %}active{% endif %}">
-                    Todos
-                </a>
-
-                {% for categoria in categorias %}
-                    <a
-                        href="{% url 'products' %}?categoria={{ categoria.id }}"
-                        class="filter-chip {% if categoria_ativa == categoria.id %}active{% endif %}"
-                    >
-                        {{ categoria.nome_categoria }}
-                    </a>
-                {% endfor %}
-
-            </div>
+            <a href="{% url 'products' %}" class="btn btn-dark">
+                Ver todos os produtos
+            </a>
 
         </div>
 
-        <div class="row g-4 products-grid">
+        <div class="filter-bar mb-5">
+
+            <a href="{% url 'products' %}" class="filter-chip">
+                Todos
+            </a>
+
+            {% for item in categorias %}
+
+                <a
+                    href="{% url 'category_detail' item.id %}"
+                    class="filter-chip {% if item.id == categoria.id %}active{% endif %}"
+                >
+                    {{ item.nome_categoria }}
+                </a>
+
+            {% endfor %}
+
+        </div>
+
+        <div class="row g-4">
 
             {% for produto in produtos %}
 
@@ -519,24 +496,26 @@
                     <div class="product-card">
 
                         {% if produto.imagens.first %}
+
                             <img
                                 src="{{ produto.imagens.first.imagem.url }}"
                                 alt="{{ produto.nome_produto }}"
                                 class="product-image"
                             >
+
                         {% else %}
+
                             <div class="product-no-image">
                                 Sem imagem
                             </div>
+
                         {% endif %}
 
                         <div class="product-card-body">
 
-                            {% if produto.categoria %}
-                                <span class="product-category">
-                                    {{ produto.categoria.nome_categoria }}
-                                </span>
-                            {% endif %}
+                            <span class="product-category">
+                                {{ produto.categoria.nome_categoria }}
+                            </span>
 
                             <h3 class="product-name">
                                 {{ produto.nome_produto }}
@@ -564,13 +543,9 @@
 
                             </div>
 
-                            <div class="product-actions">
-
-                                <a href="{% url 'product_detail' produto.id %}" class="btn btn-dark btn-modern">
-                                    Ver Produto
-                                </a>
-
-                            </div>
+                            <a href="{% url 'product_detail' produto.id %}" class="btn btn-dark w-100">
+                                Ver Produto
+                            </a>
 
                         </div>
 
@@ -585,18 +560,26 @@
                     <div class="empty-state">
 
                         <h3>
-                            Nenhum produto encontrado
+                            Nenhum produto nesta categoria
                         </h3>
 
                         <p>
-                            Ainda não existem produtos ativos cadastrados nesta seção.
-                            Assim que os produtos forem adicionados no painel administrativo,
-                            eles aparecerão automaticamente aqui.
+                            Esta categoria ainda não possui produtos ativos cadastrados.
+                            Você pode voltar para todas as categorias ou solicitar um
+                            orçamento personalizado.
                         </p>
 
-                        <a href="{% url 'home' %}" class="btn btn-dark btn-modern">
-                            Voltar para Home
-                        </a>
+                        <div class="d-flex flex-column flex-sm-row justify-content-center gap-3">
+
+                            <a href="{% url 'categories' %}" class="btn btn-outline-dark">
+                                Ver categorias
+                            </a>
+
+                            <a href="{% url 'home' %}#orcamento" class="btn btn-warning">
+                                Solicitar orçamento
+                            </a>
+
+                        </div>
 
                     </div>
 
@@ -606,30 +589,33 @@
 
         </div>
 
-        <div class="cta-products mt-5">
+        <div class="mt-5">
 
-            <div class="cta-box">
+            <div class="cta-category">
 
                 <span class="section-tag">
-                    Atendimento personalizado
+                    Atendimento sob medida
                 </span>
 
                 <h2>
-                    Precisa de um produto sob medida?
+                    Quer um projeto personalizado em {{ categoria.nome_categoria }}?
                 </h2>
 
                 <p>
-                    Fale com a ArtSkala e solicite um orçamento personalizado para fachadas,
-                    toldos, adesivos, banners, brindes e soluções completas de comunicação visual.
+                    Solicite um orçamento com a ArtSkala. Desenvolvemos soluções
+                    personalizadas para sua loja, empresa, fachada, evento ou ação comercial.
                 </p>
 
                 <div class="d-flex flex-column flex-sm-row justify-content-center gap-3">
-                    <a href="{% url 'home' %}#orcamento" class="btn btn-warning btn-modern">
+
+                    <a href="{% url 'home' %}#orcamento" class="btn btn-warning">
                         Solicitar orçamento
                     </a>
-                    <a href="{% url 'projects' %}" class="btn btn-outline-dark btn-modern">
-                        Ver projetos
+
+                    <a href="{% url 'projects' %}" class="btn btn-outline-dark">
+                        Ver projetos realizados
                     </a>
+
                 </div>
 
             </div>

@@ -1,6 +1,7 @@
 from django.shortcuts import render, get_object_or_404
 from django.views import View
 from django.contrib.auth.models import User
+from django.db.models import Count, Q
 
 from .models import (
     Produto,
@@ -11,26 +12,55 @@ from .models import (
     PerfilUsuario
 )
 
-
 class HomeView(View):
 
     def get(self, request):
         ctx = {
-            "produtos": Produto.objects.filter(ativo=True)[:8],
-            "projetos": Projeto.objects.filter(ativo=True)[:6],
-            "categorias": CategoriaProdutos.objects.all(),
-        }
-        return render(request, "home.html", ctx)
+            "produtos": Produto.objects.filter(
+                ativo=True
+            ).select_related(
+                "categoria"
+            ).prefetch_related(
+                "imagens"
+            )[:8],
 
+            "projetos": Projeto.objects.filter(
+                ativo=True
+            ).prefetch_related(
+                "imagens"
+            )[:6],
+
+            "categorias": CategoriaProdutos.objects.filter(
+                ativo=True
+            ).annotate(
+                total_produtos=Count(
+                    "produtos",
+                    filter=Q(produtos__ativo=True)
+                )
+            ),
+        }
+
+        return render(request, "home.html", ctx)
 
 class ProductsView(View):
 
     def get(self, request):
-        ctx = {
-            "produtos": Produto.objects.filter(ativo=True),
-        }
-        return render(request, "products.html", ctx)
+        categoria_id = request.GET.get("categoria")
 
+        produtos = Produto.objects.filter(
+            ativo=True
+        ).select_related("categoria").prefetch_related("imagens")
+
+        if categoria_id:
+            produtos = produtos.filter(categoria_id=categoria_id)
+
+        ctx = {
+            "produtos": produtos,
+            "categorias": CategoriaProdutos.objects.filter(ativo=True),
+            "categoria_ativa": int(categoria_id) if categoria_id else None,
+        }
+
+        return render(request, "products.html", ctx)
 
 class ProductDetailView(View):
 
@@ -52,28 +82,85 @@ class ProductDetailView(View):
 
         return render(request, "product_detail.html", ctx)
 
-
 class CategoriesView(View):
 
     def get(self, request):
-        ctx = {
-            "categorias": CategoriaProdutos.objects.prefetch_related(
-                "produtos"
+        categorias = CategoriaProdutos.objects.filter(
+            ativo=True
+        ).annotate(
+            total_produtos=Count(
+                "produtos",
+                filter=Q(produtos__ativo=True)
             )
+        ).order_by("nome_categoria")
+
+        total_produtos = Produto.objects.filter(
+            ativo=True
+        ).count()
+
+        ctx = {
+            "categorias": categorias,
+            "total_categorias": categorias.count(),
+            "total_produtos": total_produtos,
         }
 
         return render(request, "categories.html", ctx)
+
+
+class CategoryDetailView(View):
+
+    def get(self, request, pk):
+        categoria = get_object_or_404(
+            CategoriaProdutos.objects.filter(
+                ativo=True
+            ).annotate(
+                total_produtos=Count(
+                    "produtos",
+                    filter=Q(produtos__ativo=True)
+                )
+            ),
+            pk=pk
+        )
+
+        produtos = Produto.objects.filter(
+            categoria=categoria,
+            ativo=True
+        ).select_related(
+            "categoria"
+        ).prefetch_related(
+            "imagens"
+        ).order_by("nome_produto")
+
+        categorias = CategoriaProdutos.objects.filter(
+            ativo=True
+        ).annotate(
+            total_produtos=Count(
+                "produtos",
+                filter=Q(produtos__ativo=True)
+            )
+        ).order_by("nome_categoria")
+
+        ctx = {
+            "categoria": categoria,
+            "categorias": categorias,
+            "produtos": produtos,
+        }
+
+        return render(request, "category_detail.html", ctx)
 
 
 class ProjectsView(View):
 
     def get(self, request):
         ctx = {
-            "projetos": Projeto.objects.filter(ativo=True)
+            "projetos": Projeto.objects.filter(
+                ativo=True
+            ).prefetch_related(
+                "imagens"
+            ).order_by("-criacao")
         }
 
         return render(request, "projects.html", ctx)
-
 
 class ProjectDetailView(View):
 
