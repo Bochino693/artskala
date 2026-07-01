@@ -1,7 +1,11 @@
-
-
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views import View
+from django.contrib.auth.models import User
+from django.contrib.auth import authenticate, login, logout
+from django.contrib import messages
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.db.models import Count, Q
 
 from django.shortcuts import render, get_object_or_404, redirect
@@ -293,11 +297,107 @@ class ProfileView(View):
 
         return render(request, "profile.html", ctx)
 
-
 class RegisterView(View):
 
     def get(self, request):
+        if request.user.is_authenticated:
+            return redirect("profile")
+
         return render(request, "register.html")
+
+    def post(self, request):
+        if request.user.is_authenticated:
+            return redirect("profile")
+
+        nome = request.POST.get("nome", "").strip()
+        sobrenome = request.POST.get("sobrenome", "").strip()
+        username = request.POST.get("username", "").strip()
+        email = request.POST.get("email", "").strip().lower()
+        password = request.POST.get("password", "").strip()
+        password_confirm = request.POST.get("password_confirm", "").strip()
+
+        telefone = request.POST.get("telefone", "").strip()
+        cpf = request.POST.get("cpf", "").strip()
+        endereco = request.POST.get("endereco", "").strip()
+        cidade = request.POST.get("cidade", "").strip()
+        estado = request.POST.get("estado", "").strip().upper()
+        cep = request.POST.get("cep", "").strip()
+
+        ctx = {
+            "dados": request.POST,
+        }
+
+        campos_obrigatorios = [
+            nome,
+            sobrenome,
+            username,
+            email,
+            password,
+            password_confirm,
+            telefone,
+            cpf,
+            endereco,
+            cidade,
+            estado,
+            cep,
+        ]
+
+        if not all(campos_obrigatorios):
+            messages.error(request, "Preencha todos os campos obrigatórios.")
+            return render(request, "register.html", ctx)
+
+        if password != password_confirm:
+            messages.error(request, "As senhas não conferem.")
+            return render(request, "register.html", ctx)
+
+        if User.objects.filter(username=username).exists():
+            messages.error(request, "Este nome de usuário já está em uso.")
+            return render(request, "register.html", ctx)
+
+        if User.objects.filter(email=email).exists():
+            messages.error(request, "Este e-mail já está cadastrado.")
+            return render(request, "register.html", ctx)
+
+        if len(estado) != 2:
+            messages.error(request, "Informe o estado com 2 letras. Exemplo: SP.")
+            return render(request, "register.html", ctx)
+
+        try:
+            validate_password(password)
+        except ValidationError as erros:
+            for erro in erros:
+                messages.error(request, erro)
+
+            return render(request, "register.html", ctx)
+
+        try:
+            with transaction.atomic():
+                usuario = User.objects.create_user(
+                    username=username,
+                    email=email,
+                    password=password,
+                    first_name=nome,
+                    last_name=sobrenome,
+                )
+
+                PerfilUsuario.objects.create(
+                    usuario=usuario,
+                    telefone=telefone,
+                    cpf=cpf,
+                    endereco=endereco,
+                    cidade=cidade,
+                    estado=estado,
+                    cep=cep,
+                )
+
+                login(request, usuario)
+
+        except Exception:
+            messages.error(request, "Não foi possível criar sua conta. Tente novamente.")
+            return render(request, "register.html", ctx)
+
+        messages.success(request, "Conta criada com sucesso. Seja bem-vindo à ArtSkala!")
+        return redirect("profile")
 
 
 class PaymentView(View):

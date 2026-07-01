@@ -1,0 +1,579 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block title %}ArtSkala | Cadastro{% endblock %}
+
+{% block content %}
+
+<style>
+    :root {
+        --red: #ef2b35;
+        --red-dark: #c91822;
+        --dark: #111111;
+        --soft: #f6f7f9;
+        --muted: #6c757d;
+        --border: #eeeeee;
+    }
+
+    .register-page {
+        position: relative;
+        overflow: hidden;
+        min-height: calc(100vh - 92px);
+        background:
+            linear-gradient(
+                90deg,
+                rgba(255, 255, 255, 0.98) 0%,
+                rgba(255, 255, 255, 0.94) 48%,
+                rgba(255, 255, 255, 0.80) 100%
+            ),
+            url("{% static 'images/back-art.png' %}");
+        background-size: cover;
+        background-position: center right;
+        background-repeat: no-repeat;
+    }
+
+    .register-page::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+            radial-gradient(circle at 14% 84%, rgba(239, 43, 53, 0.13), transparent 28%),
+            linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.76));
+        pointer-events: none;
+    }
+
+    .register-page .container {
+        position: relative;
+        z-index: 1;
+    }
+
+    .register-row {
+        min-height: calc(100vh - 92px);
+        padding-top: 70px;
+        padding-bottom: 70px;
+    }
+
+    .register-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        background: var(--red);
+        color: #ffffff;
+        border-radius: 999px;
+        padding: 10px 18px;
+        font-size: 0.8rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.7px;
+        margin-bottom: 24px;
+        box-shadow: 0 12px 30px rgba(239, 43, 53, 0.24);
+    }
+
+    .register-badge::before {
+        content: "";
+        width: 9px;
+        height: 9px;
+        background: #ffffff;
+        border-radius: 50%;
+    }
+
+    .register-title {
+        font-size: clamp(2.7rem, 5.4vw, 5.3rem);
+        line-height: 0.95;
+        letter-spacing: -3px;
+        color: var(--dark);
+        font-weight: 900;
+        margin-bottom: 24px;
+    }
+
+    .register-subtitle {
+        max-width: 680px;
+        color: #555555;
+        font-size: 1.12rem;
+        line-height: 1.75;
+        margin-bottom: 34px;
+    }
+
+    .register-benefits {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+        max-width: 760px;
+    }
+
+    .benefit-card {
+        background: rgba(255, 255, 255, 0.86);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        border-radius: 24px;
+        padding: 22px;
+        box-shadow: 0 16px 42px rgba(0, 0, 0, 0.045);
+    }
+
+    .benefit-card strong {
+        display: block;
+        color: var(--dark);
+        font-weight: 900;
+        margin-bottom: 6px;
+    }
+
+    .benefit-card span {
+        color: var(--muted);
+        font-size: 0.92rem;
+    }
+
+    .register-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(18px);
+        border: 1px solid rgba(255, 255, 255, 0.82);
+        border-radius: 38px;
+        padding: 42px;
+        box-shadow: 0 30px 85px rgba(17, 17, 17, 0.14);
+        overflow: hidden;
+        position: relative;
+    }
+
+    .register-card::before {
+        content: "";
+        position: absolute;
+        width: 240px;
+        height: 240px;
+        right: -100px;
+        top: -100px;
+        background: var(--red);
+        opacity: 0.10;
+        border-radius: 50%;
+    }
+
+    .register-card-content {
+        position: relative;
+        z-index: 1;
+    }
+
+    .register-card-title {
+        font-weight: 900;
+        letter-spacing: -0.8px;
+        margin-bottom: 8px;
+        color: var(--dark);
+    }
+
+    .register-card-text {
+        color: var(--muted);
+        line-height: 1.65;
+        margin-bottom: 28px;
+    }
+
+    .form-section-title {
+        font-size: 0.82rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.7px;
+        color: var(--red);
+        margin-top: 24px;
+        margin-bottom: 14px;
+    }
+
+    .form-label {
+        font-weight: 800;
+        color: #222222;
+        margin-bottom: 8px;
+    }
+
+    .form-control {
+        border-radius: 17px;
+        padding: 14px 16px;
+        border: 1px solid #dedede;
+        font-weight: 600;
+    }
+
+    .form-control:focus {
+        border-color: var(--red);
+        box-shadow: 0 0 0 0.25rem rgba(239, 43, 53, 0.12);
+    }
+
+    .register-alert {
+        border-radius: 22px;
+        border: 0;
+        font-weight: 700;
+        padding: 16px 18px;
+    }
+
+    .btn-register-main {
+        background: var(--red);
+        border-color: var(--red);
+        color: #ffffff;
+        border-radius: 999px;
+        padding: 15px 24px;
+        font-weight: 900;
+        width: 100%;
+        margin-top: 22px;
+    }
+
+    .btn-register-main:hover {
+        background: var(--red-dark);
+        border-color: var(--red-dark);
+        color: #ffffff;
+    }
+
+    .register-login-link {
+        text-align: center;
+        margin-top: 20px;
+        color: var(--muted);
+        font-weight: 700;
+    }
+
+    .register-login-link a {
+        color: var(--red);
+        font-weight: 900;
+        text-decoration: none;
+    }
+
+    .register-login-link a:hover {
+        color: var(--red-dark);
+    }
+
+    @media (max-width: 991px) {
+        .register-page {
+            min-height: auto;
+            background:
+                linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,255,255,0.92)),
+                url("{% static 'images/back-art.png' %}");
+            background-size: cover;
+            background-position: center;
+        }
+
+        .register-row {
+            min-height: auto;
+            padding-top: 56px;
+            padding-bottom: 56px;
+        }
+
+        .register-benefits {
+            grid-template-columns: 1fr;
+        }
+
+        .register-card {
+            padding: 32px;
+        }
+    }
+
+    @media (max-width: 575px) {
+        .register-title {
+            font-size: 3rem;
+            letter-spacing: -2px;
+        }
+
+        .register-subtitle {
+            font-size: 1.02rem;
+            line-height: 1.65;
+        }
+
+        .register-card {
+            padding: 26px;
+            border-radius: 30px;
+        }
+    }
+</style>
+
+<section class="register-page">
+
+    <div class="container">
+
+        <div class="row align-items-center register-row g-5">
+
+            <div class="col-lg-6">
+
+                <span class="register-badge">
+                    Cadastro ArtSkala
+                </span>
+
+                <h1 class="register-title">
+                    Crie sua conta.
+                </h1>
+
+                <p class="register-subtitle">
+                    Cadastre-se para acompanhar pedidos, salvar seus dados,
+                    acessar o carrinho e facilitar novos orçamentos com a ArtSkala.
+                </p>
+
+                <div class="register-benefits">
+
+                    <div class="benefit-card">
+                        <strong>Pedidos</strong>
+                        <span>Acompanhe seu histórico e solicitações.</span>
+                    </div>
+
+                    <div class="benefit-card">
+                        <strong>Perfil</strong>
+                        <span>Dados salvos para novos atendimentos.</span>
+                    </div>
+
+                    <div class="benefit-card">
+                        <strong>Orçamento</strong>
+                        <span>Mais agilidade no contato comercial.</span>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="col-lg-6">
+
+                <div class="register-card">
+
+                    <div class="register-card-content">
+
+                        {% if messages %}
+
+                            {% for message in messages %}
+
+                                <div class="alert alert-{{ message.tags }} register-alert mb-3">
+                                    {{ message }}
+                                </div>
+
+                            {% endfor %}
+
+                        {% endif %}
+
+                        <h2 class="register-card-title">
+                            Cadastro
+                        </h2>
+
+                        <p class="register-card-text">
+                            Preencha seus dados para criar sua conta.
+                        </p>
+
+                        <form method="post" action="{% url 'register' %}">
+
+                            {% csrf_token %}
+
+                            <div class="form-section-title">
+                                Dados de acesso
+                            </div>
+
+                            <div class="row g-3">
+
+                                <div class="col-md-6">
+                                    <label for="nome" class="form-label">
+                                        Nome
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        name="nome"
+                                        id="nome"
+                                        class="form-control"
+                                        value="{{ dados.nome }}"
+                                        required
+                                    >
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label for="sobrenome" class="form-label">
+                                        Sobrenome
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        name="sobrenome"
+                                        id="sobrenome"
+                                        class="form-control"
+                                        value="{{ dados.sobrenome }}"
+                                        required
+                                    >
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label for="username" class="form-label">
+                                        Usuário
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        name="username"
+                                        id="username"
+                                        class="form-control"
+                                        value="{{ dados.username }}"
+                                        autocomplete="username"
+                                        required
+                                    >
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label for="email" class="form-label">
+                                        E-mail
+                                    </label>
+
+                                    <input
+                                        type="email"
+                                        name="email"
+                                        id="email"
+                                        class="form-control"
+                                        value="{{ dados.email }}"
+                                        autocomplete="email"
+                                        required
+                                    >
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label for="password" class="form-label">
+                                        Senha
+                                    </label>
+
+                                    <input
+                                        type="password"
+                                        name="password"
+                                        id="password"
+                                        class="form-control"
+                                        autocomplete="new-password"
+                                        required
+                                    >
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label for="password_confirm" class="form-label">
+                                        Confirmar senha
+                                    </label>
+
+                                    <input
+                                        type="password"
+                                        name="password_confirm"
+                                        id="password_confirm"
+                                        class="form-control"
+                                        autocomplete="new-password"
+                                        required
+                                    >
+                                </div>
+
+                            </div>
+
+                            <div class="form-section-title">
+                                Dados de atendimento
+                            </div>
+
+                            <div class="row g-3">
+
+                                <div class="col-md-6">
+                                    <label for="telefone" class="form-label">
+                                        Telefone / WhatsApp
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        name="telefone"
+                                        id="telefone"
+                                        class="form-control"
+                                        value="{{ dados.telefone }}"
+                                        placeholder="11 99999-9999"
+                                        required
+                                    >
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label for="cpf" class="form-label">
+                                        CPF
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        name="cpf"
+                                        id="cpf"
+                                        class="form-control"
+                                        value="{{ dados.cpf }}"
+                                        placeholder="000.000.000-00"
+                                        required
+                                    >
+                                </div>
+
+                                <div class="col-12">
+                                    <label for="endereco" class="form-label">
+                                        Endereço
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        name="endereco"
+                                        id="endereco"
+                                        class="form-control"
+                                        value="{{ dados.endereco }}"
+                                        placeholder="Rua, número, complemento"
+                                        required
+                                    >
+                                </div>
+
+                                <div class="col-md-5">
+                                    <label for="cidade" class="form-label">
+                                        Cidade
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        name="cidade"
+                                        id="cidade"
+                                        class="form-control"
+                                        value="{{ dados.cidade }}"
+                                        required
+                                    >
+                                </div>
+
+                                <div class="col-md-3">
+                                    <label for="estado" class="form-label">
+                                        Estado
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        name="estado"
+                                        id="estado"
+                                        class="form-control"
+                                        value="{{ dados.estado }}"
+                                        maxlength="2"
+                                        placeholder="SP"
+                                        required
+                                    >
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label for="cep" class="form-label">
+                                        CEP
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        name="cep"
+                                        id="cep"
+                                        class="form-control"
+                                        value="{{ dados.cep }}"
+                                        placeholder="00000-000"
+                                        required
+                                    >
+                                </div>
+
+                            </div>
+
+                            <button type="submit" class="btn btn-register-main">
+                                Criar minha conta
+                            </button>
+
+                        </form>
+
+                        <p class="register-login-link">
+                            Já tem uma conta?
+                            <a href="{% url 'login' %}">
+                                Entrar agora
+                            </a>
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+{% endblock %}
