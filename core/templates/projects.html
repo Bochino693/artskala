@@ -516,21 +516,19 @@
 
                         <div class="project-image-wrap">
 
-                            {% if projeto.imagens.first %}
-
-                                <img
-                                    src="{{ projeto.imagens.first.imagem.url }}"
-                                    alt="{{ projeto.titulo }}"
-                                    class="project-image"
-                                >
-
-                            {% else %}
-
-                                <div class="project-no-image">
-                                    Sem imagem
-                                </div>
-
-                            {% endif %}
+                            {% with primeira_imagem=projeto.imagens.first %}
+                                {% if primeira_imagem and primeira_imagem.imagem %}
+                                    <img
+                                        src="{{ primeira_imagem.imagem.url }}"
+                                        alt="{{ projeto.titulo }}"
+                                        class="project-image"
+                                    >
+                                {% else %}
+                                    <div class="project-no-image">
+                                        Sem imagem
+                                    </div>
+                                {% endif %}
+                            {% endwith %}
 
                             <span class="project-label">
                                 Projeto realizado

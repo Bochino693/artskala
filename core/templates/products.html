@@ -518,17 +518,19 @@
 
                     <div class="product-card">
 
-                        {% if produto.imagens.first %}
-                            <img
-                                src="{{ produto.imagens.first.imagem.url }}"
-                                alt="{{ produto.nome_produto }}"
-                                class="product-image"
-                            >
-                        {% else %}
-                            <div class="product-no-image">
-                                Sem imagem
-                            </div>
-                        {% endif %}
+                        {% with primeira_imagem=produto.imagens.first %}
+                            {% if primeira_imagem and primeira_imagem.imagem %}
+                                <img
+                                    src="{{ primeira_imagem.imagem.url }}"
+                                    alt="{{ produto.nome_produto }}"
+                                    class="product-image"
+                                >
+                            {% else %}
+                                <div class="product-no-image">
+                                    Sem imagem
+                                </div>
+                            {% endif %}
+                        {% endwith %}
 
                         <div class="product-card-body">
 
