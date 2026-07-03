@@ -39,6 +39,9 @@ if not SECRET_KEY:
 # HOSTS / CSRF
 # ============================================================
 
+DEBUG=False
+DATABASE_URL=sua_url_do_postgresql
+
 ALLOWED_HOSTS = [
     "localhost",
     "127.0.0.1",
