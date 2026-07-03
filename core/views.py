@@ -6,14 +6,7 @@ from django.contrib import messages
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.db.models import Count, Q
-
-from django.shortcuts import render, get_object_or_404, redirect
-from django.views import View
-from django.contrib.auth.models import User
-from django.contrib.auth import authenticate, login, logout
-from django.contrib import messages
-from django.db.models import Count, Q
+from django.db.models import Count, Q, Prefetch
 
 from .models import (
     Produto,
@@ -21,135 +14,114 @@ from .models import (
     Projeto,
     Carrinho,
     Pedido,
-    PerfilUsuario
+    PerfilUsuario,
+    ImagemProduto,
+    ImagemProjeto,
 )
 
-class HomeView(View):
 
+def _perfil_defaults():
+    return {
+        "telefone": "",
+        "cpf": "",
+        "endereco": "",
+        "cidade": "",
+        "estado": "",
+        "cep": "",
+    }
+
+
+def _produtos_ativos():
+    imagens_validas = ImagemProduto.objects.exclude(imagem="")
+    return (
+        Produto.objects.filter(ativo=True)
+        .select_related("categoria")
+        .prefetch_related(Prefetch("imagens", queryset=imagens_validas))
+    )
+
+
+def _projetos_ativos():
+    imagens_validas = ImagemProjeto.objects.exclude(imagem="")
+    return Projeto.objects.filter(ativo=True).prefetch_related(
+        Prefetch("imagens", queryset=imagens_validas)
+    )
+
+
+class HomeView(View):
     def get(self, request):
         ctx = {
-            "produtos": Produto.objects.filter(
-                ativo=True
-            ).select_related(
-                "categoria"
-            ).prefetch_related(
-                "imagens"
-            )[:8],
-
-            "projetos": Projeto.objects.filter(
-                ativo=True
-            ).prefetch_related(
-                "imagens"
-            )[:6],
-
-            "categorias": CategoriaProdutos.objects.filter(
-                ativo=True
-            ).annotate(
-                total_produtos=Count(
-                    "produtos",
-                    filter=Q(produtos__ativo=True)
-                )
+            "produtos": _produtos_ativos().order_by("-criacao")[:8],
+            "projetos": _projetos_ativos().order_by("-criacao")[:6],
+            "categorias": CategoriaProdutos.objects.filter(ativo=True).annotate(
+                total_produtos=Count("produtos", filter=Q(produtos__ativo=True))
             ),
         }
-
         return render(request, "home.html", ctx)
 
-class ProductsView(View):
 
+class ProductsView(View):
     def get(self, request):
         categoria_id = request.GET.get("categoria")
-
-        produtos = Produto.objects.filter(
-            ativo=True
-        ).select_related("categoria").prefetch_related("imagens")
+        produtos = _produtos_ativos().order_by("nome_produto")
+        categoria_ativa = None
 
         if categoria_id:
-            produtos = produtos.filter(categoria_id=categoria_id)
+            try:
+                categoria_ativa = int(categoria_id)
+                produtos = produtos.filter(categoria_id=categoria_ativa)
+            except (TypeError, ValueError):
+                categoria_ativa = None
 
         ctx = {
             "produtos": produtos,
-            "categorias": CategoriaProdutos.objects.filter(ativo=True),
-            "categoria_ativa": int(categoria_id) if categoria_id else None,
+            "categorias": CategoriaProdutos.objects.filter(ativo=True).order_by("nome_categoria"),
+            "categoria_ativa": categoria_ativa,
         }
-
         return render(request, "products.html", ctx)
 
-class ProductDetailView(View):
 
+class ProductDetailView(View):
     def get(self, request, pk):
-        produto = get_object_or_404(
-            Produto,
-            pk=pk,
-            ativo=True
-        )
+        produto = get_object_or_404(_produtos_ativos(), pk=pk)
+        relacionados = Produto.objects.filter(
+            categoria=produto.categoria,
+            ativo=True,
+        ).exclude(pk=produto.pk).select_related("categoria")[:4]
 
         ctx = {
             "produto": produto,
             "imagens": produto.imagens.all(),
-            "relacionados": Produto.objects.filter(
-                categoria=produto.categoria,
-                ativo=True
-            ).exclude(pk=produto.pk)[:4]
+            "relacionados": relacionados,
         }
-
         return render(request, "product_detail.html", ctx)
 
+
 class CategoriesView(View):
-
     def get(self, request):
-        categorias = CategoriaProdutos.objects.filter(
-            ativo=True
-        ).annotate(
-            total_produtos=Count(
-                "produtos",
-                filter=Q(produtos__ativo=True)
-            )
+        categorias = CategoriaProdutos.objects.filter(ativo=True).annotate(
+            total_produtos=Count("produtos", filter=Q(produtos__ativo=True))
         ).order_by("nome_categoria")
-
-        total_produtos = Produto.objects.filter(
-            ativo=True
-        ).count()
 
         ctx = {
             "categorias": categorias,
             "total_categorias": categorias.count(),
-            "total_produtos": total_produtos,
+            "total_produtos": Produto.objects.filter(ativo=True).count(),
         }
-
         return render(request, "categories.html", ctx)
 
 
 class CategoryDetailView(View):
-
     def get(self, request, pk):
         categoria = get_object_or_404(
-            CategoriaProdutos.objects.filter(
-                ativo=True
-            ).annotate(
-                total_produtos=Count(
-                    "produtos",
-                    filter=Q(produtos__ativo=True)
-                )
+            CategoriaProdutos.objects.filter(ativo=True).annotate(
+                total_produtos=Count("produtos", filter=Q(produtos__ativo=True))
             ),
-            pk=pk
+            pk=pk,
         )
 
-        produtos = Produto.objects.filter(
-            categoria=categoria,
-            ativo=True
-        ).select_related(
-            "categoria"
-        ).prefetch_related(
-            "imagens"
-        ).order_by("nome_produto")
-
-        categorias = CategoriaProdutos.objects.filter(
-            ativo=True
-        ).annotate(
-            total_produtos=Count(
-                "produtos",
-                filter=Q(produtos__ativo=True)
-            )
+        produtos = _produtos_ativos().filter(categoria=categoria).order_by("nome_produto")
+        categorias = CategoriaProdutos.objects.filter(ativo=True).annotate(
+            total_produtos=Count("produtos", filter=Q(produtos__ativo=True))
         ).order_by("nome_categoria")
 
         ctx = {
@@ -157,152 +129,85 @@ class CategoryDetailView(View):
             "categorias": categorias,
             "produtos": produtos,
         }
-
         return render(request, "category_detail.html", ctx)
 
 
 class ProjectsView(View):
-
     def get(self, request):
         ctx = {
-            "projetos": Projeto.objects.filter(
-                ativo=True
-            ).prefetch_related(
-                "imagens"
-            ).order_by("-criacao")
+            "projetos": _projetos_ativos().order_by("-criacao"),
         }
-
         return render(request, "projects.html", ctx)
 
+
 class ProjectDetailView(View):
-
     def get(self, request, pk):
-
-        projeto = get_object_or_404(
-            Projeto,
-            pk=pk,
-            ativo=True
-        )
-
+        projeto = get_object_or_404(_projetos_ativos(), pk=pk)
         ctx = {
             "projeto": projeto,
-            "imagens": projeto.imagens.all()
+            "imagens": projeto.imagens.all(),
         }
-
         return render(request, "project_detail.html", ctx)
 
 
 class CartView(View):
-
     def get(self, request):
-
         if not request.user.is_authenticated:
-            return render(request, "cart.html")
+            return render(request, "cart.html", {"itens": [], "total": 0})
 
-        carrinho, created = Carrinho.objects.get_or_create(
-            usuario=request.user
-        )
-
+        carrinho, _created = Carrinho.objects.get_or_create(usuario=request.user)
         itens = carrinho.itens.select_related("produto")
+        total = sum(item.subtotal() for item in itens)
 
-        total = sum(
-            item.subtotal()
-            for item in itens
-        )
-
-        ctx = {
-            "carrinho": carrinho,
-            "itens": itens,
-            "total": total,
-        }
-
-        return render(request, "cart.html", ctx)
+        return render(request, "cart.html", {"carrinho": carrinho, "itens": itens, "total": total})
 
 
 class CheckoutView(View):
-
     def get(self, request):
-
         if not request.user.is_authenticated:
-            return render(request, "login.html")
+            return redirect("login")
 
-        carrinho = get_object_or_404(
-            Carrinho,
-            usuario=request.user
-        )
+        carrinho, _created = Carrinho.objects.get_or_create(usuario=request.user)
+        itens = carrinho.itens.select_related("produto")
+        total = sum(item.subtotal() for item in itens)
 
-        total = sum(
-            item.subtotal()
-            for item in carrinho.itens.all()
-        )
-
-        ctx = {
-            "carrinho": carrinho,
-            "total": total
-        }
-
-        return render(request, "checkout.html", ctx)
+        return render(request, "checkout.html", {"carrinho": carrinho, "itens": itens, "total": total})
 
 
 class OrdersView(View):
-
     def get(self, request):
-
         if not request.user.is_authenticated:
-            return render(request, "login.html")
+            return redirect("login")
 
-        pedidos = Pedido.objects.filter(
-            usuario=request.user
-        ).order_by("-criacao")
-
-        ctx = {
-            "pedidos": pedidos
-        }
-
-        return render(request, "orders.html", ctx)
+        pedidos = Pedido.objects.filter(usuario=request.user).order_by("-criacao")
+        return render(request, "orders.html", {"pedidos": pedidos})
 
 
 class OrderDetailView(View):
-
     def get(self, request, pk):
+        if not request.user.is_authenticated:
+            return redirect("login")
 
-        pedido = get_object_or_404(
-            Pedido,
-            pk=pk,
-            usuario=request.user
-        )
-
-        ctx = {
-            "pedido": pedido,
-            "itens": pedido.itens.select_related("produto")
-        }
-
-        return render(request, "order_detail.html", ctx)
+        pedido = get_object_or_404(Pedido, pk=pk, usuario=request.user)
+        return render(request, "order_detail.html", {"pedido": pedido, "itens": pedido.itens.select_related("produto")})
 
 
 class ProfileView(View):
-
     def get(self, request):
-
         if not request.user.is_authenticated:
-            return render(request, "login.html")
+            return redirect("login")
 
-        perfil, created = PerfilUsuario.objects.get_or_create(
-            usuario=request.user
+        perfil, _created = PerfilUsuario.objects.get_or_create(
+            usuario=request.user,
+            defaults=_perfil_defaults(),
         )
+        return render(request, "profile.html", {"perfil": perfil})
 
-        ctx = {
-            "perfil": perfil
-        }
-
-        return render(request, "profile.html", ctx)
 
 class RegisterView(View):
-
     def get(self, request):
         if request.user.is_authenticated:
             return redirect("profile")
-
         return render(request, "register.html")
 
     def post(self, request):
@@ -315,7 +220,6 @@ class RegisterView(View):
         email = request.POST.get("email", "").strip().lower()
         password = request.POST.get("password", "").strip()
         password_confirm = request.POST.get("password_confirm", "").strip()
-
         telefone = request.POST.get("telefone", "").strip()
         cpf = request.POST.get("cpf", "").strip()
         endereco = request.POST.get("endereco", "").strip()
@@ -323,23 +227,11 @@ class RegisterView(View):
         estado = request.POST.get("estado", "").strip().upper()
         cep = request.POST.get("cep", "").strip()
 
-        ctx = {
-            "dados": request.POST,
-        }
+        ctx = {"dados": request.POST}
 
         campos_obrigatorios = [
-            nome,
-            sobrenome,
-            username,
-            email,
-            password,
-            password_confirm,
-            telefone,
-            cpf,
-            endereco,
-            cidade,
-            estado,
-            cep,
+            nome, sobrenome, username, email, password, password_confirm,
+            telefone, cpf, endereco, cidade, estado, cep,
         ]
 
         if not all(campos_obrigatorios):
@@ -367,7 +259,6 @@ class RegisterView(View):
         except ValidationError as erros:
             for erro in erros:
                 messages.error(request, erro)
-
             return render(request, "register.html", ctx)
 
         try:
@@ -379,7 +270,6 @@ class RegisterView(View):
                     first_name=nome,
                     last_name=sobrenome,
                 )
-
                 PerfilUsuario.objects.create(
                     usuario=usuario,
                     telefone=telefone,
@@ -389,9 +279,7 @@ class RegisterView(View):
                     estado=estado,
                     cep=cep,
                 )
-
                 login(request, usuario)
-
         except Exception:
             messages.error(request, "Não foi possível criar sua conta. Tente novamente.")
             return render(request, "register.html", ctx)
@@ -401,32 +289,22 @@ class RegisterView(View):
 
 
 class PaymentView(View):
-
     def get(self, request):
         return render(request, "payment.html")
 
 
 class PendingOrdersView(View):
-
     def get(self, request):
-
-        pedidos = Pedido.objects.filter(
-            status="PENDENTE"
-        )
-
-        ctx = {
-            "pedidos": pedidos
-        }
-
-        return render(request, "pendings.html", ctx)
+        if not request.user.is_authenticated:
+            return redirect("login")
+        pedidos = Pedido.objects.filter(status="PENDENTE").order_by("-criacao")
+        return render(request, "pendings.html", {"pedidos": pedidos})
 
 
 class LoginView(View):
-
     def get(self, request):
         if request.user.is_authenticated:
-            return render(request, "login.html")
-
+            return redirect("home")
         return render(request, "login.html")
 
     def post(self, request):
@@ -438,11 +316,7 @@ class LoginView(View):
             messages.error(request, "Informe seu usuário e sua senha.")
             return render(request, "login.html")
 
-        usuario = authenticate(
-            request,
-            username=username,
-            password=password
-        )
+        usuario = authenticate(request, username=username, password=password)
 
         if usuario is None:
             messages.error(request, "Usuário ou senha inválidos.")
@@ -453,20 +327,10 @@ class LoginView(View):
             return render(request, "login.html")
 
         login(request, usuario)
-
-        if next_url:
-            return redirect(next_url)
-
-        if usuario.is_staff or usuario.is_superuser:
-            return redirect("home")
-
-        return redirect("home")
+        return redirect(next_url or "home")
 
 
 class LogoutView(View):
-
     def get(self, request):
         logout(request)
         return redirect("home")
-
-

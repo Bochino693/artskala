@@ -17,6 +17,7 @@ class CategoriaProdutos(Prime):
     class Meta:
         verbose_name = "Categoria de Produto"
         verbose_name_plural = "Categorias de Produtos"
+        ordering = ["nome_categoria"]
 
     def __str__(self):
         return self.nome_categoria
@@ -25,49 +26,46 @@ class CategoriaProdutos(Prime):
 class Produto(Prime):
     categoria = models.ForeignKey(
         CategoriaProdutos,
-        on_delete=models.CASCADE,
-        related_name="produtos"
+        on_delete=models.PROTECT,
+        related_name="produtos",
     )
-
     nome_produto = models.CharField(max_length=150)
-    descricao_produto = models.TextField(max_length=500)
-    preco = models.DecimalField(max_digits=12, decimal_places=2)
+    descricao_produto = models.TextField(max_length=500, blank=True, default="")
+    preco = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     estoque = models.PositiveIntegerField(default=0)
-    avaliacao = models.DecimalField(
-        max_digits=3,
-        decimal_places=2,
-        default=0
-    )
-
-    def __str__(self):
-        return self.nome_produto
+    avaliacao = models.DecimalField(max_digits=3, decimal_places=2, default=0)
 
     class Meta:
         verbose_name = "Produto"
         verbose_name_plural = "Produtos"
+        ordering = ["nome_produto"]
+
+    def __str__(self):
+        return self.nome_produto
 
 
 class ImagemProduto(Prime):
     produto = models.ForeignKey(
         Produto,
         on_delete=models.CASCADE,
-        related_name="imagens"
+        related_name="imagens",
     )
-
-    imagem = models.ImageField(upload_to="produtos/")
+    imagem = models.ImageField(upload_to="produtos/", blank=True, null=True)
 
     def __str__(self):
-        return self.produto.nome_produto
-
-
-# PORTFÓLIO DE PROJETOS
+        return self.produto.nome_produto if self.produto_id else "Imagem de produto"
 
 
 class Projeto(Prime):
     titulo = models.CharField(max_length=200)
-    descricao = models.TextField()
-    cliente = models.CharField(max_length=150, blank=True)
+    descricao = models.TextField(blank=True, default="")
+    cliente = models.CharField(max_length=150, blank=True, default="")
     data_execucao = models.DateField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Projeto"
+        verbose_name_plural = "Projetos"
+        ordering = ["-criacao"]
 
     def __str__(self):
         return self.titulo
@@ -77,24 +75,24 @@ class ImagemProjeto(Prime):
     projeto = models.ForeignKey(
         Projeto,
         on_delete=models.CASCADE,
-        related_name="imagens"
+        related_name="imagens",
     )
-
-    imagem = models.ImageField(upload_to="projetos/")
+    imagem = models.ImageField(upload_to="projetos/", blank=True, null=True)
 
     def __str__(self):
-        return self.projeto.titulo
-
-
-# CARRINHO
+        return self.projeto.titulo if self.projeto_id else "Imagem de projeto"
 
 
 class Carrinho(Prime):
     usuario = models.OneToOneField(
         User,
         on_delete=models.CASCADE,
-        related_name="carrinho"
+        related_name="carrinho",
     )
+
+    class Meta:
+        verbose_name = "Carrinho"
+        verbose_name_plural = "Carrinhos"
 
     def __str__(self):
         return f"Carrinho - {self.usuario.username}"
@@ -104,15 +102,17 @@ class ItemCarrinho(Prime):
     carrinho = models.ForeignKey(
         Carrinho,
         on_delete=models.CASCADE,
-        related_name="itens"
+        related_name="itens",
     )
-
     produto = models.ForeignKey(
         Produto,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
     )
-
     quantidade = models.PositiveIntegerField(default=1)
+
+    class Meta:
+        verbose_name = "Item do Carrinho"
+        verbose_name_plural = "Itens do Carrinho"
 
     def subtotal(self):
         return self.quantidade * self.produto.preco
@@ -121,11 +121,7 @@ class ItemCarrinho(Prime):
         return self.produto.nome_produto
 
 
-# PEDIDOS
-
-
 class Pedido(Prime):
-
     STATUS = (
         ("PENDENTE", "Pendente"),
         ("PAGO", "Pago"),
@@ -137,22 +133,16 @@ class Pedido(Prime):
     usuario = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name="pedidos"
+        related_name="pedidos",
     )
+    status = models.CharField(max_length=20, choices=STATUS, default="PENDENTE")
+    valor_total = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    endereco = models.CharField(max_length=255, blank=True, default="")
 
-    status = models.CharField(
-        max_length=20,
-        choices=STATUS,
-        default="PENDENTE"
-    )
-
-    valor_total = models.DecimalField(
-        max_digits=12,
-        decimal_places=2,
-        default=0
-    )
-
-    endereco = models.CharField(max_length=255)
+    class Meta:
+        verbose_name = "Pedido"
+        verbose_name_plural = "Pedidos"
+        ordering = ["-criacao"]
 
     def __str__(self):
         return f"Pedido #{self.id}"
@@ -162,20 +152,18 @@ class ItemPedido(Prime):
     pedido = models.ForeignKey(
         Pedido,
         on_delete=models.CASCADE,
-        related_name="itens"
+        related_name="itens",
     )
-
     produto = models.ForeignKey(
         Produto,
-        on_delete=models.PROTECT
+        on_delete=models.PROTECT,
     )
-
     quantidade = models.PositiveIntegerField(default=1)
+    preco_unitario = models.DecimalField(max_digits=12, decimal_places=2, default=0)
 
-    preco_unitario = models.DecimalField(
-        max_digits=12,
-        decimal_places=2
-    )
+    class Meta:
+        verbose_name = "Item do Pedido"
+        verbose_name_plural = "Itens do Pedido"
 
     def subtotal(self):
         return self.quantidade * self.preco_unitario
@@ -184,21 +172,22 @@ class ItemPedido(Prime):
         return self.produto.nome_produto
 
 
-
-from django.contrib.auth.models import User
-
 class PerfilUsuario(Prime):
     usuario = models.OneToOneField(
         User,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name="perfil",
     )
+    telefone = models.CharField(max_length=20, blank=True, default="")
+    cpf = models.CharField(max_length=14, blank=True, default="")
+    endereco = models.CharField(max_length=255, blank=True, default="")
+    cidade = models.CharField(max_length=100, blank=True, default="")
+    estado = models.CharField(max_length=2, blank=True, default="")
+    cep = models.CharField(max_length=9, blank=True, default="")
 
-    telefone = models.CharField(max_length=20)
-    cpf = models.CharField(max_length=14)
-    endereco = models.CharField(max_length=255)
-    cidade = models.CharField(max_length=100)
-    estado = models.CharField(max_length=2)
-    cep = models.CharField(max_length=9)
+    class Meta:
+        verbose_name = "Perfil de Usuário"
+        verbose_name_plural = "Perfis de Usuários"
 
     def __str__(self):
         return self.usuario.username
