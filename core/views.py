@@ -567,3 +567,292 @@ class LogoutView(View):
     def get(self, request):
         logout(request)
         return redirect("home")
+
+
+
+# ---------------------------------------------------------------------------
+# SUBSTITUI o arquivo anterior. Cole estas views no seu views.py (ou mantenha
+# separado e importe em urls.py). São só 4 classes:
+#
+#   GestaoDashboardView   -> GET
+#   OrcamentoView         -> GET (lista OU detalhe/edição), POST (cria OU
+#                            atualiza), PUT (troca rápida de status via
+#                            fetch), DELETE (remove via fetch)
+#   GestaoPedidosView     -> GET
+#   RelatorioOrcamentosView -> GET
+# ---------------------------------------------------------------------------
+
+import json
+from decimal import Decimal, InvalidOperation
+
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib import messages
+from django.db import transaction
+from django.db.models import Count, Q
+from django.db.models.functions import TruncMonth
+from django.http import JsonResponse
+from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
+from django.views import View
+
+from .models import Orcamento, ItemOrcamento, Produto, Projeto, Pedido
+
+
+def _to_decimal(valor, default="0"):
+    try:
+        return Decimal(str(valor).replace(",", "."))
+    except (InvalidOperation, TypeError):
+        return Decimal(default)
+
+
+def _orcamentos_usuario(request):
+    return Orcamento.objects.filter(usuario=request.user, ativo=True)
+
+
+class GestaoDashboardView(LoginRequiredMixin, View):
+    login_url = "login"
+
+    def get(self, request):
+        orcamentos = _orcamentos_usuario(request)
+        pedidos = Pedido.objects.filter(usuario=request.user)
+
+        resumo_status = orcamentos.values("status").annotate(total=Count("id"))
+        resumo_status_dict = {item["status"]: item["total"] for item in resumo_status}
+        resumo_status_lista = [
+            (chave, rotulo, resumo_status_dict.get(chave, 0))
+            for chave, rotulo in Orcamento.STATUS
+        ]
+
+        valor_total_orcamentos = sum((o.valor_total() for o in orcamentos), Decimal("0"))
+        valor_aprovado = sum(
+            (o.valor_total() for o in orcamentos if o.status == "APROVADO"), Decimal("0")
+        )
+
+        ctx = {
+            "total_orcamentos": orcamentos.count(),
+            "total_pedidos": pedidos.count(),
+            "resumo_status_lista": resumo_status_lista,
+            "valor_total_orcamentos": valor_total_orcamentos,
+            "valor_aprovado": valor_aprovado,
+            "orcamentos_recentes": orcamentos.order_by("-criacao")[:5],
+            "pedidos_recentes": pedidos.order_by("-criacao")[:5],
+            "secao_ativa": "dashboard",
+        }
+        return render(request, "gestao/dashboard.html", ctx)
+
+
+class OrcamentoView(LoginRequiredMixin, View):
+    """
+    View única para toda a área de orçamentos.
+
+    GET  /gestao/orcamentos/            -> lista (com filtros ?status=&q=)
+    GET  /gestao/orcamentos/<pk>/       -> detalhe/edição de um orçamento
+    POST /gestao/orcamentos/            -> cria um novo orçamento
+    POST /gestao/orcamentos/<pk>/       -> atualiza um orçamento existente
+    PUT  /gestao/orcamentos/<pk>/       -> troca rápida de status (JSON: {"status": "..."})
+    DELETE /gestao/orcamentos/<pk>/     -> remove (soft delete)
+    """
+
+    login_url = "login"
+    template_name = "gestao/orcamentos.html"
+
+    # -- leitura -------------------------------------------------------
+
+    def get(self, request, pk=None):
+        if pk:
+            orcamento = get_object_or_404(
+                Orcamento.objects.prefetch_related("itens__produto", "itens__projeto"),
+                pk=pk,
+                usuario=request.user,
+            )
+        else:
+            orcamento = None
+
+        orcamentos = _orcamentos_usuario(request).order_by("-criacao")
+
+        status_filtro = request.GET.get("status", "")
+        busca = request.GET.get("q", "").strip()
+        if status_filtro:
+            orcamentos = orcamentos.filter(status=status_filtro)
+        if busca:
+            orcamentos = orcamentos.filter(
+                Q(titulo__icontains=busca) | Q(cliente_nome__icontains=busca)
+            )
+
+        ctx = {
+            "orcamento": orcamento,
+            "orcamentos": orcamentos,
+            "status_choices": Orcamento.STATUS,
+            "tipo_choices": Orcamento.TIPO,
+            "status_filtro": status_filtro,
+            "busca": busca,
+            "produtos": Produto.objects.filter(ativo=True).order_by("nome_produto"),
+            "projetos": Projeto.objects.filter(ativo=True).order_by("titulo"),
+            "secao_ativa": "orcamentos",
+        }
+        return render(request, self.template_name, ctx)
+
+    # -- criação / atualização (formulário normal) ----------------------
+
+    def post(self, request, pk=None):
+        orcamento = None
+        if pk:
+            orcamento = get_object_or_404(Orcamento, pk=pk, usuario=request.user)
+
+        titulo = request.POST.get("titulo", "").strip()
+        if not titulo:
+            messages.error(request, "Informe um título para o orçamento.")
+            return redirect(request.path)
+
+        with transaction.atomic():
+            if orcamento is None:
+                orcamento = Orcamento(usuario=request.user)
+
+            orcamento.titulo = titulo
+            orcamento.tipo = request.POST.get("tipo", "MISTO")
+            orcamento.cliente_nome = request.POST.get("cliente_nome", "").strip()
+            orcamento.cliente_email = request.POST.get("cliente_email", "").strip()
+            orcamento.cliente_telefone = request.POST.get("cliente_telefone", "").strip()
+            orcamento.data_validade = request.POST.get("data_validade") or None
+            orcamento.desconto_percentual = _to_decimal(request.POST.get("desconto_percentual", "0"))
+            orcamento.observacoes = request.POST.get("observacoes", "").strip()
+            orcamento.save()
+
+            self._salvar_itens(request, orcamento)
+
+        messages.success(request, "Orçamento salvo com sucesso!")
+        return redirect("orcamento_detalhe", pk=orcamento.pk)
+
+    def _salvar_itens(self, request, orcamento):
+        produtos_ids = request.POST.getlist("item_produto[]")
+        projetos_ids = request.POST.getlist("item_projeto[]")
+        descricoes = request.POST.getlist("item_descricao[]")
+        datas_referencia = request.POST.getlist("item_data[]")
+        quantidades = request.POST.getlist("item_quantidade[]")
+        valores = request.POST.getlist("item_valor[]")
+
+        linhas = zip(produtos_ids, projetos_ids, descricoes, datas_referencia, quantidades, valores)
+
+        # Estratégia simples: apaga e recria os itens a cada salvamento.
+        orcamento.itens.all().delete()
+
+        for produto_id, projeto_id, descricao, data_ref, quantidade, valor in linhas:
+            if not any([produto_id, projeto_id, descricao.strip()]):
+                continue
+            try:
+                quantidade_int = max(1, int(quantidade or 1))
+            except (TypeError, ValueError):
+                quantidade_int = 1
+
+            item = ItemOrcamento(
+                orcamento=orcamento,
+                descricao=descricao.strip(),
+                data_referencia=data_ref or None,
+                quantidade=quantidade_int,
+                valor_unitario=_to_decimal(valor),
+            )
+            if produto_id:
+                item.produto_id = produto_id
+            if projeto_id:
+                item.projeto_id = projeto_id
+            item.save()
+
+    # -- ações rápidas via fetch (AJAX) ---------------------------------
+
+    def put(self, request, pk):
+        """Troca de status via fetch: body JSON {"status": "APROVADO"}."""
+        orcamento = get_object_or_404(Orcamento, pk=pk, usuario=request.user)
+
+        try:
+            dados = json.loads(request.body or "{}")
+        except json.JSONDecodeError:
+            return JsonResponse({"success": False, "erro": "JSON inválido."}, status=400)
+
+        novo_status = dados.get("status")
+        if novo_status not in dict(Orcamento.STATUS):
+            return JsonResponse({"success": False, "erro": "Status inválido."}, status=400)
+
+        orcamento.status = novo_status
+        orcamento.save(update_fields=["status", "modificado"])
+
+        return JsonResponse({
+            "success": True,
+            "status": orcamento.status,
+            "status_display": orcamento.get_status_display(),
+        })
+
+    def delete(self, request, pk):
+        orcamento = get_object_or_404(Orcamento, pk=pk, usuario=request.user)
+        orcamento.ativo = False
+        orcamento.save(update_fields=["ativo", "modificado"])
+        return JsonResponse({"success": True, "redirect": reverse("orcamentos")})
+
+
+class GestaoPedidosView(LoginRequiredMixin, View):
+    """Pedidos realizados no site, dentro da área de gestão do usuário."""
+
+    login_url = "login"
+
+    def get(self, request):
+        pedidos = (
+            Pedido.objects.filter(usuario=request.user)
+            .order_by("-criacao")
+            .prefetch_related("itens__produto")
+        )
+        return render(request, "gestao/pedidos.html", {"pedidos": pedidos, "secao_ativa": "pedidos"})
+
+
+class RelatorioOrcamentosView(LoginRequiredMixin, View):
+    """Relatório com somas e agrupamentos dos orçamentos do usuário."""
+
+    login_url = "login"
+
+    def get(self, request):
+        orcamentos = _orcamentos_usuario(request)
+
+        inicio = request.GET.get("inicio", "")
+        fim = request.GET.get("fim", "")
+        if inicio:
+            orcamentos = orcamentos.filter(criacao__date__gte=inicio)
+        if fim:
+            orcamentos = orcamentos.filter(criacao__date__lte=fim)
+
+        por_mes = (
+            orcamentos.annotate(mes=TruncMonth("criacao"))
+            .values("mes")
+            .annotate(total=Count("id"))
+            .order_by("mes")
+        )
+        por_status = orcamentos.values("status").annotate(total=Count("id"))
+
+        linhas = []
+        soma_bruto = Decimal("0")
+        soma_desconto = Decimal("0")
+        soma_total = Decimal("0")
+
+        for orcamento in orcamentos.order_by("-criacao"):
+            bruto = orcamento.valor_bruto()
+            desconto = orcamento.valor_desconto()
+            total = orcamento.valor_total()
+            soma_bruto += bruto
+            soma_desconto += desconto
+            soma_total += total
+            linhas.append({
+                "orcamento": orcamento,
+                "bruto": bruto,
+                "desconto": desconto,
+                "total": total,
+            })
+
+        ctx = {
+            "linhas": linhas,
+            "por_mes": por_mes,
+            "por_status": por_status,
+            "soma_bruto": soma_bruto,
+            "soma_desconto": soma_desconto,
+            "soma_total": soma_total,
+            "inicio": inicio,
+            "fim": fim,
+            "secao_ativa": "relatorio",
+        }
+        return render(request, "gestao/relatorio.html", ctx)

@@ -21,7 +21,13 @@ from .views import (
     AddToCartView,
     RemoveCartItemView,
     UpdateCartItemView,
-    CartView
+    CartView,
+    RelatorioOrcamentosView,
+    OrcamentoView,
+    GestaoDashboardView,
+    GestaoPedidosView,
+
+
 )
 
 urlpatterns = [
@@ -58,4 +64,12 @@ urlpatterns = [
     path("payment/", PaymentView.as_view(), name="payment"),
 
     path("pendings/", PendingOrdersView.as_view(), name="pendings"),
+
+    path("gestao/", GestaoDashboardView.as_view(), name="gestao_dashboard"),
+    path("gestao/pedidos/", GestaoPedidosView.as_view(), name="gestao_pedidos"),
+    path("gestao/relatorio/", RelatorioOrcamentosView.as_view(), name="gestao_relatorio"),
+
+    # Uma unica view cuida de listar, criar, editar, trocar status e excluir.
+    path("gestao/orcamentos/", OrcamentoView.as_view(), name="orcamentos"),
+    path("gestao/orcamentos/<int:pk>/", OrcamentoView.as_view(), name="orcamento_detalhe"),
 ]
