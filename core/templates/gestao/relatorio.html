@@ -1,10 +1,111 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends "gestao/base_gestao.html" %}
+{% block titulo %}Relatório de orçamentos{% endblock %}
 
-</body>
-</html>
+{% block conteudo %}
+<div class="cabecalho-pagina">
+    <div>
+        <div class="eyebrow">Relatórios</div>
+        <h1 class="titulo-pagina">Relatório de orçamentos</h1>
+        <div class="subtitulo-pagina">Somas e agrupamentos de tudo o que você já orçou.</div>
+    </div>
+</div>
+
+<div class="painel" style="margin-bottom: 20px;">
+    <form method="get" style="display: flex; gap: 14px; align-items: flex-end; flex-wrap: wrap;">
+        <div class="campo" style="margin-bottom: 0;">
+            <label for="inicio">De</label>
+            <input type="date" id="inicio" name="inicio" value="{{ inicio }}">
+        </div>
+        <div class="campo" style="margin-bottom: 0;">
+            <label for="fim">Até</label>
+            <input type="date" id="fim" name="fim" value="{{ fim }}">
+        </div>
+        <button type="submit" class="btn btn-secundario">Aplicar período</button>
+    </form>
+</div>
+
+<div class="grade-cartoes">
+    <div class="cartao-stat">
+        <div class="rotulo">Valor bruto somado</div>
+        <div class="valor">R$ {{ soma_bruto|floatformat:2 }}</div>
+    </div>
+    <div class="cartao-stat patina">
+        <div class="rotulo">Descontos concedidos</div>
+        <div class="valor">R$ {{ soma_desconto|floatformat:2 }}</div>
+    </div>
+    <div class="cartao-stat recusa">
+        <div class="rotulo">Total líquido</div>
+        <div class="valor">R$ {{ soma_total|floatformat:2 }}</div>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 320px; gap: 20px; align-items: start;">
+
+    <div class="painel">
+        <h2 style="font-family: var(--fonte-display); font-size: 17px; margin: 0 0 16px;">Detalhamento por orçamento</h2>
+        {% if linhas %}
+        <table class="ledger">
+            <thead>
+                <tr>
+                    <th>Título</th>
+                    <th>Status</th>
+                    <th class="num">Bruto</th>
+                    <th class="num">Desconto</th>
+                    <th class="num">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for linha in linhas %}
+                <tr>
+                    <td><a href="{% url 'orcamento_detalhe' linha.orcamento.pk %}">{{ linha.orcamento.titulo }}</a></td>
+                    <td><span class="selo {{ linha.orcamento.status }}">{{ linha.orcamento.get_status_display }}</span></td>
+                    <td class="num">R$ {{ linha.bruto|floatformat:2 }}</td>
+                    <td class="num">R$ {{ linha.desconto|floatformat:2 }}</td>
+                    <td class="num">R$ {{ linha.total|floatformat:2 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="2" style="border-bottom: none; font-weight: 600;">Total do período</td>
+                    <td class="num" style="border-bottom: none; font-weight: 600;">R$ {{ soma_bruto|floatformat:2 }}</td>
+                    <td class="num" style="border-bottom: none; font-weight: 600;">R$ {{ soma_desconto|floatformat:2 }}</td>
+                    <td class="num" style="border-bottom: none; font-weight: 600;">R$ {{ soma_total|floatformat:2 }}</td>
+                </tr>
+            </tfoot>
+        </table>
+        {% else %}
+        <div class="vazio">
+            <div class="fonte-display">Nada no período selecionado</div>
+            Ajuste as datas acima ou registre novos orçamentos.
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="painel">
+        <h2 style="font-family: var(--fonte-display); font-size: 17px; margin: 0 0 16px;">Por status</h2>
+        <table class="ledger">
+            <tbody>
+                {% for grupo in por_status %}
+                <tr>
+                    <td><span class="selo {{ grupo.status }}">{{ grupo.status }}</span></td>
+                    <td class="num">{{ grupo.total }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <h2 style="font-family: var(--fonte-display); font-size: 17px; margin: 22px 0 14px;">Por mês</h2>
+        <table class="ledger">
+            <tbody>
+                {% for grupo in por_mes %}
+                <tr>
+                    <td>{{ grupo.mes|date:"m/Y" }}</td>
+                    <td class="num">{{ grupo.total }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

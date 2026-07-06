@@ -213,6 +213,16 @@
     </tr>
 </template>
 
+
+{% if orcamento %}
+<script>
+    const URL_ORCAMENTO = "{% url 'orcamento_detalhe' orcamento.pk %}";
+{% else %}
+<script>
+    const URL_ORCAMENTO = null;
+{% endif %}
+</script>
+
 <script>
 (function () {
     // ---------- itens dinâmicos (produto / projeto / avulso) ----------
@@ -333,7 +343,7 @@
     const seletorStatus = document.getElementById("seletor-status");
     if (seletorStatus) {
         seletorStatus.addEventListener("change", function () {
-            fetch("{% url 'orcamento_detalhe' orcamento.pk %}", {
+            fetch(URL_ORCAMENTO,{
                 method: "PUT",
                 headers: { "Content-Type": "application/json", "X-CSRFToken": csrftoken },
                 body: JSON.stringify({ status: this.value }),
@@ -345,7 +355,7 @@
     if (btnExcluir) {
         btnExcluir.addEventListener("click", function () {
             if (!confirm("Remover este orçamento?")) return;
-            fetch("{% url 'orcamento_detalhe' orcamento.pk %}", {
+            fetch(URL_ORCAMENTO,{
                 method: "DELETE",
                 headers: { "X-CSRFToken": csrftoken },
             }).then((r) => r.json()).then((dados) => { if (dados.success) window.location = dados.redirect; });
