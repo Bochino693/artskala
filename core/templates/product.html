@@ -1,10 +1,724 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends 'base.html' %}
 
-</body>
-</html>
+{% load static %}
+
+{% block title %}ArtSkala | {{ produto.nome_produto }}{% endblock %}
+
+{% block content %}
+
+<style>
+    :root {
+        --yellow: #f6c400;
+        --yellow-dark: #d9aa00;
+        --dark: #111111;
+        --soft: #f6f7f9;
+        --muted: #6c757d;
+        --border: #eeeeee;
+        --white: #ffffff;
+    }
+
+    .detail-hero {
+        position: relative;
+        overflow: hidden;
+        background:
+            linear-gradient(
+                90deg,
+                rgba(255, 255, 255, 0.98) 0%,
+                rgba(255, 255, 255, 0.92) 45%,
+                rgba(255, 255, 255, 0.70) 100%
+            ),
+            radial-gradient(circle at 85% 20%, rgba(246, 196, 0, 0.28), transparent 30%),
+            radial-gradient(circle at 15% 90%, rgba(17, 17, 17, 0.05), transparent 26%),
+            url("{% static 'img/home-bg.jpg' %}");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        border-bottom: 1px solid var(--border);
+        padding-top: 34px;
+        padding-bottom: 68px;
+    }
+
+    .detail-hero::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.60) 100%);
+        pointer-events: none;
+    }
+
+    .detail-hero .container {
+        position: relative;
+        z-index: 1;
+    }
+
+    .breadcrumb-bar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.86rem;
+        font-weight: 700;
+        color: var(--muted);
+        margin-bottom: 30px;
+    }
+
+    .breadcrumb-bar a {
+        color: var(--muted);
+        text-decoration: none;
+    }
+
+    .breadcrumb-bar a:hover {
+        color: var(--dark);
+    }
+
+    .breadcrumb-bar .current {
+        color: var(--dark);
+    }
+
+    .gallery-main {
+        width: 100%;
+        height: 460px;
+        border-radius: 34px;
+        overflow: hidden;
+        background: #ffffff;
+        box-shadow: 0 25px 60px rgba(17, 17, 17, 0.10);
+        margin-bottom: 16px;
+    }
+
+    .gallery-main img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    .gallery-main .product-no-image {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        color: var(--muted);
+        font-weight: 900;
+        font-size: 1.1rem;
+    }
+
+    .gallery-thumbs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .gallery-thumb {
+        width: 84px;
+        height: 84px;
+        border-radius: 18px;
+        overflow: hidden;
+        border: 2px solid transparent;
+        cursor: pointer;
+        transition: 0.2s ease;
+        background: var(--soft);
+    }
+
+    .gallery-thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    .gallery-thumb:hover,
+    .gallery-thumb.active {
+        border-color: var(--yellow);
+    }
+
+    .detail-panel {
+        background: rgba(255, 255, 255, 0.92);
+        backdrop-filter: blur(18px);
+        border: 1px solid rgba(255,255,255,0.85);
+        border-radius: 34px;
+        padding: 36px;
+        box-shadow: 0 25px 60px rgba(17, 17, 17, 0.10);
+        height: 100%;
+    }
+
+    .product-category {
+        display: inline-flex;
+        align-self: flex-start;
+        background: #fff4bf;
+        color: #806500;
+        font-size: 0.76rem;
+        font-weight: 900;
+        border-radius: 999px;
+        padding: 8px 13px;
+        margin-bottom: 18px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .detail-title {
+        font-size: clamp(1.9rem, 3vw, 2.5rem);
+        line-height: 1.1;
+        letter-spacing: -1.5px;
+        color: var(--dark);
+        font-weight: 900;
+        margin-bottom: 14px;
+    }
+
+    .rating-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 22px;
+    }
+
+    .rating-stars {
+        color: var(--yellow-dark);
+        font-size: 1.05rem;
+        letter-spacing: 2px;
+    }
+
+    .rating-value {
+        font-weight: 800;
+        color: var(--dark);
+        font-size: 0.92rem;
+    }
+
+    .detail-price-row {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 22px;
+    }
+
+    .detail-price {
+        font-size: 2.1rem;
+        font-weight: 900;
+        color: var(--dark);
+        margin: 0;
+    }
+
+    .stock-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        padding: 8px 14px;
+        font-size: 0.78rem;
+        font-weight: 900;
+    }
+
+    .stock-ok {
+        background: #e7f8ef;
+        color: #157347;
+    }
+
+    .stock-off {
+        background: #fff3cd;
+        color: #7a5d00;
+    }
+
+    .detail-description {
+        color: var(--muted);
+        line-height: 1.8;
+        margin-bottom: 28px;
+    }
+
+    .detail-actions {
+        display: grid;
+        gap: 12px;
+    }
+
+    .btn-modern {
+        border-radius: 999px;
+        padding: 14px 22px;
+        font-weight: 800;
+    }
+
+    .detail-info-list {
+        margin-top: 26px;
+        display: grid;
+        gap: 10px;
+    }
+
+    .detail-info-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 14px;
+        background: var(--soft);
+        border-radius: 16px;
+        font-weight: 700;
+        color: #222222;
+        font-size: 0.92rem;
+    }
+
+    .detail-info-item span {
+        width: 30px;
+        height: 30px;
+        background: var(--yellow);
+        color: #111111;
+        border-radius: 10px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.78rem;
+        font-weight: 900;
+        flex-shrink: 0;
+    }
+
+    .related-section {
+        padding-top: 68px;
+        padding-bottom: 68px;
+        background: #ffffff;
+    }
+
+    .section-tag {
+        display: inline-block;
+        background: #fff4bf;
+        color: #806500;
+        border-radius: 999px;
+        padding: 8px 15px;
+        font-size: 0.78rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.7px;
+        margin-bottom: 14px;
+    }
+
+    .section-title {
+        letter-spacing: -1.5px;
+        font-weight: 900;
+        color: var(--dark);
+    }
+
+    .product-card {
+        border: 0;
+        border-radius: 30px;
+        overflow: hidden;
+        background: #ffffff;
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.05);
+        transition: 0.28s ease;
+        height: 100%;
+    }
+
+    .product-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.09);
+    }
+
+    .product-image {
+        width: 100%;
+        height: 255px;
+        object-fit: cover;
+        display: block;
+    }
+
+    .product-no-image {
+        width: 100%;
+        height: 255px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        color: var(--muted);
+        font-weight: 900;
+        font-size: 1rem;
+    }
+
+    .product-card-body {
+        padding: 26px;
+        display: flex;
+        flex-direction: column;
+        height: calc(100% - 255px);
+    }
+
+    .product-name {
+        font-size: 1.18rem;
+        font-weight: 900;
+        line-height: 1.35;
+        color: var(--dark);
+        margin-bottom: 10px;
+    }
+
+    .product-description {
+        color: var(--muted);
+        line-height: 1.65;
+        margin-bottom: 18px;
+        flex-grow: 1;
+    }
+
+    .product-meta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 18px;
+    }
+
+    .product-price {
+        font-size: 1.25rem;
+        font-weight: 900;
+        color: var(--dark);
+        margin: 0;
+    }
+
+    .empty-state {
+        background: var(--soft);
+        border: 1px dashed #cfcfcf;
+        border-radius: 34px;
+        padding: 70px 30px;
+        text-align: center;
+    }
+
+    .empty-state h3 {
+        font-weight: 900;
+        color: var(--dark);
+        margin-bottom: 14px;
+    }
+
+    .empty-state p {
+        color: var(--muted);
+        max-width: 680px;
+        margin: 0 auto 24px auto;
+        line-height: 1.7;
+    }
+
+    .cta-products {
+        padding-top: 10px;
+    }
+
+    .cta-box {
+        background:
+            radial-gradient(circle at 20% 20%, rgba(246, 196, 0, 0.42), transparent 30%),
+            #ffffff;
+        border: 1px solid var(--border);
+        border-radius: 40px;
+        padding: 60px 28px;
+        text-align: center;
+        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.04);
+    }
+
+    .cta-box h2 {
+        font-weight: 900;
+        letter-spacing: -1.4px;
+        color: var(--dark);
+        margin-bottom: 14px;
+    }
+
+    .cta-box p {
+        color: var(--muted);
+        max-width: 760px;
+        margin: 0 auto 28px auto;
+        line-height: 1.75;
+    }
+
+    @media (max-width: 991px) {
+        .gallery-main {
+            height: 360px;
+        }
+
+        .detail-panel {
+            padding: 28px;
+        }
+    }
+
+    @media (max-width: 575px) {
+        .gallery-main {
+            height: 300px;
+            border-radius: 26px;
+        }
+
+        .detail-panel {
+            padding: 24px;
+        }
+
+        .detail-price {
+            font-size: 1.7rem;
+        }
+
+        .cta-box {
+            padding: 42px 22px;
+        }
+    }
+</style>
+
+<section class="detail-hero">
+
+    <div class="container">
+
+        <div class="breadcrumb-bar">
+            <a href="{% url 'home' %}">Home</a>
+            <span>/</span>
+            <a href="{% url 'products' %}">Produtos</a>
+            {% if produto.categoria %}
+                <span>/</span>
+                <a href="{% url 'products' %}?categoria={{ produto.categoria.id }}">{{ produto.categoria.nome_categoria }}</a>
+            {% endif %}
+            <span>/</span>
+            <span class="current">{{ produto.nome_produto }}</span>
+        </div>
+
+        <div class="row g-4">
+
+            <div class="col-lg-6">
+
+                {% with primeira_imagem=imagens.first %}
+                    <div class="gallery-main" id="galleryMain">
+                        {% if primeira_imagem and primeira_imagem.imagem %}
+                            <img src="{{ primeira_imagem.imagem.url }}" alt="{{ produto.nome_produto }}" id="galleryMainImg">
+                        {% else %}
+                            <div class="product-no-image">
+                                Sem imagem
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endwith %}
+
+                {% if imagens|length > 1 %}
+                    <div class="gallery-thumbs">
+                        {% for imagem in imagens %}
+                            {% if imagem.imagem %}
+                                <div class="gallery-thumb {% if forloop.first %}active{% endif %}" onclick="trocarImagem(this, '{{ imagem.imagem.url }}')">
+                                    <img src="{{ imagem.imagem.url }}" alt="{{ produto.nome_produto }}">
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+            </div>
+
+            <div class="col-lg-6">
+
+                <div class="detail-panel">
+
+                    {% if produto.categoria %}
+                        <span class="product-category">
+                            {{ produto.categoria.nome_categoria }}
+                        </span>
+                    {% endif %}
+
+                    <h1 class="detail-title">
+                        {{ produto.nome_produto }}
+                    </h1>
+
+                    {% if produto.avaliacao %}
+                        <div class="rating-row">
+                            <span class="rating-stars">★★★★★</span>
+                            <span class="rating-value">{{ produto.avaliacao }} / 5</span>
+                        </div>
+                    {% endif %}
+
+                    <div class="detail-price-row">
+                        <p class="detail-price">
+                            R$ {{ produto.preco }}
+                        </p>
+
+                        {% if produto.estoque > 0 %}
+                            <span class="stock-badge stock-ok">
+                                Disponível
+                            </span>
+                        {% else %}
+                            <span class="stock-badge stock-off">
+                                Sob consulta
+                            </span>
+                        {% endif %}
+                    </div>
+
+                    <p class="detail-description">
+                        {{ produto.descricao_produto|default:"Sem descrição disponível para este produto." }}
+                    </p>
+
+                    <div class="detail-actions">
+                        <a href="{% url 'home' %}#orcamento" class="btn btn-warning btn-modern">
+                            Solicitar orçamento
+                        </a>
+                        <a href="{% url 'products' %}" class="btn btn-outline-dark btn-modern">
+                            Voltar ao catálogo
+                        </a>
+                    </div>
+
+                    <div class="detail-info-list">
+                        <div class="detail-info-item">
+                            <span>01</span>
+                            Acabamento profissional garantido
+                        </div>
+                        <div class="detail-info-item">
+                            <span>02</span>
+                            Orçamento sob medida para seu projeto
+                        </div>
+                        <div class="detail-info-item">
+                            <span>03</span>
+                            Produção e entrega personalizadas
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+<section class="related-section">
+
+    <div class="container">
+
+        <div class="mb-5">
+            <span class="section-tag">
+                Você também pode gostar
+            </span>
+
+            <h2 class="section-title mb-2">
+                Produtos relacionados
+            </h2>
+
+            <p class="text-muted mb-0">
+                Outras soluções da mesma categoria que podem te interessar.
+            </p>
+        </div>
+
+        <div class="row g-4 products-grid">
+
+            {% for relacionado in relacionados %}
+
+                <div class="col-xl-3 col-lg-4 col-md-6">
+
+                    <div class="product-card">
+
+                        {% with primeira_imagem=relacionado.imagens.first %}
+                            {% if primeira_imagem and primeira_imagem.imagem %}
+                                <img
+                                    src="{{ primeira_imagem.imagem.url }}"
+                                    alt="{{ relacionado.nome_produto }}"
+                                    class="product-image"
+                                >
+                            {% else %}
+                                <div class="product-no-image">
+                                    Sem imagem
+                                </div>
+                            {% endif %}
+                        {% endwith %}
+
+                        <div class="product-card-body">
+
+                            {% if relacionado.categoria %}
+                                <span class="product-category">
+                                    {{ relacionado.categoria.nome_categoria }}
+                                </span>
+                            {% endif %}
+
+                            <h3 class="product-name">
+                                {{ relacionado.nome_produto }}
+                            </h3>
+
+                            <p class="product-description">
+                                {{ relacionado.descricao_produto|truncatechars:110 }}
+                            </p>
+
+                            <div class="product-meta">
+
+                                <p class="product-price">
+                                    R$ {{ relacionado.preco }}
+                                </p>
+
+                                {% if relacionado.estoque > 0 %}
+                                    <span class="stock-badge stock-ok">
+                                        Disponível
+                                    </span>
+                                {% else %}
+                                    <span class="stock-badge stock-off">
+                                        Sob consulta
+                                    </span>
+                                {% endif %}
+
+                            </div>
+
+                            <a href="{% url 'product_detail' relacionado.id %}" class="btn btn-dark btn-modern">
+                                Ver Produto
+                            </a>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            {% empty %}
+
+                <div class="col-12">
+
+                    <div class="empty-state">
+
+                        <h3>
+                            Nenhum produto relacionado
+                        </h3>
+
+                        <p>
+                            Não encontramos outros produtos ativos nesta mesma categoria no momento.
+                        </p>
+
+                        <a href="{% url 'products' %}" class="btn btn-dark btn-modern">
+                            Ver todo o catálogo
+                        </a>
+
+                    </div>
+
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+        <div class="cta-products mt-5">
+
+            <div class="cta-box">
+
+                <span class="section-tag">
+                    Atendimento personalizado
+                </span>
+
+                <h2>
+                    Precisa de um produto sob medida?
+                </h2>
+
+                <p>
+                    Fale com a ArtSkala e solicite um orçamento personalizado para fachadas,
+                    toldos, adesivos, banners, brindes e soluções completas de comunicação visual.
+                </p>
+
+                <div class="d-flex flex-column flex-sm-row justify-content-center gap-3">
+                    <a href="{% url 'home' %}#orcamento" class="btn btn-warning btn-modern">
+                        Solicitar orçamento
+                    </a>
+                    <a href="{% url 'projects' %}" class="btn btn-outline-dark btn-modern">
+                        Ver projetos
+                    </a>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+<script>
+    function trocarImagem(el, url) {
+        document.getElementById('galleryMainImg').src = url;
+
+        document.querySelectorAll('.gallery-thumb').forEach(function (thumb) {
+            thumb.classList.remove('active');
+        });
+
+        el.classList.add('active');
+    }
+</script>
+
+{% endblock %}

@@ -7,13 +7,16 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Count, Q, Prefetch
+from django.http import JsonResponse
 
 from .models import (
     Produto,
     CategoriaProdutos,
     Projeto,
     Carrinho,
+    ItemCarrinho,
     Pedido,
+    ItemPedido,
     PerfilUsuario,
     ImagemProduto,
     ImagemProjeto,
@@ -45,6 +48,13 @@ def _projetos_ativos():
     return Projeto.objects.filter(ativo=True).prefetch_related(
         Prefetch("imagens", queryset=imagens_validas)
     )
+
+
+def _resumo_carrinho(carrinho):
+    itens = carrinho.itens.select_related("produto")
+    total_itens = sum(item.quantidade for item in itens)
+    total_valor = sum(item.subtotal() for item in itens)
+    return total_itens, total_valor
 
 
 class HomeView(View):
@@ -93,7 +103,7 @@ class ProductDetailView(View):
             "imagens": produto.imagens.all(),
             "relacionados": relacionados,
         }
-        return render(request, "product_detail.html", ctx)
+        return render(request, "product.html", ctx)
 
 
 class CategoriesView(View):
@@ -150,17 +160,141 @@ class ProjectDetailView(View):
         return render(request, "project_detail.html", ctx)
 
 
+# ---------------------------------------------------------------------------
+# Carrinho — leitura (página) + endpoints assíncronos (adicionar/atualizar/remover)
+# ---------------------------------------------------------------------------
+
 class CartView(View):
     def get(self, request):
         if not request.user.is_authenticated:
             return render(request, "cart.html", {"itens": [], "total": 0})
 
         carrinho, _created = Carrinho.objects.get_or_create(usuario=request.user)
-        itens = carrinho.itens.select_related("produto")
+        itens = carrinho.itens.select_related("produto", "produto__categoria").prefetch_related(
+            "produto__imagens"
+        )
         total = sum(item.subtotal() for item in itens)
 
         return render(request, "cart.html", {"carrinho": carrinho, "itens": itens, "total": total})
 
+
+class AddToCartView(View):
+    """
+    POST assíncrono chamado pelos botões "Adicionar ao carrinho".
+    Retorna JSON para atualizar o badge do ícone sem recarregar a página.
+    """
+
+    def post(self, request, pk):
+        if not request.user.is_authenticated:
+            return JsonResponse(
+                {"success": False, "auth_required": True, "redirect": "/login/"},
+                status=401,
+            )
+
+        produto = get_object_or_404(Produto, pk=pk, ativo=True)
+
+        try:
+            quantidade = int(request.POST.get("quantidade", 1))
+        except (TypeError, ValueError):
+            quantidade = 1
+        quantidade = max(1, quantidade)
+
+        carrinho, _created = Carrinho.objects.get_or_create(usuario=request.user)
+
+        item, criado = ItemCarrinho.objects.get_or_create(
+            carrinho=carrinho,
+            produto=produto,
+            defaults={"quantidade": quantidade},
+        )
+
+        if not criado:
+            item.quantidade += quantidade
+            item.save()
+
+        total_itens, total_valor = _resumo_carrinho(carrinho)
+
+        return JsonResponse({
+            "success": True,
+            "total_itens": total_itens,
+            "total_valor": str(total_valor),
+            "item_id": item.id,
+            "item_quantidade": item.quantidade,
+            "item_subtotal": str(item.subtotal()),
+        })
+
+
+class UpdateCartItemView(View):
+    """
+    POST assíncrono para +/- quantidade ou definir quantidade exata de um item.
+    Espera `acao` = "incrementar" | "decrementar" | "definir".
+    Se `acao` == "definir", espera também `quantidade`.
+    """
+
+    def post(self, request, pk):
+        if not request.user.is_authenticated:
+            return JsonResponse({"success": False}, status=401)
+
+        item = get_object_or_404(ItemCarrinho, pk=pk, carrinho__usuario=request.user)
+        acao = request.POST.get("acao", "incrementar")
+        removido = False
+
+        if acao == "incrementar":
+            item.quantidade += 1
+            item.save()
+        elif acao == "decrementar":
+            item.quantidade -= 1
+            if item.quantidade <= 0:
+                item.delete()
+                removido = True
+            else:
+                item.save()
+        elif acao == "definir":
+            try:
+                nova_quantidade = int(request.POST.get("quantidade", 1))
+            except (TypeError, ValueError):
+                nova_quantidade = 1
+
+            if nova_quantidade <= 0:
+                item.delete()
+                removido = True
+            else:
+                item.quantidade = nova_quantidade
+                item.save()
+
+        carrinho = Carrinho.objects.get(usuario=request.user)
+        total_itens, total_valor = _resumo_carrinho(carrinho)
+
+        return JsonResponse({
+            "success": True,
+            "removido": removido,
+            "item_quantidade": 0 if removido else item.quantidade,
+            "item_subtotal": "0" if removido else str(item.subtotal()),
+            "total_itens": total_itens,
+            "total_valor": str(total_valor),
+        })
+
+
+class RemoveCartItemView(View):
+    def post(self, request, pk):
+        if not request.user.is_authenticated:
+            return JsonResponse({"success": False}, status=401)
+
+        item = get_object_or_404(ItemCarrinho, pk=pk, carrinho__usuario=request.user)
+        item.delete()
+
+        carrinho = Carrinho.objects.get(usuario=request.user)
+        total_itens, total_valor = _resumo_carrinho(carrinho)
+
+        return JsonResponse({
+            "success": True,
+            "total_itens": total_itens,
+            "total_valor": str(total_valor),
+        })
+
+
+# ---------------------------------------------------------------------------
+# Checkout — finalização do pedido com escolha de forma de pagamento
+# ---------------------------------------------------------------------------
 
 class CheckoutView(View):
     def get(self, request):
@@ -168,10 +302,73 @@ class CheckoutView(View):
             return redirect("login")
 
         carrinho, _created = Carrinho.objects.get_or_create(usuario=request.user)
-        itens = carrinho.itens.select_related("produto")
+        itens = carrinho.itens.select_related("produto").prefetch_related("produto__imagens")
         total = sum(item.subtotal() for item in itens)
 
-        return render(request, "checkout.html", {"carrinho": carrinho, "itens": itens, "total": total})
+        if not itens:
+            messages.info(request, "Seu carrinho está vazio.")
+            return redirect("cart")
+
+        perfil, _created = PerfilUsuario.objects.get_or_create(
+            usuario=request.user,
+            defaults=_perfil_defaults(),
+        )
+
+        ctx = {
+            "carrinho": carrinho,
+            "itens": itens,
+            "total": total,
+            "perfil": perfil,
+        }
+        return render(request, "checkout.html", ctx)
+
+    def post(self, request):
+        if not request.user.is_authenticated:
+            return redirect("login")
+
+        carrinho = get_object_or_404(Carrinho, usuario=request.user)
+        itens = list(carrinho.itens.select_related("produto"))
+
+        if not itens:
+            messages.error(request, "Seu carrinho está vazio.")
+            return redirect("cart")
+
+        endereco = request.POST.get("endereco", "").strip()
+        metodo_pagamento = request.POST.get("metodo_pagamento", "").strip()
+
+        metodos_validos = dict(Pedido.METODOS_PAGAMENTO).keys()
+
+        if not endereco:
+            messages.error(request, "Informe o endereço de entrega.")
+            return redirect("checkout")
+
+        if metodo_pagamento not in metodos_validos:
+            messages.error(request, "Escolha uma forma de pagamento válida.")
+            return redirect("checkout")
+
+        total = sum(item.subtotal() for item in itens)
+
+        with transaction.atomic():
+            pedido = Pedido.objects.create(
+                usuario=request.user,
+                valor_total=total,
+                endereco=endereco,
+                metodo_pagamento=metodo_pagamento,
+                status="PENDENTE",
+            )
+
+            for item in itens:
+                ItemPedido.objects.create(
+                    pedido=pedido,
+                    produto=item.produto,
+                    quantidade=item.quantidade,
+                    preco_unitario=item.produto.preco,
+                )
+
+            carrinho.itens.all().delete()
+
+        messages.success(request, "Pedido realizado com sucesso!")
+        return redirect("order_detail", pk=pedido.pk)
 
 
 class OrdersView(View):
@@ -191,18 +388,54 @@ class OrderDetailView(View):
         pedido = get_object_or_404(Pedido, pk=pk, usuario=request.user)
         return render(request, "order_detail.html", {"pedido": pedido, "itens": pedido.itens.select_related("produto")})
 
-
 class ProfileView(View):
+
     def get(self, request):
+
         if not request.user.is_authenticated:
             return redirect("login")
 
-        perfil, _created = PerfilUsuario.objects.get_or_create(
+        perfil, _ = PerfilUsuario.objects.get_or_create(
             usuario=request.user,
-            defaults=_perfil_defaults(),
+            defaults=_perfil_defaults()
         )
-        return render(request, "profile.html", {"perfil": perfil})
 
+        return render(
+            request,
+            "profile.html",
+            {"perfil": perfil}
+        )
+
+
+    def post(self, request):
+
+        if not request.user.is_authenticated:
+            return redirect("login")
+
+        perfil = request.user.perfil
+
+        request.user.first_name = request.POST.get("nome")
+        request.user.last_name = request.POST.get("sobrenome")
+        request.user.username = request.POST.get("username")
+        request.user.email = request.POST.get("email")
+
+        request.user.save()
+
+        perfil.telefone = request.POST.get("telefone")
+        perfil.cpf = request.POST.get("cpf")
+        perfil.endereco = request.POST.get("endereco")
+        perfil.cidade = request.POST.get("cidade")
+        perfil.estado = request.POST.get("estado")
+        perfil.cep = request.POST.get("cep")
+
+        perfil.save()
+
+        messages.success(
+            request,
+            "Perfil atualizado com sucesso!"
+        )
+
+        return redirect("profile")
 
 class RegisterView(View):
     def get(self, request):

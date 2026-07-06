@@ -1,0 +1,319 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}ArtSkala | Carrinho{% endblock %}
+
+{% block content %}
+
+<style>
+
+:root{
+    --yellow:#f6c400;
+    --yellow-dark:#d8aa00;
+    --dark:#111;
+    --soft:#f6f7f9;
+    --border:#ececec;
+}
+
+.cart-hero{
+    background:
+    linear-gradient(rgba(255,255,255,.94),rgba(255,255,255,.94)),
+    url("{% static 'img/home-bg.jpg' %}");
+    background-size:cover;
+    padding:70px 0;
+    border-bottom:1px solid var(--border);
+}
+
+.page-title{
+    font-size:2.6rem;
+    font-weight:900;
+    margin-bottom:8px;
+}
+
+.page-subtitle{
+    color:#777;
+}
+
+.cart-card{
+    background:#fff;
+    border-radius:28px;
+    padding:22px;
+    margin-bottom:20px;
+    box-shadow:0 15px 40px rgba(0,0,0,.05);
+}
+
+.cart-image{
+
+    width:120px;
+    height:120px;
+    border-radius:20px;
+    object-fit:cover;
+
+}
+
+.cart-image-empty{
+
+    width:120px;
+    height:120px;
+    border-radius:20px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:#f3f3f3;
+
+}
+
+.product-name{
+    font-weight:800;
+    font-size:1.25rem;
+}
+
+.product-category{
+    color:#777;
+    font-size:.9rem;
+}
+
+.price{
+    font-weight:900;
+    font-size:1.25rem;
+}
+
+.qty-box{
+
+    display:flex;
+    align-items:center;
+    gap:10px;
+
+}
+
+.qty-btn{
+
+    width:38px;
+    height:38px;
+    border:none;
+    border-radius:50%;
+    background:var(--yellow);
+    font-weight:bold;
+
+}
+
+.summary{
+
+    background:#fff;
+    border-radius:30px;
+    padding:30px;
+    box-shadow:0 15px 40px rgba(0,0,0,.05);
+    position:sticky;
+    top:100px;
+
+}
+
+.summary h3{
+
+    font-weight:900;
+    margin-bottom:25px;
+
+}
+
+.summary-row{
+
+    display:flex;
+    justify-content:space-between;
+    margin-bottom:15px;
+
+}
+
+.summary-total{
+
+    font-size:1.6rem;
+    font-weight:900;
+
+}
+
+.btn-cart{
+
+    width:100%;
+    border-radius:50px;
+    padding:15px;
+    font-weight:800;
+
+}
+
+.empty{
+
+    background:#fff;
+    border-radius:30px;
+    text-align:center;
+    padding:90px 30px;
+    box-shadow:0 15px 40px rgba(0,0,0,.05);
+
+}
+
+</style>
+
+
+<section class="cart-hero">
+
+<div class="container">
+
+<h1 class="page-title">
+Seu Carrinho
+</h1>
+
+<p class="page-subtitle">
+Confira os produtos antes de finalizar seu pedido.
+</p>
+
+</div>
+
+</section>
+
+
+<section class="py-5">
+
+<div class="container">
+
+{% if itens %}
+
+<div class="row g-4">
+
+<div class="col-lg-8">
+
+{% for item in itens %}
+
+<div class="cart-card">
+
+<div class="row align-items-center">
+
+<div class="col-md-2">
+
+{% with imagem=item.produto.imagens.first %}
+    {% if imagem %}
+        <img src="{{ imagem.imagem.url }}" class="cart-image">
+    {% else %}
+        <div class="cart-image-empty">
+            Sem imagem
+        </div>
+    {% endif %}
+{% endwith %}
+
+</div>
+
+<div class="col-md-5">
+
+<div class="product-name">
+{{ item.produto.nome_produto }}
+</div>
+
+<div class="product-category">
+{{ item.produto.categoria.nome_categoria }}
+</div>
+
+</div>
+
+<div class="col-md-3">
+
+<div class="qty-box">
+
+<button class="qty-btn">-</button>
+
+<strong>{{ item.quantidade }}</strong>
+
+<button class="qty-btn">+</button>
+
+</div>
+
+</div>
+
+<div class="col-md-2 text-end">
+
+<div class="price">
+
+R$ {{ item.subtotal }}
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+{% endfor %}
+
+</div>
+
+
+<div class="col-lg-4">
+
+<div class="summary">
+
+<h3>
+Resumo
+</h3>
+
+<div class="summary-row">
+
+<span>Itens</span>
+
+<strong>{{ carrinho_total_itens }}</strong>
+
+</div>
+
+<hr>
+
+<div class="summary-row summary-total">
+
+<span>Total</span>
+
+<span>R$ {{ total }}</span>
+
+</div>
+
+<a href="{% url 'checkout' %}" class="btn btn-warning btn-cart">
+
+Finalizar Compra
+
+</a>
+
+<a href="{% url 'products' %}" class="btn btn-outline-dark btn-cart mt-3">
+
+Continuar Comprando
+
+</a>
+
+</div>
+
+</div>
+
+</div>
+
+{% else %}
+
+<div class="empty">
+
+<h2 class="fw-bold">
+Seu carrinho está vazio
+</h2>
+
+<p class="text-muted mt-3">
+
+Adicione produtos ao carrinho para continuar.
+
+</p>
+
+<a href="{% url 'products' %}" class="btn btn-warning rounded-pill px-5">
+
+Ver Produtos
+
+</a>
+
+</div>
+
+{% endif %}
+
+</div>
+
+</section>
+
+{% endblock %}

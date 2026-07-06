@@ -18,6 +18,10 @@ from .views import (
     RegisterView,
     PaymentView,
     PendingOrdersView,
+    AddToCartView,
+    RemoveCartItemView,
+    UpdateCartItemView,
+    CartView
 )
 
 urlpatterns = [
@@ -32,7 +36,13 @@ urlpatterns = [
     path("projects/", ProjectsView.as_view(), name="projects"),
     path("projects/<int:pk>/", ProjectDetailView.as_view(), name="project_detail"),
 
-    path("cart/", CartView.as_view(), name="cart"),
+    # Carrinho — página + endpoints assíncronos
+    path("carrinho/", CartView.as_view(), name="cart"),
+    path("carrinho/adicionar/<int:pk>/", AddToCartView.as_view(), name="cart_add"),
+    path("carrinho/atualizar/<int:pk>/", UpdateCartItemView.as_view(), name="cart_update"),
+    path("carrinho/remover/<int:pk>/", RemoveCartItemView.as_view(), name="cart_remove"),
+
+    path("finalizar/", CheckoutView.as_view(), name="checkout"),
 
     path("checkout/", CheckoutView.as_view(), name="checkout"),
 

@@ -1,10 +1,1150 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends 'base.html' %}
+{% load static %}
 
-</body>
-</html>
+{% block title %}ArtSkala | Meu Perfil{% endblock %}
+
+{% block content %}
+
+<style>
+
+:root{
+    --yellow:#f6c400;
+    --yellow-dark:#d7aa00;
+    --dark:#111111;
+    --soft:#f7f8fa;
+    --border:#ececec;
+    --muted:#6c757d;
+    --success:#198754;
+    --danger:#dc3545;
+}
+
+body{
+    background:var(--soft);
+}
+
+/* HERO */
+
+.profile-hero{
+
+    position:relative;
+
+    overflow:hidden;
+
+    padding:70px 0;
+
+    border-bottom:1px solid var(--border);
+
+    background:
+    linear-gradient(
+        rgba(255,255,255,.95),
+        rgba(255,255,255,.95)
+    ),
+    url("{% static 'img/home-bg.jpg' %}");
+
+    background-size:cover;
+    background-position:center;
+
+}
+
+.profile-hero::before{
+
+    content:"";
+
+    position:absolute;
+
+    inset:0;
+
+    background:
+
+    radial-gradient(circle at 80% 20%, rgba(246,196,0,.25), transparent 30%),
+    radial-gradient(circle at 10% 80%, rgba(0,0,0,.04), transparent 25%);
+
+}
+
+.profile-hero .container{
+
+    position:relative;
+
+    z-index:2;
+
+}
+
+.profile-header{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:30px;
+
+    flex-wrap:wrap;
+
+}
+
+.profile-avatar{
+
+    width:130px;
+
+    height:130px;
+
+    border-radius:50%;
+
+    background:linear-gradient(135deg,var(--yellow),#ffd95e);
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    font-size:46px;
+
+    font-weight:900;
+
+    color:#111;
+
+    box-shadow:0 20px 45px rgba(0,0,0,.10);
+
+}
+
+.profile-title h1{
+
+    font-size:3rem;
+
+    font-weight:900;
+
+    letter-spacing:-2px;
+
+    margin-bottom:5px;
+
+}
+
+.profile-title p{
+
+    color:var(--muted);
+
+    font-size:1.05rem;
+
+}
+
+.profile-badges{
+
+    display:flex;
+
+    gap:10px;
+
+    margin-top:20px;
+
+    flex-wrap:wrap;
+
+}
+
+.profile-badge{
+
+    padding:8px 16px;
+
+    border-radius:50px;
+
+    background:#fff;
+
+    font-weight:700;
+
+    border:1px solid var(--border);
+
+}
+
+/* GRID */
+
+.profile-content{
+
+    padding:70px 0;
+
+}
+
+.profile-grid{
+
+    display:grid;
+
+    grid-template-columns:320px 1fr;
+
+    gap:30px;
+
+}
+
+/* SIDEBAR */
+
+.sidebar-card{
+
+    background:#fff;
+
+    border-radius:30px;
+
+    box-shadow:0 15px 45px rgba(0,0,0,.05);
+
+    padding:30px;
+
+}
+
+.sidebar-user{
+
+    text-align:center;
+
+    margin-bottom:30px;
+
+}
+
+.sidebar-avatar{
+
+    width:90px;
+
+    height:90px;
+
+    border-radius:50%;
+
+    background:var(--yellow);
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    font-size:32px;
+
+    font-weight:900;
+
+    margin:auto;
+
+    margin-bottom:15px;
+
+}
+
+.sidebar-user h4{
+
+    font-weight:900;
+
+}
+
+.sidebar-user p{
+
+    color:var(--muted);
+
+    margin:0;
+
+}
+
+.profile-menu{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:12px;
+
+}
+
+.profile-menu a{
+
+    text-decoration:none;
+
+    color:#333;
+
+    padding:14px 18px;
+
+    border-radius:15px;
+
+    transition:.25s;
+
+    font-weight:700;
+
+}
+
+.profile-menu a:hover{
+
+    background:var(--yellow);
+
+    color:#111;
+
+}
+
+.profile-menu .active{
+
+    background:var(--yellow);
+
+}
+
+/* CONTENT */
+
+.content-card{
+
+    background:#fff;
+
+    border-radius:30px;
+
+    padding:35px;
+
+    box-shadow:0 15px 45px rgba(0,0,0,.05);
+
+    margin-bottom:30px;
+
+}
+
+.card-title{
+
+    font-size:1.6rem;
+
+    font-weight:900;
+
+    margin-bottom:25px;
+
+}
+
+/* STATS */
+
+.stats{
+
+    display:grid;
+
+    grid-template-columns:repeat(4,1fr);
+
+    gap:20px;
+
+    margin-bottom:30px;
+
+}
+
+.stat-card{
+
+    background:#fff;
+
+    border-radius:25px;
+
+    padding:25px;
+
+    text-align:center;
+
+    box-shadow:0 10px 35px rgba(0,0,0,.05);
+
+}
+
+.stat-card h2{
+
+    font-weight:900;
+
+    margin:10px 0;
+
+}
+
+.stat-card span{
+
+    color:var(--muted);
+
+}
+
+/* FORMS */
+
+.form-label{
+
+    font-weight:800;
+
+    margin-bottom:8px;
+
+}
+
+.form-control{
+
+    border-radius:16px;
+
+    padding:14px;
+
+    border:1px solid var(--border);
+
+    transition:.25s;
+
+}
+
+.form-control:focus{
+
+    border-color:var(--yellow);
+
+    box-shadow:0 0 0 .2rem rgba(246,196,0,.2);
+
+}
+
+textarea.form-control{
+
+    min-height:120px;
+
+}
+
+/* BUTTON */
+
+.btn-save{
+
+    background:var(--yellow);
+
+    border:none;
+
+    padding:14px 35px;
+
+    border-radius:50px;
+
+    font-weight:800;
+
+    transition:.3s;
+
+}
+
+.btn-save:hover{
+
+    background:#111;
+
+    color:#fff;
+
+}
+
+/* RESPONSIVO */
+
+@media(max-width:991px){
+
+.profile-grid{
+
+grid-template-columns:1fr;
+
+}
+
+.stats{
+
+grid-template-columns:repeat(2,1fr);
+
+}
+
+}
+
+@media(max-width:600px){
+
+.profile-header{
+
+justify-content:center;
+
+text-align:center;
+
+}
+
+.profile-title h1{
+
+font-size:2.2rem;
+
+}
+
+.stats{
+
+grid-template-columns:1fr;
+
+}
+
+}
+
+</style>
+
+
+<section class="profile-hero">
+
+<div class="container">
+
+<div class="profile-header">
+
+<div class="profile-avatar">
+
+{{ request.user.first_name|slice:":1"|upper }}{{ request.user.last_name|slice:":1"|upper }}
+
+</div>
+
+<div class="profile-title">
+
+<h1>Minha Conta</h1>
+
+<p>
+
+Gerencie suas informações pessoais, acompanhe pedidos e mantenha seu cadastro atualizado.
+
+</p>
+
+<div class="profile-badges">
+
+<span class="profile-badge">
+👤 {{ request.user.username }}
+</span>
+
+<span class="profile-badge">
+✉ {{ request.user.email }}
+</span>
+
+<span class="profile-badge">
+Cliente ArtSkala
+</span>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</section>
+
+
+
+<section class="profile-content">
+
+<div class="container">
+
+<div class="profile-grid">
+
+<!-- SIDEBAR -->
+
+<div>
+
+<div class="sidebar-card">
+
+<div class="sidebar-user">
+
+<div class="sidebar-avatar">
+
+{{ request.user.first_name|slice:":1"|upper }}
+
+</div>
+
+<h4>
+
+{{ request.user.first_name }} {{ request.user.last_name }}
+
+</h4>
+
+<p>
+
+{{ request.user.email }}
+
+</p>
+
+</div>
+
+<div class="profile-menu">
+
+<a href="#" class="active">
+
+👤 Meu Perfil
+
+</a>
+
+<a href="{% url 'orders' %}">
+
+📦 Meus Pedidos
+
+</a>
+
+<a href="{% url 'cart' %}">
+
+🛒 Meu Carrinho
+
+</a>
+
+<a href="{% url 'logout' %}">
+
+🚪 Sair
+
+</a>
+
+</div>
+
+</div>
+
+</div>
+
+
+<!-- CONTEÚDO -->
+
+<div>
+
+<div class="stats">
+
+<div class="stat-card">
+
+<h2>
+
+{{ carrinho_total_itens }}
+
+</h2>
+
+<span>
+
+Produtos no Carrinho
+
+</span>
+
+</div>
+
+<div class="stat-card">
+
+<h2>
+
+{{ request.user.pedidos.count }}
+
+</h2>
+
+<span>
+
+Pedidos
+
+</span>
+
+</div>
+
+<div class="stat-card">
+
+<h2>
+
+{{ perfil.cidade|default:"--" }}
+
+</h2>
+
+<span>
+
+Cidade
+
+</span>
+
+</div>
+
+<div class="stat-card">
+
+<h2>
+
+{{ perfil.estado|default:"--" }}
+
+</h2>
+
+<span>
+
+Estado
+
+</span>
+
+</div>
+
+</div>
+
+<!-- CARD DADOS PESSOAIS -->
+
+<div class="content-card">
+
+    <h2 class="card-title">
+        👤 Dados Pessoais
+    </h2>
+
+    <p class="text-muted mb-4">
+        Mantenha seus dados sempre atualizados para facilitar seus pedidos e entregas.
+    </p>
+
+    <form method="POST">
+
+        {% csrf_token %}
+
+        <div class="row">
+
+            <div class="col-md-6 mb-4">
+
+                <label class="form-label">
+                    Nome
+                </label>
+
+                <input
+                    type="text"
+                    class="form-control"
+                    name="nome"
+                    value="{{ request.user.first_name }}"
+                    required
+                >
+
+            </div>
+
+            <div class="col-md-6 mb-4">
+
+                <label class="form-label">
+                    Sobrenome
+                </label>
+
+                <input
+                    type="text"
+                    class="form-control"
+                    name="sobrenome"
+                    value="{{ request.user.last_name }}"
+                    required
+                >
+
+            </div>
+
+            <div class="col-md-6 mb-4">
+
+                <label class="form-label">
+                    Usuário
+                </label>
+
+                <input
+                    type="text"
+                    class="form-control"
+                    name="username"
+                    value="{{ request.user.username }}"
+                    required
+                >
+
+            </div>
+
+            <div class="col-md-6 mb-4">
+
+                <label class="form-label">
+                    Email
+                </label>
+
+                <input
+                    type="email"
+                    class="form-control"
+                    name="email"
+                    value="{{ request.user.email }}"
+                    required
+                >
+
+            </div>
+
+            <div class="col-md-6 mb-4">
+
+                <label class="form-label">
+                    Telefone
+                </label>
+
+                <input
+                    type="text"
+                    class="form-control"
+                    name="telefone"
+                    value="{{ perfil.telefone }}"
+                    placeholder="(11) 99999-9999"
+                >
+
+            </div>
+
+            <div class="col-md-6 mb-4">
+
+                <label class="form-label">
+                    CPF
+                </label>
+
+                <input
+                    type="text"
+                    class="form-control"
+                    name="cpf"
+                    value="{{ perfil.cpf }}"
+                    placeholder="000.000.000-00"
+                >
+
+            </div>
+
+            <div class="col-md-6 mb-4">
+
+                <label class="form-label">
+                    CEP
+                </label>
+
+                <input
+                    type="text"
+                    class="form-control"
+                    name="cep"
+                    value="{{ perfil.cep }}"
+                    placeholder="00000-000"
+                >
+
+            </div>
+
+            <div class="col-md-6 mb-4">
+
+                <label class="form-label">
+                    Cidade
+                </label>
+
+                <input
+                    type="text"
+                    class="form-control"
+                    name="cidade"
+                    value="{{ perfil.cidade }}"
+                >
+
+            </div>
+
+            <div class="col-md-4 mb-4">
+
+                <label class="form-label">
+                    Estado
+                </label>
+
+                <input
+                    type="text"
+                    maxlength="2"
+                    class="form-control text-uppercase"
+                    name="estado"
+                    value="{{ perfil.estado }}"
+                >
+
+            </div>
+
+            <div class="col-12 mb-4">
+
+                <label class="form-label">
+                    Endereço Completo
+                </label>
+
+                <textarea
+                    class="form-control"
+                    name="endereco"
+                    placeholder="Rua, número, bairro..."
+                >{{ perfil.endereco }}</textarea>
+
+            </div>
+
+        </div>
+
+        <hr class="my-4">
+
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+
+            <small class="text-muted">
+
+                Seus dados são utilizados apenas para emissão de pedidos,
+                entregas e contato referente às compras realizadas.
+
+            </small>
+
+            <button
+                type="submit"
+                class="btn btn-save"
+            >
+
+                Salvar Alterações
+
+            </button>
+
+        </div>
+
+    </form>
+
+</div>
+
+
+
+<!-- CARD INFORMAÇÕES DA CONTA -->
+
+<div class="content-card">
+
+    <h2 class="card-title">
+
+        📋 Informações da Conta
+
+    </h2>
+
+    <div class="row">
+
+        <div class="col-md-6 mb-4">
+
+            <div class="border rounded-4 p-4 h-100">
+
+                <small class="text-muted">
+
+                    Nome Completo
+
+                </small>
+
+                <h5 class="mt-2 fw-bold">
+
+                    {{ request.user.first_name }}
+                    {{ request.user.last_name }}
+
+                </h5>
+
+            </div>
+
+        </div>
+
+        <div class="col-md-6 mb-4">
+
+            <div class="border rounded-4 p-4 h-100">
+
+                <small class="text-muted">
+
+                    Usuário
+
+                </small>
+
+                <h5 class="mt-2 fw-bold">
+
+                    {{ request.user.username }}
+
+                </h5>
+
+            </div>
+
+        </div>
+
+        <div class="col-md-6 mb-4">
+
+            <div class="border rounded-4 p-4 h-100">
+
+                <small class="text-muted">
+
+                    Email
+
+                </small>
+
+                <h5 class="mt-2 fw-bold">
+
+                    {{ request.user.email }}
+
+                </h5>
+
+            </div>
+
+        </div>
+
+        <div class="col-md-6 mb-4">
+
+            <div class="border rounded-4 p-4 h-100">
+
+                <small class="text-muted">
+
+                    Cliente desde
+
+                </small>
+
+                <h5 class="mt-2 fw-bold">
+
+                    {{ request.user.date_joined|date:"d/m/Y" }}
+
+                </h5>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+    <!-- CARD SEGURANÇA -->
+
+<div class="content-card">
+
+    <h2 class="card-title">
+        🔒 Segurança da Conta
+    </h2>
+
+    <p class="text-muted mb-4">
+        Para sua segurança, utilize uma senha forte contendo letras maiúsculas,
+        minúsculas, números e caracteres especiais.
+    </p>
+
+    <form method="POST" action="#">
+
+        {% csrf_token %}
+
+        <div class="row">
+
+            <div class="col-md-4 mb-4">
+
+                <label class="form-label">
+
+                    Senha Atual
+
+                </label>
+
+                <input
+                    type="password"
+                    class="form-control"
+                    placeholder="••••••••"
+                    disabled
+                >
+
+            </div>
+
+            <div class="col-md-4 mb-4">
+
+                <label class="form-label">
+
+                    Nova Senha
+
+                </label>
+
+                <input
+                    type="password"
+                    class="form-control"
+                    placeholder="••••••••"
+                    disabled
+                >
+
+            </div>
+
+            <div class="col-md-4 mb-4">
+
+                <label class="form-label">
+
+                    Confirmar Senha
+
+                </label>
+
+                <input
+                    type="password"
+                    class="form-control"
+                    placeholder="••••••••"
+                    disabled
+                >
+
+            </div>
+
+        </div>
+
+        <div class="alert alert-warning rounded-4 mt-2">
+
+            A alteração de senha será habilitada em uma próxima atualização do sistema.
+
+        </div>
+
+    </form>
+
+</div>
+
+
+
+<!-- DICAS -->
+
+<div class="content-card">
+
+    <h2 class="card-title">
+
+        💡 Dicas para sua conta
+
+    </h2>
+
+    <div class="row g-4">
+
+        <div class="col-md-4">
+
+            <div class="border rounded-4 p-4 h-100">
+
+                <h5 class="fw-bold mb-3">
+
+                    📦 Pedidos
+
+                </h5>
+
+                <p class="text-muted mb-0">
+
+                    Acompanhe todos os pedidos realizados e consulte seu histórico de compras.
+
+                </p>
+
+            </div>
+
+        </div>
+
+        <div class="col-md-4">
+
+            <div class="border rounded-4 p-4 h-100">
+
+                <h5 class="fw-bold mb-3">
+
+                    📍 Endereço
+
+                </h5>
+
+                <p class="text-muted mb-0">
+
+                    Mantenha seu endereço atualizado para evitar problemas na entrega.
+
+                </p>
+
+            </div>
+
+        </div>
+
+        <div class="col-md-4">
+
+            <div class="border rounded-4 p-4 h-100">
+
+                <h5 class="fw-bold mb-3">
+
+                    🔒 Segurança
+
+                </h5>
+
+                <p class="text-muted mb-0">
+
+                    Nunca compartilhe sua senha e utilize combinações fortes para proteger sua conta.
+
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<!-- RODAPÉ DO PERFIL -->
+
+<div class="content-card text-center">
+
+    <h3 class="fw-bold mb-3">
+
+        Obrigado por escolher a ArtSkala ❤️
+
+    </h3>
+
+    <p class="text-muted mb-4">
+
+        Nosso compromisso é oferecer produtos de alta qualidade e uma experiência
+        segura durante toda sua jornada conosco.
+
+    </p>
+
+    <div class="d-flex justify-content-center flex-wrap gap-3">
+
+        <a href="{% url 'products' %}" class="btn btn-warning btn-save">
+
+            Ver Produtos
+
+        </a>
+
+        <a href="{% url 'orders' %}" class="btn btn-outline-dark rounded-pill px-4">
+
+            Meus Pedidos
+
+        </a>
+
+        <a href="{% url 'cart' %}" class="btn btn-outline-dark rounded-pill px-4">
+
+            Meu Carrinho
+
+        </a>
+
+    </div>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</section>
+
+{% endblock %}
