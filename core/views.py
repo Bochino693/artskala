@@ -809,6 +809,8 @@ class GestaoDashboardView(SuperuserGestaoRequiredMixin, View):
 
         lucro_pedidos = valor_pedidos - custo_pedidos
 
+        lucro_estimado = lucro_aprovado + lucro_pedidos
+
         resumo_status = orcamentos.values("status").annotate(total=Count("id"))
         resumo_status_dict = {item["status"]: item["total"] for item in resumo_status}
 
@@ -831,6 +833,8 @@ class GestaoDashboardView(SuperuserGestaoRequiredMixin, View):
             "valor_aprovado": valor_aprovado,
             "custo_aprovado": custo_aprovado,
             "lucro_aprovado": lucro_aprovado,
+
+            "lucro_estimado": lucro_estimado,
 
             "valor_pedidos": valor_pedidos,
             "custo_pedidos": custo_pedidos,

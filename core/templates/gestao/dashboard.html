@@ -39,9 +39,9 @@
     <div class="cartao-stat vermelho">
         <div class="rotulo">Lucro estimado</div>
         <div class="valor">
-            R$ {{ lucro_aprovado|default:lucro_estimado|default:0|floatformat:2 }}
+            R$ {{ lucro_estimado|default:0|floatformat:2 }}
         </div>
-        <div class="apoio">Com base nos custos cadastrados</div>
+        <div class="apoio">Orçamentos aprovados + pedidos do site</div>
     </div>
 </div>
 
@@ -56,14 +56,17 @@
 
         <div class="status-grid">
             {% for grupo in resumo_status_lista %}
-                <div class="status-card {{ grupo.chave|default:grupo.0 }}">
+                <div class="status-card {{ grupo.chave }}">
                     <div class="status-card-info">
                         <div class="status-card-label">
-                            {{ grupo.rotulo|default:grupo.1 }}
+                            {{ grupo.rotulo }}
                         </div>
                         <div class="status-card-sub">Orçamentos</div>
                     </div>
-                    <div class="status-card-num">{{ grupo.total|default:grupo.2 }}</div>
+
+                    <div class="status-card-num">
+                        {{ grupo.total }}
+                    </div>
                 </div>
             {% empty %}
                 <div class="vazio" style="padding:24px 10px;">
@@ -194,9 +197,10 @@
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-const labels = {{ chart_labels|default:grafico_labels|default:"[]"|safe }};
-const receitas = {{ chart_receitas|default:grafico_receita|default:"[]"|safe }};
-const lucros = {{ chart_lucros|default:grafico_lucro|default:"[]"|safe }};
+
+const labels = {{ grafico_labels|default:"[]"|safe }};
+const receitas = {{ grafico_receita|default:"[]"|safe }};
+const lucros = {{ grafico_lucro|default:"[]"|safe }};
 
 const ctx = document.getElementById('graficoFinanceiro');
 
