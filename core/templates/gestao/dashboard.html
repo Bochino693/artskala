@@ -4,91 +4,248 @@
 {% block conteudo %}
 <div class="cabecalho-pagina">
     <div>
-        <div class="eyebrow">Painel</div>
-        <h1 class="titulo-pagina">Bem-vindo, {{ request.user.first_name|default:request.user.username }}</h1>
-        <div class="subtitulo-pagina">Resumo dos seus orçamentos e pedidos na ArtSkala.</div>
+        <div class="eyebrow">Visão geral</div>
+        <h1 class="titulo-pagina">Painel financeiro</h1>
+        <div class="subtitulo-pagina">
+            Resumo de orçamentos, pedidos do site, receita e lucro estimado.
+        </div>
     </div>
-    <a href="{% url 'orcamentos' %}" class="btn btn-primario">+ Novo orçamento</a>
+
+    <div class="acoes-linha">
+        <a class="btn btn-secundario" href="{% url 'gestao_relatorio' %}">Ver relatório</a>
+        <a class="btn btn-primario" href="{% url 'orcamentos' %}">Novo orçamento</a>
+    </div>
 </div>
 
 <div class="grade-cartoes">
     <div class="cartao-stat">
-        <div class="rotulo">Orçamentos ativos</div>
-        <div class="valor">{{ total_orcamentos }}</div>
+        <div class="rotulo">Orçamentos</div>
+        <div class="valor">{{ total_orcamentos|default:0 }}</div>
+        <div class="apoio">Total registrado</div>
     </div>
-    <div class="cartao-stat patina">
-        <div class="rotulo">Valor total orçado</div>
-        <div class="valor">R$ {{ valor_total_orcamentos|floatformat:2 }}</div>
+
+    <div class="cartao-stat azul">
+        <div class="rotulo">Aprovados</div>
+        <div class="valor">R$ {{ valor_aprovado|default:0|floatformat:2 }}</div>
+        <div class="apoio">Receita aprovada</div>
     </div>
-    <div class="cartao-stat">
-        <div class="rotulo">Valor aprovado</div>
-        <div class="valor">R$ {{ valor_aprovado|floatformat:2 }}</div>
+
+    <div class="cartao-stat verde">
+        <div class="rotulo">Pedidos do site</div>
+        <div class="valor">R$ {{ valor_pedidos|default:0|floatformat:2 }}</div>
+        <div class="apoio">{{ total_pedidos|default:0 }} pedido{{ total_pedidos|pluralize }}</div>
     </div>
-    <div class="cartao-stat recusa">
-        <div class="rotulo">Pedidos realizados</div>
-        <div class="valor">{{ total_pedidos }}</div>
+
+    <div class="cartao-stat vermelho">
+        <div class="rotulo">Lucro estimado</div>
+        <div class="valor">
+            R$ {{ lucro_aprovado|default:lucro_estimado|default:0|floatformat:2 }}
+        </div>
+        <div class="apoio">Com base nos custos cadastrados</div>
     </div>
 </div>
 
-<div style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 20px; align-items: start;">
+<div class="duas-colunas">
+    <div class="painel">
+        <h2 class="painel-titulo">Receita x lucro — últimos meses</h2>
+        <canvas id="graficoFinanceiro" height="115"></canvas>
+    </div>
 
     <div class="painel">
-        <h2 style="font-family: var(--fonte-display); font-size: 17px; margin: 0 0 16px;">Orçamentos recentes</h2>
+        <h2 class="painel-titulo">Status dos orçamentos</h2>
+
+        <div class="status-grid">
+            {% for grupo in resumo_status_lista %}
+                <div class="status-card {{ grupo.chave|default:grupo.0 }}">
+                    <div class="status-card-info">
+                        <div class="status-card-label">
+                            {{ grupo.rotulo|default:grupo.1 }}
+                        </div>
+                        <div class="status-card-sub">Orçamentos</div>
+                    </div>
+                    <div class="status-card-num">{{ grupo.total|default:grupo.2 }}</div>
+                </div>
+            {% empty %}
+                <div class="vazio" style="padding:24px 10px;">
+                    <div class="fonte-display">Sem status ainda</div>
+                    Crie um orçamento para começar.
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div class="duas-colunas" style="margin-top:20px;">
+    <div class="painel">
+        <h2 class="painel-titulo">Orçamentos recentes</h2>
+
         {% if orcamentos_recentes %}
-        <table class="ledger">
-            <thead>
-                <tr>
-                    <th>Título</th>
-                    <th>Status</th>
-                    <th class="num">Total</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for orcamento in orcamentos_recentes %}
-                <tr>
-                    <td><a href="{% url 'orcamento_detalhe' orcamento.pk %}">{{ orcamento.titulo }}</a></td>
-                    <td><span class="selo {{ orcamento.status }}">{{ orcamento.get_status_display }}</span></td>
-                    <td class="num">R$ {{ orcamento.valor_total|floatformat:2 }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="tabela-responsiva tabela-desktop">
+            <table class="ledger ledger-compacta">
+                <thead>
+                    <tr>
+                        <th class="col-titulo">Título</th>
+                        <th>Cliente</th>
+                        <th class="col-status">Status</th>
+                        <th class="num col-num">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in orcamentos_recentes %}
+                    <tr onclick="window.location='{% url 'orcamento_detalhe' item.pk %}'" style="cursor:pointer;">
+                        <td class="col-titulo">{{ item.titulo }}</td>
+                        <td>{{ item.cliente_nome|default:"—" }}</td>
+                        <td class="col-status">
+                            <span class="selo {{ item.status }}">{{ item.get_status_display }}</span>
+                        </td>
+                        <td class="num col-num">R$ {{ item.valor_total|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="mobile-card-list">
+            {% for item in orcamentos_recentes %}
+            <a class="mobile-card" href="{% url 'orcamento_detalhe' item.pk %}" style="display:block;">
+                <div class="mobile-card-topo">
+                    <div>
+                        <div class="mobile-card-titulo">{{ item.titulo }}</div>
+                        <div class="mobile-card-meta">{{ item.cliente_nome|default:"Sem cliente" }}</div>
+                    </div>
+                    <span class="selo {{ item.status }}">{{ item.get_status_display }}</span>
+                </div>
+
+                <div class="mobile-card-valor">
+                    <span class="rotulo-mini">Total</span>
+                    <span class="valor-mini">R$ {{ item.valor_total|floatformat:2 }}</span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
         {% else %}
         <div class="vazio">
             <div class="fonte-display">Nenhum orçamento ainda</div>
-            Registre o primeiro orçamento para começar a acompanhar seus números.
+            Crie seu primeiro orçamento para começar a medir resultados.
         </div>
         {% endif %}
     </div>
 
     <div class="painel">
-        <h2 style="font-family: var(--fonte-display); font-size: 17px; margin: 0 0 16px;">Por status</h2>
-        <table class="ledger">
-            <tbody>
-                {% for status_key, status_label, status_total in resumo_status_lista %}
-                <tr>
-                    <td><span class="selo {{ status_key }}">{{ status_label }}</span></td>
-                    <td class="num">{{ status_total }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <h2 class="painel-titulo">Pedidos recentes</h2>
 
-        <h2 style="font-family: var(--fonte-display); font-size: 17px; margin: 22px 0 16px;">Pedidos recentes</h2>
         {% if pedidos_recentes %}
-        <table class="ledger">
-            <tbody>
-                {% for pedido in pedidos_recentes %}
-                <tr>
-                    <td><a href="{% url 'order_detail' pedido.pk %}">Pedido #{{ pedido.id }}</a></td>
-                    <td class="num">R$ {{ pedido.valor_total|floatformat:2 }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="tabela-responsiva tabela-desktop">
+            <table class="ledger ledger-compacta">
+                <thead>
+                    <tr>
+                        <th>Pedido</th>
+                        <th class="col-status">Status</th>
+                        <th class="num col-num">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pedido in pedidos_recentes %}
+                    <tr>
+                        <td>
+                            #{{ pedido.id }}<br>
+                            <span style="color:var(--papel-fraco);font-size:12px;">
+                                {{ pedido.criacao|date:"d/m/Y" }}
+                            </span>
+                        </td>
+                        <td class="col-status">
+                            <span class="selo PEDIDO_{{ pedido.status }}">{{ pedido.get_status_display }}</span>
+                        </td>
+                        <td class="num col-num">R$ {{ pedido.valor_total|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="mobile-card-list">
+            {% for pedido in pedidos_recentes %}
+            <div class="mobile-card">
+                <div class="mobile-card-topo">
+                    <div>
+                        <div class="mobile-card-titulo">Pedido #{{ pedido.id }}</div>
+                        <div class="mobile-card-meta">{{ pedido.criacao|date:"d/m/Y" }}</div>
+                    </div>
+                    <span class="selo PEDIDO_{{ pedido.status }}">{{ pedido.get_status_display }}</span>
+                </div>
+
+                <div class="mobile-card-valor">
+                    <span class="rotulo-mini">Total</span>
+                    <span class="valor-mini">R$ {{ pedido.valor_total|floatformat:2 }}</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
         {% else %}
-        <div class="vazio" style="padding: 20px;">Nenhum pedido ainda.</div>
+        <div class="vazio">
+            <div class="fonte-display">Sem pedidos</div>
+            Os pedidos feitos no site aparecerão aqui.
+        </div>
         {% endif %}
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const labels = {{ chart_labels|default:grafico_labels|default:"[]"|safe }};
+const receitas = {{ chart_receitas|default:grafico_receita|default:"[]"|safe }};
+const lucros = {{ chart_lucros|default:grafico_lucro|default:"[]"|safe }};
+
+const ctx = document.getElementById('graficoFinanceiro');
+
+if (ctx) {
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Receita',
+                    data: receitas,
+                    tension: .35,
+                    borderWidth: 3,
+                    pointRadius: 4
+                },
+                {
+                    label: 'Lucro',
+                    data: lucros,
+                    tension: .35,
+                    borderWidth: 3,
+                    pointRadius: 4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    labels: {
+                        color: '#ece8dc',
+                        boxWidth: 12,
+                        usePointStyle: true
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    ticks: { color: '#aaa79a' },
+                    grid: { color: 'rgba(232,230,222,.08)' }
+                },
+                y: {
+                    ticks: { color: '#aaa79a' },
+                    grid: { color: 'rgba(232,230,222,.08)' }
+                }
+            }
+        }
+    });
+}
+</script>
 {% endblock %}

@@ -1,0 +1,129 @@
+{% extends "gestao/base_gestao.html" %}
+{% block titulo %}Perfil da gestão{% endblock %}
+
+{% block conteudo %}
+<div class="cabecalho-pagina">
+    <div>
+        <div class="eyebrow">Conta interna</div>
+        <h1 class="titulo-pagina">Perfil da gestão</h1>
+        <div class="subtitulo-pagina">
+            Dados básicos do superusuário responsável pela área administrativa.
+        </div>
+    </div>
+</div>
+
+<form method="post">
+    {% csrf_token %}
+
+    <div class="duas-colunas">
+        <div class="painel">
+            <h2 class="painel-titulo">Dados do usuário</h2>
+
+            <div class="linha-campos">
+                <div class="campo">
+                    <label for="first_name">Nome</label>
+                    <input 
+                        type="text" 
+                        id="first_name" 
+                        name="first_name" 
+                        value="{{ request.user.first_name }}"
+                        placeholder="Nome"
+                    >
+                </div>
+
+                <div class="campo">
+                    <label for="last_name">Sobrenome</label>
+                    <input 
+                        type="text" 
+                        id="last_name" 
+                        name="last_name" 
+                        value="{{ request.user.last_name }}"
+                        placeholder="Sobrenome"
+                    >
+                </div>
+            </div>
+
+            <div class="linha-campos">
+                <div class="campo">
+                    <label for="username">Usuário de acesso</label>
+                    <input 
+                        type="text" 
+                        id="username" 
+                        name="username" 
+                        value="{{ request.user.username }}"
+                        required
+                    >
+                </div>
+
+                <div class="campo">
+                    <label for="email">E-mail</label>
+                    <input 
+                        type="email" 
+                        id="email" 
+                        name="email" 
+                        value="{{ request.user.email }}"
+                        required
+                    >
+                </div>
+            </div>
+
+            <div class="linha-campos">
+                <div class="campo">
+                    <label>Status</label>
+                    <input 
+                        type="text" 
+                        value="{% if request.user.is_superuser %}Superusuário{% else %}Usuário comum{% endif %}" 
+                        disabled
+                    >
+                </div>
+
+                <div class="campo">
+                    <label>Último acesso</label>
+                    <input 
+                        type="text" 
+                        value="{{ request.user.last_login|date:'d/m/Y H:i'|default:'Sem registro' }}" 
+                        disabled
+                    >
+                </div>
+            </div>
+        </div>
+
+        <div class="painel">
+            <h2 class="painel-titulo">Segurança</h2>
+
+            <div class="vazio" style="padding:28px 18px;">
+                <div class="fonte-display">Acesso restrito</div>
+                Esta área só pode ser acessada por superusuários do sistema.
+            </div>
+
+            <div class="resumo-lista">
+                <div class="resumo-item">
+                    <span>ID do usuário</span>
+                    <strong>#{{ request.user.id }}</strong>
+                </div>
+
+                <div class="resumo-item">
+                    <span>Conta criada em</span>
+                    <strong>{{ request.user.date_joined|date:"d/m/Y" }}</strong>
+                </div>
+
+                <div class="resumo-item">
+                    <span>Permissão</span>
+                    <strong>
+                        {% if request.user.is_superuser %}
+                            Total
+                        {% else %}
+                            Limitada
+                        {% endif %}
+                    </strong>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="acoes-linha" style="margin-top:22px;">
+        <button type="submit" class="btn btn-primario">Salvar alterações</button>
+        <a href="{% url 'gestao_dashboard' %}" class="btn btn-secundario">Voltar ao dashboard</a>
+    </div>
+</form>
+{% endblock %}

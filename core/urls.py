@@ -26,6 +26,7 @@ from .views import (
     OrcamentoView,
     GestaoDashboardView,
     GestaoPedidosView,
+    GestaoPerfilView
 
 
 )
@@ -72,4 +73,7 @@ urlpatterns = [
     # Uma unica view cuida de listar, criar, editar, trocar status e excluir.
     path("gestao/orcamentos/", OrcamentoView.as_view(), name="orcamentos"),
     path("gestao/orcamentos/<int:pk>/", OrcamentoView.as_view(), name="orcamento_detalhe"),
+
+    path("gestao/perfil/", GestaoPerfilView.as_view(), name="gestao_perfil"),
+
 ]

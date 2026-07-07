@@ -1,184 +1,128 @@
 {% extends "gestao/base_gestao.html" %}
-{% block titulo %}{% if orcamento %}{{ orcamento.titulo }}{% else %}Meus orçamentos{% endif %}{% endblock %}
+{% block titulo %}{% if orcamento %}{{ orcamento.titulo }}{% else %}Orçamentos{% endif %}{% endblock %}
 
 {% block conteudo %}
-
 <div class="cabecalho-pagina">
     <div>
         <div class="eyebrow">
-            {% if orcamento %}<a href="{% url 'orcamentos' %}">← Meus orçamentos</a> · Orçamento #{{ orcamento.id }}{% else %}Orçamentos{% endif %}
+            {% if orcamento %}<a href="{% url 'orcamentos' %}">← Orçamentos</a> · #{{ orcamento.id }}{% else %}Comercial{% endif %}
         </div>
-        <h1 class="titulo-pagina">{% if orcamento %}{{ orcamento.titulo }}{% else %}Meus orçamentos{% endif %}</h1>
+        <h1 class="titulo-pagina">{% if orcamento %}{{ orcamento.titulo }}{% else %}Orçamentos{% endif %}</h1>
         <div class="subtitulo-pagina">
-            {% if orcamento %}
-                Criado em {{ orcamento.criacao|date:"d/m/Y" }}
-            {% else %}
-                {{ orcamentos.count }} orçamento{{ orcamentos.count|pluralize }} registrado{{ orcamentos.count|pluralize }}.
-            {% endif %}
+            {% if orcamento %}Criado em {{ orcamento.criacao|date:"d/m/Y" }}{% else %}Registre orçamentos de produtos, projetos ou itens avulsos com custo, venda e lucro estimado.{% endif %}
         </div>
     </div>
 
     {% if orcamento %}
-    <div style="display: flex; align-items: center; gap: 14px;">
-        <select id="seletor-status">
-            {% for chave, rotulo in status_choices %}
-            <option value="{{ chave }}" {% if orcamento.status == chave %}selected{% endif %}>{{ rotulo }}</option>
-            {% endfor %}
+    <div class="acoes-linha">
+        <select id="seletor-status" style="min-width: 180px;">
+            {% for chave, rotulo in status_choices %}<option value="{{ chave }}" {% if orcamento.status == chave %}selected{% endif %}>{{ rotulo }}</option>{% endfor %}
         </select>
         <button type="button" class="btn btn-perigo" id="btn-excluir">Excluir</button>
     </div>
     {% endif %}
 </div>
 
-<!-- ============ FORMULÁRIO (mesmo para criar e para editar) ============ -->
 <form method="post" action="{% if orcamento %}{% url 'orcamento_detalhe' orcamento.pk %}{% else %}{% url 'orcamentos' %}{% endif %}" id="form-orcamento">
     {% csrf_token %}
 
-    <div class="painel" style="margin-bottom: 20px;">
-        <h2 style="font-family: var(--fonte-display); font-size: 17px; margin: 0 0 18px;">Dados gerais</h2>
-
+    <div class="painel" style="margin-bottom:20px;">
+        <h2 class="painel-titulo">Dados gerais</h2>
         <div class="linha-campos">
-            <div class="campo" style="grid-column: span 2;">
-                <label for="titulo">Título do orçamento</label>
-                <input type="text" id="titulo" name="titulo" required value="{{ orcamento.titulo|default:'' }}" placeholder="Ex: Mural para recepção">
-            </div>
-            <div class="campo">
-                <label for="tipo">Tipo</label>
-                <select id="tipo" name="tipo">
-                    {% for chave, rotulo in tipo_choices %}
-                    <option value="{{ chave }}" {% if orcamento.tipo == chave %}selected{% endif %}>{{ rotulo }}</option>
-                    {% endfor %}
-                </select>
-            </div>
+            <div class="campo" style="grid-column: span 2;"><label for="titulo">Título do orçamento</label><input type="text" id="titulo" name="titulo" required value="{{ orcamento.titulo|default:'' }}" placeholder="Ex: Fachada em ACM + letreiro"></div>
+            <div class="campo"><label for="tipo">Tipo</label><select id="tipo" name="tipo">{% for chave, rotulo in tipo_choices %}<option value="{{ chave }}" {% if orcamento.tipo == chave %}selected{% endif %}>{{ rotulo }}</option>{% endfor %}</select></div>
         </div>
-
         <div class="linha-campos">
-            <div class="campo">
-                <label for="cliente_nome">Cliente</label>
-                <input type="text" id="cliente_nome" name="cliente_nome" value="{{ orcamento.cliente_nome|default:'' }}">
-            </div>
-            <div class="campo">
-                <label for="cliente_email">E-mail do cliente</label>
-                <input type="email" id="cliente_email" name="cliente_email" value="{{ orcamento.cliente_email|default:'' }}">
-            </div>
-            <div class="campo">
-                <label for="cliente_telefone">Telefone do cliente</label>
-                <input type="text" id="cliente_telefone" name="cliente_telefone" value="{{ orcamento.cliente_telefone|default:'' }}">
-            </div>
+            <div class="campo"><label for="cliente_nome">Cliente</label><input type="text" id="cliente_nome" name="cliente_nome" value="{{ orcamento.cliente_nome|default:'' }}" placeholder="Nome do cliente"></div>
+            <div class="campo"><label for="cliente_email">E-mail</label><input type="email" id="cliente_email" name="cliente_email" value="{{ orcamento.cliente_email|default:'' }}"></div>
+            <div class="campo"><label for="cliente_telefone">Telefone</label><input type="text" id="cliente_telefone" name="cliente_telefone" value="{{ orcamento.cliente_telefone|default:'' }}"></div>
         </div>
-
         <div class="linha-campos">
-            <div class="campo">
-                <label for="data_validade">Válido até</label>
-                <input type="date" id="data_validade" name="data_validade" value="{{ orcamento.data_validade|date:'Y-m-d'|default:'' }}">
-            </div>
-            <div class="campo">
-                <label for="desconto_percentual">Desconto (%)</label>
-                <input type="number" step="0.01" min="0" max="100" id="desconto_percentual" name="desconto_percentual" value="{{ orcamento.desconto_percentual|default:'0' }}">
-            </div>
+            <div class="campo"><label for="data_validade">Válido até</label><input type="date" id="data_validade" name="data_validade" value="{{ orcamento.data_validade|date:'Y-m-d'|default:'' }}"></div>
+            <div class="campo"><label for="desconto_percentual">Desconto (%)</label><input type="number" step="0.01" min="0" max="100" id="desconto_percentual" name="desconto_percentual" value="{{ orcamento.desconto_percentual|default:'0' }}"></div>
         </div>
-
-        <div class="campo">
-            <label for="observacoes">Observações</label>
-            <textarea id="observacoes" name="observacoes" rows="2">{{ orcamento.observacoes|default:'' }}</textarea>
-        </div>
+        <div class="campo"><label for="observacoes">Observações</label><textarea id="observacoes" name="observacoes" rows="3" placeholder="Prazo, garantia, forma de pagamento, condições comerciais...">{{ orcamento.observacoes|default:'' }}</textarea></div>
     </div>
 
-    <div class="painel" style="margin-bottom: 20px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-            <h2 style="font-family: var(--fonte-display); font-size: 17px; margin: 0;">Itens</h2>
+    <div class="painel" style="margin-bottom:20px;">
+        <div class="cabecalho-pagina" style="margin-bottom:16px;">
+            <div><h2 class="painel-titulo" style="margin-bottom:4px;">Itens do orçamento</h2><div class="subtitulo-pagina" style="margin-top:0;">Cada linha pode ser produto, projeto ou item personalizado.</div></div>
             <button type="button" class="btn btn-secundario" id="btn-add-item">+ Adicionar item</button>
         </div>
 
-        <table class="ledger" id="tabela-itens">
-            <thead>
-                <tr>
-                    <th style="width: 16%;">Origem</th>
-                    <th style="width: 26%;">Produto / Projeto / Descrição</th>
-                    <th style="width: 14%;">Data prevista</th>
-                    <th style="width: 10%;">Qtd.</th>
-                    <th style="width: 14%;">Valor unit. (R$)</th>
-                    <th class="num" style="width: 12%;">Subtotal</th>
-                    <th style="width: 8%;"></th>
-                </tr>
-            </thead>
-            <tbody id="corpo-itens"></tbody>
-        </table>
-
-        <div style="text-align: right; margin-top: 16px; font-family: var(--fonte-dados); font-size: 15px;">
-            Total estimado: <strong id="total-estimado">R$ 0,00</strong>
+        <div class="tabela-responsiva">
+            <table class="ledger" id="tabela-itens" style="min-width: 1080px;">
+                <thead>
+                    <tr>
+                        <th style="width: 12%;">Origem</th>
+                        <th style="width: 24%;">Produto / Projeto / Descrição</th>
+                        <th style="width: 12%;">Data prevista</th>
+                        <th style="width: 8%;">Qtd.</th>
+                        <th style="width: 12%;">Custo unit.</th>
+                        <th style="width: 12%;">Venda unit.</th>
+                        <th class="num" style="width: 10%;">Subtotal</th>
+                        <th class="num" style="width: 10%;">Lucro</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="corpo-itens"></tbody>
+            </table>
         </div>
+
+        <div class="tres-colunas" style="margin-top:18px;">
+            <div class="cartao-stat"><div class="rotulo">Total bruto</div><div class="valor" id="total-bruto">R$ 0,00</div></div>
+            <div class="cartao-stat vermelho"><div class="rotulo">Custo estimado</div><div class="valor" id="total-custo">R$ 0,00</div></div>
+            <div class="cartao-stat verde"><div class="rotulo">Lucro estimado</div><div class="valor" id="total-lucro">R$ 0,00</div></div>
+        </div>
+        <div style="text-align:right; margin-top:14px; font-family:var(--fonte-dados); font-size:16px;">Total final com desconto: <strong id="total-estimado">R$ 0,00</strong></div>
     </div>
 
-    <div style="display: flex; gap: 12px; margin-bottom: 34px;">
+    <div class="acoes-linha" style="margin-bottom:34px;">
         <button type="submit" class="btn btn-primario">{% if orcamento %}Salvar alterações{% else %}Criar orçamento{% endif %}</button>
-        {% if not orcamento %}
-        <button type="button" class="btn btn-secundario" onclick="document.getElementById('form-orcamento').reset();">Limpar</button>
-        {% endif %}
+        {% if not orcamento %}<button type="button" class="btn btn-secundario" onclick="document.getElementById('form-orcamento').reset();">Limpar</button>{% endif %}
     </div>
 </form>
 
-<!-- ============ LISTA (só aparece fora do modo edição) ============ -->
 {% if not orcamento %}
-<div class="painel" style="margin-bottom: 20px;">
-    <form method="get" style="display: flex; gap: 14px; align-items: flex-end; flex-wrap: wrap;">
-        <div class="campo" style="flex: 1; min-width: 200px; margin-bottom: 0;">
-            <label for="q">Buscar por título ou cliente</label>
-            <input type="text" id="q" name="q" value="{{ busca }}" placeholder="Ex: mural, João Silva...">
-        </div>
-        <div class="campo" style="min-width: 180px; margin-bottom: 0;">
-            <label for="status">Status</label>
-            <select id="status" name="status">
-                <option value="">Todos</option>
-                {% for chave, rotulo in status_choices %}
-                <option value="{{ chave }}" {% if status_filtro == chave %}selected{% endif %}>{{ rotulo }}</option>
-                {% endfor %}
-            </select>
-        </div>
+<div class="painel" style="margin-bottom:20px;">
+    <form method="get" class="acoes-linha">
+        <div class="campo" style="flex:1; min-width:220px; margin-bottom:0;"><label for="q">Buscar</label><input type="text" id="q" name="q" value="{{ busca }}" placeholder="Título ou cliente"></div>
+        <div class="campo" style="min-width:190px; margin-bottom:0;"><label for="status">Status</label><select id="status" name="status"><option value="">Todos</option>{% for chave, rotulo in status_choices %}<option value="{{ chave }}" {% if status_filtro == chave %}selected{% endif %}>{{ rotulo }}</option>{% endfor %}</select></div>
         <button type="submit" class="btn btn-secundario">Filtrar</button>
     </form>
 </div>
 
 <div class="painel">
     {% if orcamentos %}
-    <table class="ledger">
-        <thead>
-            <tr>
-                <th>Título</th>
-                <th>Cliente</th>
-                <th>Tipo</th>
-                <th>Status</th>
-                <th>Validade</th>
-                <th class="num">Total</th>
-            </tr>
-        </thead>
-        <tbody>
+    <div class="tabela-responsiva tabela-desktop">
+        <table class="ledger">
+            <thead><tr><th>Título</th><th>Cliente</th><th>Tipo</th><th>Status</th><th>Validade</th><th class="num">Total</th></tr></thead>
+            <tbody>
             {% for item in orcamentos %}
-            <tr onclick="window.location='{% url 'orcamento_detalhe' item.pk %}'" style="cursor: pointer;">
-                <td>{{ item.titulo }}</td>
-                <td>{{ item.cliente_nome|default:"—" }}</td>
-                <td>{{ item.get_tipo_display }}</td>
-                <td>
-                    <span class="selo {% if item.esta_expirado %}EXPIRADO{% else %}{{ item.status }}{% endif %}">
-                        {% if item.esta_expirado %}Expirado{% else %}{{ item.get_status_display }}{% endif %}
-                    </span>
-                </td>
-                <td>{{ item.data_validade|date:"d/m/Y"|default:"—" }}</td>
-                <td class="num">R$ {{ item.valor_total|floatformat:2 }}</td>
-            </tr>
+                <tr onclick="window.location='{% url 'orcamento_detalhe' item.pk %}'" style="cursor:pointer;">
+                    <td>{{ item.titulo }}</td>
+                    <td>{{ item.cliente_nome|default:"—" }}</td>
+                    <td>{{ item.get_tipo_display }}</td>
+                    <td><span class="selo {% if item.esta_expirado %}EXPIRADO{% else %}{{ item.status }}{% endif %}">{% if item.esta_expirado %}Expirado{% else %}{{ item.get_status_display }}{% endif %}</span></td>
+                    <td>{{ item.data_validade|date:"d/m/Y"|default:"—" }}</td>
+                    <td class="num">R$ {{ item.valor_total|floatformat:2 }}</td>
+                </tr>
             {% endfor %}
-        </tbody>
-    </table>
-    {% else %}
-    <div class="vazio">
-        <div class="fonte-display">Nenhum orçamento encontrado</div>
-        Ajuste os filtros ou preencha o formulário acima para criar o primeiro.
+            </tbody>
+        </table>
     </div>
-    {% endif %}
+    <div class="mobile-card-list">
+        {% for item in orcamentos %}
+        <a href="{% url 'orcamento_detalhe' item.pk %}" class="mobile-card" style="display:block;">
+            <div class="mobile-card-topo"><div><div class="mobile-card-titulo">{{ item.titulo }}</div><div class="mobile-card-meta">{{ item.cliente_nome|default:"Sem cliente" }} · {{ item.get_tipo_display }}</div></div><span class="selo {% if item.esta_expirado %}EXPIRADO{% else %}{{ item.status }}{% endif %}">{% if item.esta_expirado %}Expirado{% else %}{{ item.get_status_display }}{% endif %}</span></div>
+            <div class="num">R$ {{ item.valor_total|floatformat:2 }}</div>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}<div class="vazio"><div class="fonte-display">Nenhum orçamento encontrado</div>Ajuste os filtros ou crie seu primeiro orçamento.</div>{% endif %}
 </div>
 {% endif %}
 
-<!-- ============ Template de linha de item (clonado via JS) ============ -->
 <template id="template-linha-item">
     <tr class="linha-item">
         <td>
@@ -189,17 +133,13 @@
             </select>
         </td>
         <td>
-            <select class="campo-produto" style="display: none;">
+            <select class="campo-produto" style="display:none;">
                 <option value="">Selecione um produto</option>
-                {% for produto in produtos %}
-                <option value="{{ produto.id }}" data-preco="{{ produto.preco }}">{{ produto.nome_produto }}</option>
-                {% endfor %}
+                {% for produto in produtos %}<option value="{{ produto.id }}" data-preco="{{ produto.preco }}" data-custo="{{ produto.custo|default:0 }}">{{ produto.nome_produto }}</option>{% endfor %}
             </select>
-            <select class="campo-projeto" style="display: none;">
+            <select class="campo-projeto" style="display:none;">
                 <option value="">Selecione um projeto</option>
-                {% for projeto in projetos %}
-                <option value="{{ projeto.id }}">{{ projeto.titulo }}</option>
-                {% endfor %}
+                {% for projeto in projetos %}<option value="{{ projeto.id }}">{{ projeto.titulo }}</option>{% endfor %}
             </select>
             <input type="text" class="campo-descricao" name="item_descricao[]" placeholder="Descreva o item">
             <input type="hidden" name="item_produto[]" class="campo-produto-hidden">
@@ -207,46 +147,49 @@
         </td>
         <td><input type="date" name="item_data[]" class="campo-data"></td>
         <td><input type="number" min="1" value="1" name="item_quantidade[]" class="campo-quantidade"></td>
+        <td><input type="number" step="0.01" min="0" value="0" name="item_custo[]" class="campo-custo"></td>
         <td><input type="number" step="0.01" min="0" value="0" name="item_valor[]" class="campo-valor"></td>
         <td class="num campo-subtotal">R$ 0,00</td>
-        <td><button type="button" class="btn btn-perigo btn-remover-item" style="padding: 6px 10px;">✕</button></td>
+        <td class="num campo-lucro">R$ 0,00</td>
+        <td><button type="button" class="btn btn-perigo btn-remover-item" style="padding:6px 10px;min-height:36px;">✕</button></td>
     </tr>
 </template>
 
-
-{% if orcamento %}
-<script>
-    const URL_ORCAMENTO = "{% url 'orcamento_detalhe' orcamento.pk %}";
-{% else %}
-<script>
-    const URL_ORCAMENTO = null;
-{% endif %}
-</script>
+{% if orcamento %}<script>const URL_ORCAMENTO = "{% url 'orcamento_detalhe' orcamento.pk %}";</script>{% else %}<script>const URL_ORCAMENTO = null;</script>{% endif %}
 
 <script>
 (function () {
-    // ---------- itens dinâmicos (produto / projeto / avulso) ----------
     const corpo = document.getElementById("corpo-itens");
     const template = document.getElementById("template-linha-item");
     const btnAdd = document.getElementById("btn-add-item");
     const descontoInput = document.getElementById("desconto_percentual");
     const totalEl = document.getElementById("total-estimado");
+    const totalBrutoEl = document.getElementById("total-bruto");
+    const totalCustoEl = document.getElementById("total-custo");
+    const totalLucroEl = document.getElementById("total-lucro");
 
-    function formatarMoeda(valor) {
-        return "R$ " + valor.toFixed(2).replace(".", ",");
-    }
+    function numero(valor) { return parseFloat(String(valor || "0").replace(",", ".")) || 0; }
+    function formatarMoeda(valor) { return "R$ " + valor.toFixed(2).replace(".", ","); }
 
     function recalcularTotais() {
-        let bruto = 0;
+        let bruto = 0, custoTotal = 0;
         corpo.querySelectorAll(".linha-item").forEach((linha) => {
-            const qtd = parseFloat(linha.querySelector(".campo-quantidade").value) || 0;
-            const valor = parseFloat(linha.querySelector(".campo-valor").value) || 0;
+            const qtd = numero(linha.querySelector(".campo-quantidade").value);
+            const valor = numero(linha.querySelector(".campo-valor").value);
+            const custo = numero(linha.querySelector(".campo-custo").value);
             const subtotal = qtd * valor;
+            const custoLinha = qtd * custo;
             linha.querySelector(".campo-subtotal").textContent = formatarMoeda(subtotal);
+            linha.querySelector(".campo-lucro").textContent = formatarMoeda(subtotal - custoLinha);
             bruto += subtotal;
+            custoTotal += custoLinha;
         });
-        const desconto = parseFloat(descontoInput.value) || 0;
-        totalEl.textContent = formatarMoeda(bruto - (bruto * desconto / 100));
+        const desconto = numero(descontoInput.value);
+        const final = bruto - (bruto * desconto / 100);
+        totalBrutoEl.textContent = formatarMoeda(bruto);
+        totalCustoEl.textContent = formatarMoeda(custoTotal);
+        totalLucroEl.textContent = formatarMoeda(final - custoTotal);
+        totalEl.textContent = formatarMoeda(final);
     }
 
     function configurarLinha(linha) {
@@ -257,6 +200,7 @@
         const produtoHidden = linha.querySelector(".campo-produto-hidden");
         const projetoHidden = linha.querySelector(".campo-projeto-hidden");
         const valorInput = linha.querySelector(".campo-valor");
+        const custoInput = linha.querySelector(".campo-custo");
 
         function atualizarVisibilidade() {
             const tipo = origem.value;
@@ -268,19 +212,16 @@
         }
 
         origem.addEventListener("change", atualizarVisibilidade);
-
         produtoSelect.addEventListener("change", () => {
             produtoHidden.value = produtoSelect.value;
             const opcao = produtoSelect.selectedOptions[0];
             if (opcao && opcao.dataset.preco) valorInput.value = opcao.dataset.preco;
+            if (opcao && opcao.dataset.custo) custoInput.value = opcao.dataset.custo;
             recalcularTotais();
         });
         projetoSelect.addEventListener("change", () => { projetoHidden.value = projetoSelect.value; });
-
-        linha.querySelector(".campo-quantidade").addEventListener("input", recalcularTotais);
-        linha.querySelector(".campo-valor").addEventListener("input", recalcularTotais);
+        linha.querySelectorAll("input, select").forEach((el) => el.addEventListener("input", recalcularTotais));
         linha.querySelector(".btn-remover-item").addEventListener("click", () => { linha.remove(); recalcularTotais(); });
-
         atualizarVisibilidade();
     }
 
@@ -306,6 +247,7 @@
             linha.querySelector(".campo-data").value = dados.data_referencia || "";
             linha.querySelector(".campo-quantidade").value = dados.quantidade || 1;
             linha.querySelector(".campo-valor").value = dados.valor_unitario || 0;
+            linha.querySelector(".campo-custo").value = dados.custo_unitario || 0;
         }
         recalcularTotais();
     }
@@ -322,18 +264,14 @@
             descricao: "{{ item.descricao|escapejs }}",
             data_referencia: "{{ item.data_referencia|date:'Y-m-d'|default:'' }}",
             quantidade: {{ item.quantidade|default:1 }},
-            valor_unitario: {{ item.valor_unitario|default:0 }}
+            valor_unitario: {{ item.valor_unitario|default:0 }},
+            custo_unitario: {{ item.custo_unitario|default:0 }}
         },
         {% endfor %}
     ];
 
-    if (itensExistentes.length > 0) {
-        itensExistentes.forEach((item) => adicionarLinha(item));
-    } else {
-        adicionarLinha();
-    }
+    if (itensExistentes.length > 0) itensExistentes.forEach((item) => adicionarLinha(item)); else adicionarLinha();
 
-    // ---------- ações rápidas: status (PUT) e excluir (DELETE) ----------
     function getCookie(nome) {
         const linha = document.cookie.split("; ").find((l) => l.startsWith(nome + "="));
         return linha ? decodeURIComponent(linha.split("=")[1]) : "";
@@ -343,11 +281,8 @@
     const seletorStatus = document.getElementById("seletor-status");
     if (seletorStatus) {
         seletorStatus.addEventListener("change", function () {
-            fetch(URL_ORCAMENTO,{
-                method: "PUT",
-                headers: { "Content-Type": "application/json", "X-CSRFToken": csrftoken },
-                body: JSON.stringify({ status: this.value }),
-            }).then((r) => r.json()).then((dados) => { if (dados.success) location.reload(); });
+            fetch(URL_ORCAMENTO, { method: "PUT", headers: { "Content-Type": "application/json", "X-CSRFToken": csrftoken }, body: JSON.stringify({ status: this.value }) })
+            .then((r) => r.json()).then((dados) => { if (dados.success) location.reload(); });
         });
     }
 
@@ -355,10 +290,8 @@
     if (btnExcluir) {
         btnExcluir.addEventListener("click", function () {
             if (!confirm("Remover este orçamento?")) return;
-            fetch(URL_ORCAMENTO,{
-                method: "DELETE",
-                headers: { "X-CSRFToken": csrftoken },
-            }).then((r) => r.json()).then((dados) => { if (dados.success) window.location = dados.redirect; });
+            fetch(URL_ORCAMENTO, { method: "DELETE", headers: { "X-CSRFToken": csrftoken } })
+            .then((r) => r.json()).then((dados) => { if (dados.success) window.location = dados.redirect; });
         });
     }
 })();

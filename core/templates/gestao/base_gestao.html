@@ -6,330 +6,347 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block titulo %}Gestão{% endblock %} · ArtSkala</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --tinta: #14181C;
-            --tinta-painel: #1D2329;
-            --tinta-painel-alt: #232A31;
-            --linha: #33393F;
-            --papel: #E8E6DE;
-            --papel-fraco: #A9AA9F;
-            --latao: #C9A227;
-            --latao-fraco: #8A7226;
-            --patina: #3E7C74;
-            --patina-fraco: #2C5951;
-            --sucesso: #4C7A5B;
-            --alerta: #C9A227;
-            --recusa: #B5484D;
+    /* ============================================================
+       REFINO FINAL — GESTÃO RESPONSIVA SEM SCROLL QUEBRADO
+       ============================================================ */
 
-            --fonte-display: 'Fraunces', serif;
-            --fonte-corpo: 'Inter', sans-serif;
-            --fonte-dados: 'IBM Plex Mono', monospace;
+    body {
+        overflow-x: hidden;
+    }
+
+    .conteudo,
+    .painel,
+    .duas-colunas,
+    .grade-cartoes {
+        min-width: 0;
+    }
+
+    .conteudo {
+        max-width: 1360px;
+    }
+
+    .painel {
+        overflow: hidden;
+    }
+
+    .grade-cartoes {
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+
+    .duas-colunas {
+        grid-template-columns: minmax(0, 1.25fr) minmax(280px, .75fr);
+    }
+
+    .acoes-linha {
+        min-width: 0;
+    }
+
+    .acoes-linha .btn {
+        white-space: nowrap;
+    }
+
+    /* Remove scroll horizontal desnecessário */
+    .tabela-responsiva {
+        width: 100%;
+        overflow-x: visible;
+    }
+
+    table.ledger {
+        min-width: 0 !important;
+        width: 100%;
+        table-layout: auto;
+    }
+
+    table.ledger th,
+    table.ledger td {
+        overflow-wrap: anywhere;
+    }
+
+    table.ledger .num {
+        white-space: nowrap;
+    }
+
+    /* Use esta classe só quando a tabela realmente for grande */
+    .tabela-scroll {
+        width: 100%;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding-bottom: 8px;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .tabela-scroll table.ledger {
+        min-width: 860px !important;
+    }
+
+    .tabela-scroll::-webkit-scrollbar,
+    .nav-mobile::-webkit-scrollbar {
+        height: 9px;
+    }
+
+    .tabela-scroll::-webkit-scrollbar-track,
+    .nav-mobile::-webkit-scrollbar-track {
+        background: rgba(255,255,255,.04);
+        border-radius: 999px;
+    }
+
+    .tabela-scroll::-webkit-scrollbar-thumb,
+    .nav-mobile::-webkit-scrollbar-thumb {
+        background: linear-gradient(90deg, var(--ouro), var(--ouro-2));
+        border-radius: 999px;
+    }
+
+    .tabela-scroll {
+        scrollbar-width: thin;
+        scrollbar-color: var(--ouro) rgba(255,255,255,.04);
+    }
+
+    /* Status alinhados em cards */
+    .status-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+        gap: 12px;
+    }
+
+    .status-card {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 13px 14px;
+        border-radius: 15px;
+        border: 1px solid var(--linha);
+        background: rgba(255,255,255,.026);
+        min-width: 0;
+    }
+
+    .status-card-info {
+        min-width: 0;
+    }
+
+    .status-card-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 11px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: .07em;
+        color: var(--papel);
+        white-space: nowrap;
+    }
+
+    .status-card-label::before {
+        content: "";
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: currentColor;
+        flex: 0 0 auto;
+    }
+
+    .status-card-sub {
+        margin-top: 4px;
+        font-size: 12px;
+        color: var(--papel-fraco);
+    }
+
+    .status-card-num {
+        font-family: var(--fonte-dados);
+        font-size: 24px;
+        font-weight: 800;
+        color: var(--papel);
+        white-space: nowrap;
+    }
+
+    .status-card.RASCUNHO,
+    .status-card.PENDENTE {
+        color: var(--papel-fraco);
+    }
+
+    .status-card.ENVIADO {
+        color: var(--azul);
+    }
+
+    .status-card.APROVADO,
+    .status-card.PAGO,
+    .status-card.ENTREGUE {
+        color: var(--verde);
+    }
+
+    .status-card.RECUSADO,
+    .status-card.CANCELADO {
+        color: var(--vermelho);
+    }
+
+    .status-card.EXPIRADO,
+    .status-card.PEDIDO_ENVIADO {
+        color: var(--laranja);
+    }
+
+    /* Selos mais estáveis, sem quebrar alinhamento */
+    .selo {
+        transform: none !important;
+        line-height: 1;
+        min-height: 28px;
+        justify-content: center;
+    }
+
+    .selo.PEDIDO_ENVIADO {
+        color: var(--laranja);
+    }
+
+    .selo.PEDIDO_PENDENTE {
+        color: var(--papel-fraco);
+    }
+
+    .selo.PEDIDO_PAGO,
+    .selo.PEDIDO_ENTREGUE {
+        color: var(--verde);
+    }
+
+    .selo.PEDIDO_CANCELADO {
+        color: var(--vermelho);
+    }
+
+    /* Tabelas compactas */
+    .ledger-compacta th,
+    .ledger-compacta td {
+        padding: 11px 10px !important;
+    }
+
+    .col-titulo {
+        min-width: 170px;
+    }
+
+    .col-status {
+        width: 1%;
+        white-space: nowrap;
+    }
+
+    .col-num {
+        width: 1%;
+        white-space: nowrap;
+    }
+
+    /* Cards mobile mais bonitos */
+    .mobile-card {
+        transition: .18s ease;
+    }
+
+    .mobile-card:hover {
+        border-color: rgba(208,169,45,.35);
+        background: rgba(208,169,45,.045);
+    }
+
+    .mobile-card-valor {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 12px;
+        margin-top: 10px;
+    }
+
+    .mobile-card-valor .rotulo-mini {
+        color: var(--papel-fraco);
+        font-size: 12px;
+    }
+
+    .mobile-card-valor .valor-mini {
+        font-family: var(--fonte-dados);
+        font-size: 18px;
+        font-weight: 800;
+        white-space: nowrap;
+    }
+
+    .resumo-lista {
+        display: grid;
+        gap: 10px;
+    }
+
+    .resumo-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 14px;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--linha);
+    }
+
+    .resumo-item:last-child {
+        border-bottom: none;
+    }
+
+    .resumo-item strong {
+        font-family: var(--fonte-dados);
+        white-space: nowrap;
+    }
+
+    @media (max-width: 1100px) {
+        .duas-colunas {
+            grid-template-columns: 1fr;
         }
+    }
 
-        * { box-sizing: border-box; }
-
-        body {
-            margin: 0;
-            background: var(--tinta);
-            color: var(--papel);
-            font-family: var(--fonte-corpo);
-            font-size: 15px;
-            line-height: 1.5;
-        }
-
-        a { color: inherit; text-decoration: none; }
-
-        .layout {
-            display: grid;
-            grid-template-columns: 248px 1fr;
-            min-height: 100vh;
-        }
-
-        /* ---------- Sidebar ---------- */
-        .sidebar {
-            background: var(--tinta-painel);
-            border-right: 1px solid var(--linha);
-            padding: 28px 20px;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .marca {
-            font-family: var(--fonte-display);
-            font-size: 22px;
-            font-weight: 700;
-            letter-spacing: 0.02em;
-            margin-bottom: 4px;
-        }
-
-        .marca span { color: var(--latao); }
-
-        .marca-sub {
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.14em;
-            color: var(--papel-fraco);
-            margin-bottom: 32px;
-        }
-
-        .nav-secao {
-            font-size: 10px;
-            text-transform: uppercase;
-            letter-spacing: 0.14em;
-            color: var(--papel-fraco);
-            margin: 18px 0 8px 4px;
-        }
-
-        .nav-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 9px 12px;
-            border-radius: 4px;
-            font-size: 14px;
-            color: var(--papel-fraco);
-            border-left: 2px solid transparent;
-        }
-
-        .nav-item:hover {
-            background: var(--tinta-painel-alt);
-            color: var(--papel);
-        }
-
-        .nav-item.ativo {
-            color: var(--papel);
-            background: var(--tinta-painel-alt);
-            border-left: 2px solid var(--latao);
-        }
-
-        .nav-icone { width: 16px; text-align: center; opacity: 0.85; }
-
-        .sidebar-rodape {
-            margin-top: auto;
-            padding-top: 20px;
-            border-top: 1px solid var(--linha);
-            font-size: 12.5px;
-            color: var(--papel-fraco);
-        }
-
-        .sidebar-rodape a { color: var(--patina); }
-
-        /* ---------- Conteúdo ---------- */
+    @media (max-width: 860px) {
         .conteudo {
-            padding: 34px 42px 60px;
-            max-width: 1180px;
+            overflow-x: hidden;
         }
 
         .cabecalho-pagina {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-            gap: 20px;
-            margin-bottom: 28px;
-            flex-wrap: wrap;
+            gap: 14px;
         }
 
-        .eyebrow {
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.16em;
-            color: var(--latao);
-            margin-bottom: 6px;
-        }
-
-        h1.titulo-pagina {
-            font-family: var(--fonte-display);
-            font-size: 30px;
-            font-weight: 600;
-            margin: 0;
-        }
-
-        .subtitulo-pagina {
-            color: var(--papel-fraco);
-            font-size: 14px;
-            margin-top: 6px;
-        }
-
-        /* ---------- Componentes reutilizáveis ---------- */
-        .painel {
-            background: var(--tinta-painel);
-            border: 1px solid var(--linha);
-            border-radius: 6px;
-            padding: 22px 24px;
-        }
-
-        .grade-cartoes {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-            margin-bottom: 28px;
-        }
-
-        .cartao-stat {
-            background: var(--tinta-painel);
-            border: 1px solid var(--linha);
-            border-left: 3px solid var(--latao);
-            border-radius: 4px;
-            padding: 18px 20px;
-        }
-
-        .cartao-stat .rotulo {
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            color: var(--papel-fraco);
-            margin-bottom: 10px;
-        }
-
-        .cartao-stat .valor {
-            font-family: var(--fonte-dados);
-            font-size: 26px;
-            font-weight: 600;
-            font-variant-numeric: tabular-nums;
-        }
-
-        .cartao-stat.patina { border-left-color: var(--patina); }
-        .cartao-stat.recusa { border-left-color: var(--recusa); }
-
-        table.ledger {
+        .acoes-linha {
             width: 100%;
-            border-collapse: collapse;
         }
 
-        table.ledger th {
-            text-align: left;
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: var(--papel-fraco);
-            font-weight: 500;
-            padding: 10px 12px;
-            border-bottom: 1px solid var(--linha);
-        }
-
-        table.ledger td {
-            padding: 12px;
-            border-bottom: 1px solid var(--linha);
-            vertical-align: middle;
-        }
-
-        table.ledger tr:last-child td { border-bottom: none; }
-
-        table.ledger .num {
-            font-family: var(--fonte-dados);
-            font-variant-numeric: tabular-nums;
-            text-align: right;
-        }
-
-        table.ledger tbody tr:hover { background: var(--tinta-painel-alt); }
-
-        /* ---------- Selo de status (elemento assinatura) ---------- */
-        .selo {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 4px 11px 4px 9px;
-            border-radius: 999px;
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
-            border: 1px solid currentColor;
-            transform: rotate(-1.5deg);
-        }
-
-        .selo::before {
-            content: "";
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: currentColor;
-        }
-
-        .selo.RASCUNHO { color: var(--papel-fraco); }
-        .selo.ENVIADO { color: var(--patina); }
-        .selo.APROVADO { color: var(--sucesso); }
-        .selo.RECUSADO { color: var(--recusa); }
-        .selo.EXPIRADO { color: var(--alerta); }
-
-        /* ---------- Formulários ---------- */
-        label { font-size: 12.5px; color: var(--papel-fraco); display: block; margin-bottom: 6px; }
-
-        input, select, textarea {
+        .acoes-linha .btn,
+        .acoes-linha .campo {
             width: 100%;
-            background: var(--tinta);
-            border: 1px solid var(--linha);
-            color: var(--papel);
-            border-radius: 4px;
-            padding: 9px 11px;
-            font-family: var(--fonte-corpo);
-            font-size: 14px;
         }
 
-        input:focus, select:focus, textarea:focus {
-            outline: 2px solid var(--latao);
-            outline-offset: 1px;
+        .status-grid {
+            grid-template-columns: 1fr;
         }
 
-        .campo { margin-bottom: 16px; }
-
-        .linha-campos {
-            display: grid;
-            gap: 16px;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        .tabela-responsiva {
+            display: none;
         }
 
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 18px;
-            border-radius: 4px;
-            font-size: 14px;
-            font-weight: 600;
-            border: 1px solid transparent;
-            cursor: pointer;
+        .tabela-scroll {
+            display: none;
         }
 
-        .btn-primario { background: var(--latao); color: var(--tinta); }
-        .btn-primario:hover { background: #dab63a; }
-
-        .btn-secundario { background: transparent; border-color: var(--linha); color: var(--papel); }
-        .btn-secundario:hover { border-color: var(--papel-fraco); }
-
-        .btn-perigo { background: transparent; border-color: var(--recusa); color: var(--recusa); }
-
-        .mensagens { margin-bottom: 20px; }
-        .mensagem {
-            padding: 10px 14px;
-            border-radius: 4px;
-            font-size: 13.5px;
-            margin-bottom: 8px;
-            border-left: 3px solid var(--patina);
-            background: var(--tinta-painel-alt);
+        .mobile-card-list {
+            display: block;
         }
-        .mensagem.error { border-left-color: var(--recusa); }
-        .mensagem.success { border-left-color: var(--sucesso); }
-
-        .vazio {
-            text-align: center;
-            padding: 50px 20px;
-            color: var(--papel-fraco);
-        }
-
-        .vazio .fonte-display { font-family: var(--fonte-display); font-size: 20px; color: var(--papel); margin-bottom: 8px; }
-
-        @media (max-width: 860px) {
-            .layout { grid-template-columns: 1fr; }
-            .sidebar { display: none; }
-            .conteudo { padding: 24px; }
-        }
-    </style>
+    }
+</style>
     {% block extra_head %}{% endblock %}
 </head>
 <body>
+    <div class="topo-mobile">
+        <div class="topo-mobile-linha">
+            <div>
+                <div class="marca">Art<span>Skala</span></div>
+                <div class="marca-sub" style="margin:0;">Área de gestão</div>
+            </div>
+            <a href="{% url 'home' %}" class="btn btn-secundario" style="padding:8px 12px; min-height:36px;">Loja</a>
+        </div>
+        <nav class="nav-mobile">
+            <a href="{% url 'gestao_dashboard' %}" class="nav-item {% if secao_ativa == 'dashboard' %}ativo{% endif %}">◆ Dashboard</a>
+            <a href="{% url 'orcamentos' %}" class="nav-item {% if secao_ativa == 'orcamentos' %}ativo{% endif %}">▤ Orçamentos</a>
+            <a href="{% url 'gestao_relatorio' %}" class="nav-item {% if secao_ativa == 'relatorio' %}ativo{% endif %}">Σ Relatórios</a>
+            <a href="{% url 'gestao_pedidos' %}" class="nav-item {% if secao_ativa == 'pedidos' %}ativo{% endif %}">▣ Pedidos</a>
+            <a href="{% url 'gestao_perfil' %}" class="nav-item {% if secao_ativa == 'gestao_perfil' %}ativo{% endif %}">
+                <span class="nav-icone">●</span>Perfil da gestão
+            </a>
+        </nav>
+    </div>
+
     <div class="layout">
         <aside class="sidebar">
             <div>
@@ -338,25 +355,15 @@
             </div>
 
             <div class="nav-secao">Visão geral</div>
-            <a href="{% url 'gestao_dashboard' %}" class="nav-item {% if secao_ativa == 'dashboard' %}ativo{% endif %}">
-                <span class="nav-icone">◆</span> Dashboard
-            </a>
+            <a href="{% url 'gestao_dashboard' %}" class="nav-item {% if secao_ativa == 'dashboard' %}ativo{% endif %}"><span class="nav-icone">◆</span>Dashboard</a>
 
-            <div class="nav-secao">Orçamentos</div>
-            <a href="{% url 'orcamentos' %}" class="nav-item {% if secao_ativa == 'orcamentos' %}ativo{% endif %}">
-                <span class="nav-icone">▤</span> Meus orçamentos
-            </a>
-            <a href="{% url 'gestao_relatorio' %}" class="nav-item {% if secao_ativa == 'relatorio' %}ativo{% endif %}">
-                <span class="nav-icone">Σ</span> Relatórios
-            </a>
+            <div class="nav-secao">Comercial</div>
+            <a href="{% url 'orcamentos' %}" class="nav-item {% if secao_ativa == 'orcamentos' %}ativo{% endif %}"><span class="nav-icone">▤</span>Orçamentos</a>
+            <a href="{% url 'gestao_pedidos' %}" class="nav-item {% if secao_ativa == 'pedidos' %}ativo{% endif %}"><span class="nav-icone">▣</span>Pedidos do site</a>
+            <a href="{% url 'gestao_relatorio' %}" class="nav-item {% if secao_ativa == 'relatorio' %}ativo{% endif %}"><span class="nav-icone">Σ</span>Relatórios</a>
 
-            <div class="nav-secao">Loja</div>
-            <a href="{% url 'gestao_pedidos' %}" class="nav-item {% if secao_ativa == 'pedidos' %}ativo{% endif %}">
-                <span class="nav-icone">▣</span> Meus pedidos
-            </a>
-            <a href="{% url 'profile' %}" class="nav-item {% if secao_ativa == 'perfil' %}ativo{% endif %}">
-                <span class="nav-icone">●</span> Meu perfil
-            </a>
+            <div class="nav-secao">Conta</div>
+            <a href="{% url 'gestao_perfil' %}" class="nav-item {% if secao_ativa == 'gestao_perfil' %}ativo{% endif %}">● Perfil</a>
 
             <div class="sidebar-rodape">
                 {{ request.user.username }}<br>
@@ -367,14 +374,12 @@
         <main class="conteudo">
             {% if messages %}
                 <div class="mensagens">
-                    {% for message in messages %}
-                        <div class="mensagem {{ message.tags }}">{{ message }}</div>
-                    {% endfor %}
+                    {% for message in messages %}<div class="mensagem {{ message.tags }}">{{ message }}</div>{% endfor %}
                 </div>
             {% endif %}
-
             {% block conteudo %}{% endblock %}
         </main>
     </div>
+    {% block extra_js %}{% endblock %}
 </body>
 </html>

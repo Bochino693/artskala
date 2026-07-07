@@ -1,111 +1,228 @@
 {% extends "gestao/base_gestao.html" %}
-{% block titulo %}Relatório de orçamentos{% endblock %}
+{% block titulo %}Relatório financeiro{% endblock %}
 
 {% block conteudo %}
 <div class="cabecalho-pagina">
     <div>
         <div class="eyebrow">Relatórios</div>
-        <h1 class="titulo-pagina">Relatório de orçamentos</h1>
-        <div class="subtitulo-pagina">Somas e agrupamentos de tudo o que você já orçou.</div>
+        <h1 class="titulo-pagina">Relatório financeiro</h1>
+        <div class="subtitulo-pagina">
+            Receita, desconto, custo e lucro estimado dos orçamentos cadastrados.
+        </div>
     </div>
 </div>
 
-<div class="painel" style="margin-bottom: 20px;">
-    <form method="get" style="display: flex; gap: 14px; align-items: flex-end; flex-wrap: wrap;">
-        <div class="campo" style="margin-bottom: 0;">
+<div class="painel" style="margin-bottom:20px;">
+    <form method="get" class="acoes-linha">
+        <div class="campo" style="margin-bottom:0;">
             <label for="inicio">De</label>
             <input type="date" id="inicio" name="inicio" value="{{ inicio }}">
         </div>
-        <div class="campo" style="margin-bottom: 0;">
+
+        <div class="campo" style="margin-bottom:0;">
             <label for="fim">Até</label>
             <input type="date" id="fim" name="fim" value="{{ fim }}">
         </div>
+
         <button type="submit" class="btn btn-secundario">Aplicar período</button>
     </form>
 </div>
 
 <div class="grade-cartoes">
     <div class="cartao-stat">
-        <div class="rotulo">Valor bruto somado</div>
+        <div class="rotulo">Valor bruto</div>
         <div class="valor">R$ {{ soma_bruto|floatformat:2 }}</div>
+        <div class="apoio">Antes dos descontos</div>
     </div>
-    <div class="cartao-stat patina">
-        <div class="rotulo">Descontos concedidos</div>
-        <div class="valor">R$ {{ soma_desconto|floatformat:2 }}</div>
-    </div>
-    <div class="cartao-stat recusa">
+
+    <div class="cartao-stat azul">
         <div class="rotulo">Total líquido</div>
         <div class="valor">R$ {{ soma_total|floatformat:2 }}</div>
+        <div class="apoio">Depois dos descontos</div>
+    </div>
+
+    <div class="cartao-stat vermelho">
+        <div class="rotulo">Custo estimado</div>
+        <div class="valor">R$ {{ soma_custo|floatformat:2 }}</div>
+        <div class="apoio">Custos cadastrados</div>
+    </div>
+
+    <div class="cartao-stat verde">
+        <div class="rotulo">Lucro estimado</div>
+        <div class="valor">R$ {{ soma_lucro|floatformat:2 }}</div>
+        <div class="apoio">Resultado previsto</div>
     </div>
 </div>
 
-<div style="display: grid; grid-template-columns: 1fr 320px; gap: 20px; align-items: start;">
+<div class="duas-colunas">
+    <div class="painel">
+        <h2 class="painel-titulo">Evolução mensal</h2>
+        <canvas id="graficoRelatorio" height="120"></canvas>
+    </div>
 
     <div class="painel">
-        <h2 style="font-family: var(--fonte-display); font-size: 17px; margin: 0 0 16px;">Detalhamento por orçamento</h2>
-        {% if linhas %}
-        <table class="ledger">
+        <h2 class="painel-titulo">Resumo</h2>
+
+        <div class="resumo-lista">
+            <div class="resumo-item">
+                <span>Descontos</span>
+                <strong>R$ {{ soma_desconto|floatformat:2 }}</strong>
+            </div>
+
+            <div class="resumo-item">
+                <span>Ticket médio</span>
+                <strong>R$ {{ ticket_medio|floatformat:2 }}</strong>
+            </div>
+
+            {% for grupo in por_status %}
+            <div class="resumo-item">
+                <span class="selo {{ grupo.status }}">{{ grupo.status }}</span>
+                <strong>{{ grupo.total }}</strong>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div class="painel" style="margin-top:20px;">
+    <h2 class="painel-titulo">Detalhamento por orçamento</h2>
+
+    {% if linhas %}
+    <div class="tabela-scroll tabela-desktop">
+        <table class="ledger ledger-compacta">
             <thead>
                 <tr>
-                    <th>Título</th>
-                    <th>Status</th>
+                    <th class="col-titulo">Título</th>
+                    <th class="col-status">Status</th>
                     <th class="num">Bruto</th>
                     <th class="num">Desconto</th>
+                    <th class="num">Custo</th>
+                    <th class="num">Lucro</th>
                     <th class="num">Total</th>
                 </tr>
             </thead>
+
             <tbody>
                 {% for linha in linhas %}
                 <tr>
-                    <td><a href="{% url 'orcamento_detalhe' linha.orcamento.pk %}">{{ linha.orcamento.titulo }}</a></td>
-                    <td><span class="selo {{ linha.orcamento.status }}">{{ linha.orcamento.get_status_display }}</span></td>
+                    <td class="col-titulo">
+                        <a href="{% url 'orcamento_detalhe' linha.orcamento.pk %}">
+                            {{ linha.orcamento.titulo }}
+                        </a>
+                    </td>
+                    <td class="col-status">
+                        <span class="selo {{ linha.orcamento.status }}">
+                            {{ linha.orcamento.get_status_display }}
+                        </span>
+                    </td>
                     <td class="num">R$ {{ linha.bruto|floatformat:2 }}</td>
                     <td class="num">R$ {{ linha.desconto|floatformat:2 }}</td>
+                    <td class="num">R$ {{ linha.custo|floatformat:2 }}</td>
+                    <td class="num">R$ {{ linha.lucro|floatformat:2 }}</td>
                     <td class="num">R$ {{ linha.total|floatformat:2 }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
-            <tfoot>
-                <tr>
-                    <td colspan="2" style="border-bottom: none; font-weight: 600;">Total do período</td>
-                    <td class="num" style="border-bottom: none; font-weight: 600;">R$ {{ soma_bruto|floatformat:2 }}</td>
-                    <td class="num" style="border-bottom: none; font-weight: 600;">R$ {{ soma_desconto|floatformat:2 }}</td>
-                    <td class="num" style="border-bottom: none; font-weight: 600;">R$ {{ soma_total|floatformat:2 }}</td>
-                </tr>
-            </tfoot>
-        </table>
-        {% else %}
-        <div class="vazio">
-            <div class="fonte-display">Nada no período selecionado</div>
-            Ajuste as datas acima ou registre novos orçamentos.
-        </div>
-        {% endif %}
-    </div>
-
-    <div class="painel">
-        <h2 style="font-family: var(--fonte-display); font-size: 17px; margin: 0 0 16px;">Por status</h2>
-        <table class="ledger">
-            <tbody>
-                {% for grupo in por_status %}
-                <tr>
-                    <td><span class="selo {{ grupo.status }}">{{ grupo.status }}</span></td>
-                    <td class="num">{{ grupo.total }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-
-        <h2 style="font-family: var(--fonte-display); font-size: 17px; margin: 22px 0 14px;">Por mês</h2>
-        <table class="ledger">
-            <tbody>
-                {% for grupo in por_mes %}
-                <tr>
-                    <td>{{ grupo.mes|date:"m/Y" }}</td>
-                    <td class="num">{{ grupo.total }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
         </table>
     </div>
+
+    <div class="mobile-card-list">
+        {% for linha in linhas %}
+        <a class="mobile-card" href="{% url 'orcamento_detalhe' linha.orcamento.pk %}" style="display:block;">
+            <div class="mobile-card-topo">
+                <div>
+                    <div class="mobile-card-titulo">{{ linha.orcamento.titulo }}</div>
+                    <div class="mobile-card-meta">
+                        Bruto: R$ {{ linha.bruto|floatformat:2 }}
+                    </div>
+                </div>
+
+                <span class="selo {{ linha.orcamento.status }}">
+                    {{ linha.orcamento.get_status_display }}
+                </span>
+            </div>
+
+            <div class="resumo-lista">
+                <div class="resumo-item">
+                    <span>Desconto</span>
+                    <strong>R$ {{ linha.desconto|floatformat:2 }}</strong>
+                </div>
+                <div class="resumo-item">
+                    <span>Custo</span>
+                    <strong>R$ {{ linha.custo|floatformat:2 }}</strong>
+                </div>
+                <div class="resumo-item">
+                    <span>Lucro</span>
+                    <strong>R$ {{ linha.lucro|floatformat:2 }}</strong>
+                </div>
+                <div class="resumo-item">
+                    <span>Total</span>
+                    <strong>R$ {{ linha.total|floatformat:2 }}</strong>
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="vazio">
+        <div class="fonte-display">Nada no período</div>
+        Ajuste as datas ou registre novos orçamentos.
+    </div>
+    {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const labelsRel = {{ chart_labels|default:grafico_labels|default:"[]"|safe }};
+const receitasRel = {{ chart_receitas|default:grafico_receita|default:"[]"|safe }};
+const lucrosRel = {{ chart_lucros|default:grafico_lucro|default:"[]"|safe }};
+
+const grafico = document.getElementById('graficoRelatorio');
+
+if (grafico) {
+    new Chart(grafico, {
+        type: 'bar',
+        data: {
+            labels: labelsRel,
+            datasets: [
+                {
+                    label: 'Receita',
+                    data: receitasRel,
+                    borderWidth: 1
+                },
+                {
+                    label: 'Lucro',
+                    data: lucrosRel,
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    labels: {
+                        color: '#ece8dc',
+                        boxWidth: 12,
+                        usePointStyle: true
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    ticks: { color: '#aaa79a' },
+                    grid: { color: 'rgba(232,230,222,.08)' }
+                },
+                y: {
+                    ticks: { color: '#aaa79a' },
+                    grid: { color: 'rgba(232,230,222,.08)' }
+                }
+            }
+        }
+    });
+}
+</script>
 {% endblock %}
