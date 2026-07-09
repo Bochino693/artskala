@@ -176,6 +176,7 @@ USE_TZ = True
 # ============================================================
 # STATIC / MEDIA
 # ============================================================
+
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
@@ -193,7 +194,23 @@ USE_CLOUDINARY = all([
     CLOUDINARY_API_SECRET,
 ])
 
+# Em produção no Render, não deixe cair no storage local.
+if IS_RENDER and not USE_CLOUDINARY:
+    raise RuntimeError(
+        "Cloudinary não configurado. Configure CLOUDINARY_CLOUD_NAME, "
+        "CLOUDINARY_API_KEY e CLOUDINARY_API_SECRET no Render."
+    )
+
 if USE_CLOUDINARY:
+    import cloudinary
+
+    cloudinary.config(
+        cloud_name=CLOUDINARY_CLOUD_NAME,
+        api_key=CLOUDINARY_API_KEY,
+        api_secret=CLOUDINARY_API_SECRET,
+        secure=True,
+    )
+
     CLOUDINARY_STORAGE = {
         "CLOUD_NAME": CLOUDINARY_CLOUD_NAME,
         "API_KEY": CLOUDINARY_API_KEY,
@@ -209,7 +226,6 @@ if USE_CLOUDINARY:
         },
     }
 
-    # Com Cloudinary, o campo imagem.url já vira URL externa.
     MEDIA_URL = "/media/"
 
 else:
@@ -224,6 +240,8 @@ else:
 
     MEDIA_URL = "/media/"
     MEDIA_ROOT = BASE_DIR / "media"
+
+
 
 # Em Render, uploads locais em MEDIA_ROOT somem quando o serviço reinicia,
 # a menos que você use Persistent Disk ou serviço externo como Cloudinary/S3.
