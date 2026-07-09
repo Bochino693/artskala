@@ -75,8 +75,6 @@ for origin in [o.strip() for o in extra_csrf.split(",") if o.strip()]:
 # ============================================================
 
 INSTALLED_APPS = [
-    "cloudinary_storage",
-
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -180,6 +178,9 @@ USE_TZ = True
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
+# Compatibilidade para pacotes antigos que ainda procuram STATICFILES_STORAGE.
+STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
+
 # ============================================================
 # CLOUDINARY / MEDIA STORAGE
 # ============================================================
@@ -194,7 +195,6 @@ USE_CLOUDINARY = all([
     CLOUDINARY_API_SECRET,
 ])
 
-# Em produção no Render, não deixe cair no storage local.
 if IS_RENDER and not USE_CLOUDINARY:
     raise RuntimeError(
         "Cloudinary não configurado. Configure CLOUDINARY_CLOUD_NAME, "
@@ -226,6 +226,9 @@ if USE_CLOUDINARY:
         },
     }
 
+    # Compatibilidade para pacotes antigos.
+    DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
+
     MEDIA_URL = "/media/"
 
 else:
@@ -238,10 +241,10 @@ else:
         },
     }
 
+    DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
+
     MEDIA_URL = "/media/"
     MEDIA_ROOT = BASE_DIR / "media"
-
-
 
 # Em Render, uploads locais em MEDIA_ROOT somem quando o serviço reinicia,
 # a menos que você use Persistent Disk ou serviço externo como Cloudinary/S3.
