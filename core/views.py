@@ -293,12 +293,16 @@ class ProjectDetailView(View):
 class CartView(View):
     def get(self, request):
         if not request.user.is_authenticated:
-            return render(request, "cart.html", {"itens": [], "total": Decimal("0.00")})
+            messages.warning(request, "Faça login ou crie uma conta para acessar o carrinho.")
+            return redirect("login")
 
-        carrinho, _created = Carrinho.objects.get_or_create(usuario=request.user)
+        carrinho, _created = Carrinho.objects.get_or_create(
+            usuario=request.user
+        )
 
         itens = (
-            carrinho.itens.select_related("produto", "produto__categoria")
+            carrinho.itens
+            .select_related("produto", "produto__categoria")
             .prefetch_related("produto__imagens")
         )
 
@@ -317,14 +321,46 @@ class CartView(View):
 
 class AddToCartView(View):
     def post(self, request, pk):
+        is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest"
+
         if not request.user.is_authenticated:
-            messages.warning(request, "Faça login para adicionar produtos ao carrinho.")
+            if is_ajax:
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "auth_required": True,
+                        "redirect": reverse("login"),
+                        "message": "Faça login ou crie uma conta para adicionar ao carrinho.",
+                    },
+                    status=401,
+                )
+
+            messages.warning(
+                request,
+                "Faça login ou crie uma conta para adicionar produtos ao carrinho."
+            )
             return redirect("login")
 
-        produto = get_object_or_404(Produto, pk=pk, ativo=True)
+        produto = get_object_or_404(
+            Produto,
+            pk=pk,
+            ativo=True,
+        )
 
         if produto.estoque <= 0:
-            messages.warning(request, "Este produto está disponível somente sob consulta.")
+            if is_ajax:
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "message": "Este produto está disponível somente sob consulta.",
+                    },
+                    status=400,
+                )
+
+            messages.warning(
+                request,
+                "Este produto está disponível somente sob consulta."
+            )
             return redirect("product_detail", pk=produto.pk)
 
         try:
@@ -341,21 +377,48 @@ class AddToCartView(View):
         item, criado = ItemCarrinho.objects.get_or_create(
             carrinho=carrinho,
             produto=produto,
-            defaults={"quantidade": quantidade},
+            defaults={
+                "quantidade": quantidade,
+            },
         )
 
         if not criado:
             item.quantidade += quantidade
             item.save(update_fields=["quantidade", "modificado"])
 
-        messages.success(request, f"{produto.nome_produto} foi adicionado ao carrinho.")
+        total_itens, total_valor = _resumo_carrinho(carrinho)
 
+        if is_ajax:
+            return JsonResponse(
+                {
+                    "success": True,
+                    "message": "Produto adicionado ao carrinho.",
+                    "total_itens": total_itens,
+                    "total_valor": str(total_valor),
+                    "item_id": item.id,
+                    "item_quantidade": item.quantidade,
+                    "item_subtotal": str(item.subtotal()),
+                }
+            )
+
+        messages.success(
+            request,
+            f"{produto.nome_produto} foi adicionado ao carrinho."
+        )
         return redirect("cart")
+
 
 class UpdateCartItemView(View):
     def post(self, request, pk):
         if not request.user.is_authenticated:
-            return JsonResponse({"success": False}, status=401)
+            return JsonResponse(
+                {
+                    "success": False,
+                    "auth_required": True,
+                    "redirect": reverse("login"),
+                },
+                status=401,
+            )
 
         item = get_object_or_404(
             ItemCarrinho,
@@ -392,7 +455,11 @@ class UpdateCartItemView(View):
                 item.quantidade = nova_quantidade
                 item.save(update_fields=["quantidade", "modificado"])
 
-        carrinho = get_object_or_404(Carrinho, usuario=request.user)
+        carrinho = get_object_or_404(
+            Carrinho,
+            usuario=request.user,
+        )
+
         total_itens, total_valor = _resumo_carrinho(carrinho)
 
         return JsonResponse(
@@ -410,7 +477,14 @@ class UpdateCartItemView(View):
 class RemoveCartItemView(View):
     def post(self, request, pk):
         if not request.user.is_authenticated:
-            return JsonResponse({"success": False}, status=401)
+            return JsonResponse(
+                {
+                    "success": False,
+                    "auth_required": True,
+                    "redirect": reverse("login"),
+                },
+                status=401,
+            )
 
         item = get_object_or_404(
             ItemCarrinho,
@@ -420,7 +494,11 @@ class RemoveCartItemView(View):
 
         item.delete()
 
-        carrinho = get_object_or_404(Carrinho, usuario=request.user)
+        carrinho = get_object_or_404(
+            Carrinho,
+            usuario=request.user,
+        )
+
         total_itens, total_valor = _resumo_carrinho(carrinho)
 
         return JsonResponse(
@@ -430,7 +508,6 @@ class RemoveCartItemView(View):
                 "total_valor": str(total_valor),
             }
         )
-
 
 # ============================================================
 # CHECKOUT / PEDIDOS DO SITE
