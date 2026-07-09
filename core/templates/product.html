@@ -225,9 +225,14 @@
         margin-bottom: 28px;
     }
 
-    .detail-actions {
+    .detail-actions,
+    .product-actions {
         display: grid;
         gap: 12px;
+    }
+
+    .add-cart-form {
+        margin: 0;
     }
 
     .btn-modern {
@@ -414,6 +419,31 @@
         line-height: 1.75;
     }
 
+    .cart-global-alert {
+        position: fixed;
+        right: 22px;
+        bottom: 22px;
+        z-index: 9999;
+        background: #111111;
+        color: #ffffff;
+        border-radius: 999px;
+        padding: 14px 20px;
+        font-weight: 900;
+        box-shadow: 0 18px 45px rgba(0,0,0,.22);
+        opacity: 0;
+        transform: translateY(14px);
+        transition: 0.22s ease;
+    }
+
+    .cart-global-alert.show {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    .cart-global-alert.error {
+        background: #842029;
+    }
+
     @media (max-width: 991px) {
         .gallery-main {
             height: 360px;
@@ -440,6 +470,14 @@
 
         .cta-box {
             padding: 42px 22px;
+        }
+
+        .cart-global-alert {
+            left: 14px;
+            right: 14px;
+            bottom: 18px;
+            text-align: center;
+            border-radius: 22px;
         }
     }
 </style>
@@ -513,7 +551,9 @@
 
                     <div class="detail-price-row">
                         <p class="detail-price">
-                            R$ {{ produto.preco }}
+                            <span class="preco-brl" data-preco="{{ produto.preco }}">
+                                {{ produto.preco }}
+                            </span>
                         </p>
 
                         {% if produto.estoque > 0 %}
@@ -532,12 +572,32 @@
                     </p>
 
                     <div class="detail-actions">
-                        <a href="{% url 'home' %}#orcamento" class="btn btn-warning btn-modern">
-                            Solicitar orçamento
-                        </a>
+
+                        {% if produto.estoque > 0 %}
+                            <form
+                                method="post"
+                                action="{% url 'cart_add' produto.id %}"
+                                class="add-cart-form"
+                            >
+                                {% csrf_token %}
+
+                                <input type="hidden" name="quantidade" value="1">
+
+                                <button type="submit" class="btn btn-warning btn-modern w-100">
+                                    <i class="bi bi-cart-plus"></i>
+                                    Adicionar ao carrinho
+                                </button>
+                            </form>
+                        {% else %}
+                            <a href="{% url 'home' %}#orcamento" class="btn btn-warning btn-modern">
+                                Solicitar orçamento
+                            </a>
+                        {% endif %}
+
                         <a href="{% url 'products' %}" class="btn btn-outline-dark btn-modern">
                             Voltar ao catálogo
                         </a>
+
                     </div>
 
                     <div class="detail-info-list">
@@ -624,7 +684,9 @@
                             <div class="product-meta">
 
                                 <p class="product-price">
-                                    R$ {{ relacionado.preco }}
+                                    <span class="preco-brl" data-preco="{{ relacionado.preco }}">
+                                        {{ relacionado.preco }}
+                                    </span>
                                 </p>
 
                                 {% if relacionado.estoque > 0 %}
@@ -639,9 +701,34 @@
 
                             </div>
 
-                            <a href="{% url 'product_detail' relacionado.id %}" class="btn btn-dark btn-modern">
-                                Ver Produto
-                            </a>
+                            <div class="product-actions">
+
+                                {% if relacionado.estoque > 0 %}
+                                    <form
+                                        method="post"
+                                        action="{% url 'cart_add' relacionado.id %}"
+                                        class="add-cart-form"
+                                    >
+                                        {% csrf_token %}
+
+                                        <input type="hidden" name="quantidade" value="1">
+
+                                        <button type="submit" class="btn btn-warning btn-modern w-100">
+                                            <i class="bi bi-cart-plus"></i>
+                                            Adicionar ao carrinho
+                                        </button>
+                                    </form>
+                                {% else %}
+                                    <a href="{% url 'home' %}#orcamento" class="btn btn-warning btn-modern w-100">
+                                        Solicitar orçamento
+                                    </a>
+                                {% endif %}
+
+                                <a href="{% url 'product_detail' relacionado.id %}" class="btn btn-dark btn-modern w-100">
+                                    Ver Produto
+                                </a>
+
+                            </div>
 
                         </div>
 
@@ -711,14 +798,194 @@
 
 <script>
     function trocarImagem(el, url) {
-        document.getElementById('galleryMainImg').src = url;
+        const imagemPrincipal = document.getElementById("galleryMainImg");
 
-        document.querySelectorAll('.gallery-thumb').forEach(function (thumb) {
-            thumb.classList.remove('active');
+        if (imagemPrincipal) {
+            imagemPrincipal.src = url;
+        }
+
+        document.querySelectorAll(".gallery-thumb").forEach(function (thumb) {
+            thumb.classList.remove("active");
         });
 
-        el.classList.add('active');
+        el.classList.add("active");
     }
+
+    function getCookie(name) {
+        let cookieValue = null;
+
+        if (document.cookie && document.cookie !== "") {
+            const cookies = document.cookie.split(";");
+
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+
+                if (cookie.substring(0, name.length + 1) === (name + "=")) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+
+        return cookieValue;
+    }
+
+    function formatarMoedaBR(valor) {
+        let numero = valor;
+
+        if (typeof numero === "string") {
+            numero = numero
+                .trim()
+                .replace("R$", "")
+                .replace(/\s/g, "");
+
+            if (numero.includes(",")) {
+                numero = numero.replace(/\./g, "").replace(",", ".");
+            }
+
+            numero = Number(numero);
+        }
+
+        if (isNaN(numero)) {
+            numero = 0;
+        }
+
+        return new Intl.NumberFormat("pt-BR", {
+            style: "currency",
+            currency: "BRL",
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(numero);
+    }
+
+    function formatarTodosPrecos() {
+        document.querySelectorAll(".preco-brl").forEach(function (el) {
+            const valor = el.dataset.preco || el.textContent || "0";
+            el.textContent = formatarMoedaBR(valor);
+        });
+    }
+
+    function atualizarBadgeCarrinho(totalItens) {
+        document.querySelectorAll("[data-cart-count]").forEach(function (badge) {
+            badge.textContent = totalItens;
+
+            if (Number(totalItens) > 0) {
+                badge.classList.remove("d-none");
+            } else {
+                badge.classList.add("d-none");
+            }
+        });
+    }
+
+    function mostrarAvisoCarrinho(texto, erro) {
+        const antigo = document.querySelector(".cart-global-alert");
+
+        if (antigo) {
+            antigo.remove();
+        }
+
+        const aviso = document.createElement("div");
+        aviso.className = "cart-global-alert";
+        aviso.textContent = texto;
+
+        if (erro) {
+            aviso.classList.add("error");
+        }
+
+        document.body.appendChild(aviso);
+
+        setTimeout(function () {
+            aviso.classList.add("show");
+        }, 50);
+
+        setTimeout(function () {
+            aviso.classList.remove("show");
+
+            setTimeout(function () {
+                aviso.remove();
+            }, 250);
+        }, 2300);
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        formatarTodosPrecos();
+
+        document.addEventListener("submit", function (event) {
+            const form = event.target.closest(".add-cart-form");
+
+            if (!form) {
+                return;
+            }
+
+            event.preventDefault();
+
+            const botao = form.querySelector("button");
+            const textoOriginal = botao ? botao.innerHTML : "";
+
+            if (botao) {
+                botao.disabled = true;
+                botao.innerHTML = '<i class="bi bi-hourglass-split"></i> Adicionando...';
+            }
+
+            fetch(form.action, {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": getCookie("csrftoken"),
+                    "X-Requested-With": "XMLHttpRequest"
+                },
+                body: new FormData(form)
+            })
+            .then(function (response) {
+                if (response.status === 401) {
+                    return response.json().then(function (data) {
+                        window.location.href = data.redirect || "{% url 'login' %}";
+                        return null;
+                    });
+                }
+
+                if (!response.ok) {
+                    throw new Error("Erro ao adicionar.");
+                }
+
+                return response.json();
+            })
+            .then(function (data) {
+                if (!data) {
+                    return;
+                }
+
+                if (data.success) {
+                    atualizarBadgeCarrinho(data.total_itens);
+                    mostrarAvisoCarrinho("Produto adicionado ao carrinho.");
+
+                    if (botao) {
+                        botao.innerHTML = '<i class="bi bi-check-circle"></i> Adicionado';
+                    }
+                } else {
+                    mostrarAvisoCarrinho("Não foi possível adicionar ao carrinho.", true);
+
+                    if (botao) {
+                        botao.innerHTML = textoOriginal;
+                    }
+                }
+            })
+            .catch(function () {
+                mostrarAvisoCarrinho("Erro ao adicionar ao carrinho.", true);
+
+                if (botao) {
+                    botao.innerHTML = textoOriginal;
+                }
+            })
+            .finally(function () {
+                setTimeout(function () {
+                    if (botao) {
+                        botao.disabled = false;
+                        botao.innerHTML = textoOriginal;
+                    }
+                }, 1000);
+            });
+        });
+    });
 </script>
 
 {% endblock %}

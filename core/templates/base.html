@@ -445,6 +445,32 @@
                 grid-template-columns: 1fr;
             }
         }
+
+
+
+        .cart-dock-link {
+    position: relative;
+}
+
+.cart-count-badge {
+    position: absolute;
+    top: -7px;
+    right: -7px;
+    min-width: 23px;
+    height: 23px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: #ffffff;
+    color: var(--art-red);
+    border: 2px solid var(--art-red);
+    font-size: 0.72rem;
+    font-weight: 900;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22);
+}
     </style>
 
 </head>
@@ -608,12 +634,20 @@
             <span class="quick-dock-label">Perfil</span>
         </a>
 
-        <a
+       <a
             href="{% url 'cart' %}"
-            class="quick-dock-link main-action"
+            class="quick-dock-link main-action cart-dock-link"
             aria-label="Carrinho"
         >
             <i class="bi bi-cart3"></i>
+
+            <span
+                class="cart-count-badge {% if carrinho_total_itens|default:0 <= 0 %}d-none{% endif %}"
+                data-cart-count
+            >
+                {{ carrinho_total_itens|default:0 }}
+            </span>
+
             <span class="quick-dock-label">Carrinho</span>
         </a>
 

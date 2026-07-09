@@ -830,7 +830,9 @@
                             <div class="d-flex justify-content-between align-items-center mb-3">
 
                                 <strong class="fs-5">
-                                    R$ {{ produto.preco }}
+                                    <span class="preco-brl" data-preco="{{ produto.preco }}">
+                                        {{ produto.preco }}
+                                    </span>
                                 </strong>
 
                                 {% if produto.estoque > 0 %}
@@ -1281,5 +1283,40 @@
     </div>
 
 </section>
+
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const formatadorBRL = new Intl.NumberFormat("pt-BR", {
+            style: "currency",
+            currency: "BRL",
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+
+        document.querySelectorAll(".preco-brl").forEach(function (el) {
+            let valor = el.dataset.preco || el.textContent || "0";
+
+            valor = valor
+                .toString()
+                .trim()
+                .replace("R$", "")
+                .replace(/\s/g, "");
+
+            // Se vier "5.000,00", converte para 5000.00
+            if (valor.includes(",")) {
+                valor = valor.replace(/\./g, "").replace(",", ".");
+            }
+
+            const numero = Number(valor);
+
+            if (!isNaN(numero)) {
+                el.textContent = formatadorBRL.format(numero);
+            } else {
+                el.textContent = "R$ 0,00";
+            }
+        });
+    });
+</script>
 
 {% endblock %}

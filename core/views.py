@@ -318,16 +318,14 @@ class CartView(View):
 class AddToCartView(View):
     def post(self, request, pk):
         if not request.user.is_authenticated:
-            return JsonResponse(
-                {
-                    "success": False,
-                    "auth_required": True,
-                    "redirect": reverse("login"),
-                },
-                status=401,
-            )
+            messages.warning(request, "Faça login para adicionar produtos ao carrinho.")
+            return redirect("login")
 
         produto = get_object_or_404(Produto, pk=pk, ativo=True)
+
+        if produto.estoque <= 0:
+            messages.warning(request, "Este produto está disponível somente sob consulta.")
+            return redirect("product_detail", pk=produto.pk)
 
         try:
             quantidade = int(request.POST.get("quantidade", 1))
@@ -336,7 +334,9 @@ class AddToCartView(View):
 
         quantidade = max(1, quantidade)
 
-        carrinho, _created = Carrinho.objects.get_or_create(usuario=request.user)
+        carrinho, _created = Carrinho.objects.get_or_create(
+            usuario=request.user
+        )
 
         item, criado = ItemCarrinho.objects.get_or_create(
             carrinho=carrinho,
@@ -348,19 +348,9 @@ class AddToCartView(View):
             item.quantidade += quantidade
             item.save(update_fields=["quantidade", "modificado"])
 
-        total_itens, total_valor = _resumo_carrinho(carrinho)
+        messages.success(request, f"{produto.nome_produto} foi adicionado ao carrinho.")
 
-        return JsonResponse(
-            {
-                "success": True,
-                "total_itens": total_itens,
-                "total_valor": str(total_valor),
-                "item_id": item.id,
-                "item_quantidade": item.quantidade,
-                "item_subtotal": str(item.subtotal()),
-            }
-        )
-
+        return redirect("cart")
 
 class UpdateCartItemView(View):
     def post(self, request, pk):
