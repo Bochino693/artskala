@@ -935,12 +935,15 @@ class GestaoProdutosView(SuperuserGestaoRequiredMixin, View):
 
         if pk:
             produto = get_object_or_404(
-                Produto.objects.prefetch_related("imagens"),
+                Produto.objects.prefetch_related("imagens").select_related("categoria"),
                 pk=pk,
                 ativo=True,
             )
 
-        produtos = Produto.objects.filter(ativo=True).select_related("categoria").order_by("nome_produto")
+        qs_todos = Produto.objects.filter(ativo=True).select_related("categoria")
+        stats = _stats_produtos(qs_todos)
+
+        produtos = qs_todos.order_by("nome_produto")
 
         busca = request.GET.get("q", "").strip()
         categoria_filtro = request.GET.get("categoria", "").strip()
@@ -962,6 +965,7 @@ class GestaoProdutosView(SuperuserGestaoRequiredMixin, View):
             "categoria_filtro": categoria_filtro,
             "secao_ativa": "produtos",
         }
+        ctx.update(stats)
 
         return render(request, self.template_name, ctx)
 
@@ -1048,7 +1052,10 @@ class GestaoProjetosView(SuperuserGestaoRequiredMixin, View):
                 ativo=True,
             )
 
-        projetos = Projeto.objects.filter(ativo=True).order_by("-criacao")
+        qs_todos = Projeto.objects.filter(ativo=True)
+        stats = _stats_projetos(qs_todos)
+
+        projetos = qs_todos.order_by("-criacao")
 
         busca = request.GET.get("q", "").strip()
 
@@ -1065,6 +1072,7 @@ class GestaoProjetosView(SuperuserGestaoRequiredMixin, View):
             "busca": busca,
             "secao_ativa": "projetos",
         }
+        ctx.update(stats)
 
         return render(request, self.template_name, ctx)
 
@@ -1118,6 +1126,55 @@ class GestaoProjetosView(SuperuserGestaoRequiredMixin, View):
                 "redirect": reverse("gestao_projetos"),
             }
         )
+
+
+def _stats_produtos(qs_todos):
+    """Calcula os cartões de estatística da tela de produtos a partir do queryset completo (sem filtros de busca)."""
+    total_produtos = qs_todos.count()
+    valor_estoque_total = Decimal("0.00")
+    custo_estoque_total = Decimal("0.00")
+    produtos_sem_estoque = 0
+
+    for produto in qs_todos:
+        valor_estoque_total += produto.preco * produto.estoque
+        custo_estoque_total += produto.custo * produto.estoque
+        if produto.estoque <= 0:
+            produtos_sem_estoque += 1
+
+    lucro_estoque_total = valor_estoque_total - custo_estoque_total
+
+    return {
+        "total_produtos": total_produtos,
+        "valor_estoque_total": valor_estoque_total,
+        "custo_estoque_total": custo_estoque_total,
+        "lucro_estoque_total": lucro_estoque_total,
+        "produtos_sem_estoque": produtos_sem_estoque,
+    }
+
+
+def _stats_projetos(qs_todos):
+    """Calcula os cartões de estatística da tela de projetos a partir do queryset completo (sem filtros de busca)."""
+    total_projetos = qs_todos.count()
+    valor_total_estimado = Decimal("0.00")
+    custo_total_estimado = Decimal("0.00")
+    projetos_futuros = 0
+    hoje = timezone.now().date()
+
+    for projeto in qs_todos:
+        valor_total_estimado += projeto.valor_estimado
+        custo_total_estimado += projeto.custo_estimado
+        if projeto.data_execucao and projeto.data_execucao >= hoje:
+            projetos_futuros += 1
+
+    lucro_total_estimado = valor_total_estimado - custo_total_estimado
+
+    return {
+        "total_projetos": total_projetos,
+        "valor_total_estimado": valor_total_estimado,
+        "custo_total_estimado": custo_total_estimado,
+        "lucro_total_estimado": lucro_total_estimado,
+        "projetos_futuros": projetos_futuros,
+    }
 
 
 # ============================================================
@@ -1340,6 +1397,9 @@ class OrcamentoView(SuperuserGestaoRequiredMixin, View):
                 "redirect": reverse("orcamentos"),
             }
         )
+
+
+
 
 
 # ============================================================

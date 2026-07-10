@@ -1,0 +1,281 @@
+{% extends "gestao/base.html" %}
+
+{% block titulo %}Produtos{% endblock %}
+
+{% block conteudo %}
+<div class="cabecalho-pagina">
+    <div>
+        <div class="eyebrow">Catálogo</div>
+        <h1 class="titulo-pagina">Produtos</h1>
+        <p class="subtitulo-pagina">
+            Cadastre, edite e acompanhe o catálogo de produtos da loja, incluindo custo,
+            preço de venda e margem de lucro.
+        </p>
+    </div>
+
+    {% if produto %}
+        <div class="acoes-linha">
+            <a href="{% url 'gestao_produtos' %}" class="btn btn-secundario">+ Novo produto</a>
+        </div>
+    {% endif %}
+</div>
+
+<div class="grade-cartoes">
+    <div class="cartao-stat">
+        <div class="rotulo">Produtos ativos</div>
+        <div class="valor">{{ total_produtos }}</div>
+    </div>
+
+    <div class="cartao-stat azul">
+        <div class="rotulo">Valor em estoque</div>
+        <div class="valor">R$ {{ valor_estoque_total|floatformat:2 }}</div>
+        <div class="apoio">Preço de venda × quantidade</div>
+    </div>
+
+    <div class="cartao-stat verde">
+        <div class="rotulo">Lucro potencial em estoque</div>
+        <div class="valor">R$ {{ lucro_estoque_total|floatformat:2 }}</div>
+        <div class="apoio">Estimado sobre o estoque atual</div>
+    </div>
+
+    <div class="cartao-stat vermelho">
+        <div class="rotulo">Sem estoque</div>
+        <div class="valor">{{ produtos_sem_estoque }}</div>
+        <div class="apoio">Produtos com 0 unidades</div>
+    </div>
+</div>
+
+<div class="duas-colunas">
+    <div class="painel">
+        <h2 class="painel-titulo">Lista de produtos</h2>
+
+        <form method="get" class="linha-campos" style="align-items: end; margin-bottom: 18px;">
+            <div class="campo" style="margin-bottom: 0;">
+                <label for="q">Buscar</label>
+                <input type="text" id="q" name="q" value="{{ busca }}" placeholder="Nome ou descrição...">
+            </div>
+
+            <div class="campo" style="margin-bottom: 0;">
+                <label for="categoria_filtro">Categoria</label>
+                <select id="categoria_filtro" name="categoria">
+                    <option value="">Todas</option>
+                    {% for categoria in categorias %}
+                        <option value="{{ categoria.id }}" {% if categoria_filtro == categoria.id|stringformat:"s" %}selected{% endif %}>
+                            {{ categoria.nome_categoria }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="campo" style="margin-bottom: 0;">
+                <button type="submit" class="btn btn-secundario" style="width: 100%;">Filtrar</button>
+            </div>
+        </form>
+
+        {% if produtos %}
+            <div class="tabela-desktop">
+                <div class="tabela-scroll">
+                    <table class="ledger">
+                        <thead>
+                            <tr>
+                                <th class="col-titulo">Produto</th>
+                                <th>Categoria</th>
+                                <th class="num">Preço</th>
+                                <th class="num">Custo</th>
+                                <th class="num">Margem</th>
+                                <th class="num">Estoque</th>
+                                <th class="col-num"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in produtos %}
+                                <tr>
+                                    <td class="col-titulo">{{ p.nome_produto }}</td>
+                                    <td>{{ p.categoria.nome_categoria }}</td>
+                                    <td class="num">R$ {{ p.preco|floatformat:2 }}</td>
+                                    <td class="num">R$ {{ p.custo|floatformat:2 }}</td>
+                                    <td class="num">{{ p.margem_lucro_percentual|floatformat:1 }}%</td>
+                                    <td class="num">
+                                        {% if p.estoque <= 0 %}
+                                            <span class="selo RECUSADO">Zerado</span>
+                                        {% else %}
+                                            {{ p.estoque }}
+                                        {% endif %}
+                                    </td>
+                                    <td class="col-num">
+                                        <div class="acoes-linha">
+                                            <a href="{% url 'gestao_produto_detalhe' p.pk %}" class="btn btn-secundario" style="padding: 7px 12px; min-height: 34px;">
+                                                Editar
+                                            </a>
+                                            <button type="button" class="btn btn-perigo" style="padding: 7px 12px; min-height: 34px;" onclick="excluirProduto({{ p.pk }})">
+                                                Excluir
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="mobile-card-list">
+                {% for p in produtos %}
+                    <div class="mobile-card">
+                        <a href="{% url 'gestao_produto_detalhe' p.pk %}" style="display: block;">
+                            <div class="mobile-card-topo">
+                                <div>
+                                    <div class="mobile-card-titulo">{{ p.nome_produto }}</div>
+                                    <div class="mobile-card-meta">{{ p.categoria.nome_categoria }} · Estoque: {{ p.estoque }}</div>
+                                </div>
+                            </div>
+                            <div class="mobile-card-valor">
+                                <div>
+                                    <div class="rotulo-mini">Preço</div>
+                                    <div class="valor-mini">R$ {{ p.preco|floatformat:2 }}</div>
+                                </div>
+                                <div>
+                                    <div class="rotulo-mini">Margem</div>
+                                    <div class="valor-mini">{{ p.margem_lucro_percentual|floatformat:1 }}%</div>
+                                </div>
+                            </div>
+                        </a>
+                        <div class="acoes-linha" style="margin-top: 12px;">
+                            <a href="{% url 'gestao_produto_detalhe' p.pk %}" class="btn btn-secundario" style="flex: 1;">Editar</a>
+                            <button type="button" class="btn btn-perigo" style="flex: 1;" onclick="excluirProduto({{ p.pk }})">Excluir</button>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="vazio">
+                <div class="fonte-display">Nenhum produto encontrado</div>
+                <p>Ajuste os filtros de busca ou cadastre um novo produto ao lado.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="painel">
+        <h2 class="painel-titulo">{% if produto %}Editar produto{% else %}Novo produto{% endif %}</h2>
+
+        <form method="post"
+              enctype="multipart/form-data"
+              action="{% if produto %}{% url 'gestao_produto_detalhe' produto.pk %}{% else %}{% url 'gestao_produtos' %}{% endif %}">
+            {% csrf_token %}
+
+            <div class="campo">
+                <label for="nome_produto">Nome do produto</label>
+                <input type="text" id="nome_produto" name="nome_produto" value="{{ produto.nome_produto|default:'' }}" required>
+            </div>
+
+            <div class="campo">
+                <label for="categoria_id">Categoria</label>
+                <select id="categoria_id" name="categoria" required>
+                    <option value="">Selecione...</option>
+                    {% for categoria in categorias %}
+                        <option value="{{ categoria.id }}" {% if produto and produto.categoria_id == categoria.id %}selected{% endif %}>
+                            {{ categoria.nome_categoria }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="campo">
+                <label for="descricao_produto">Descrição</label>
+                <textarea id="descricao_produto" name="descricao_produto" rows="3" maxlength="500">{{ produto.descricao_produto|default:'' }}</textarea>
+            </div>
+
+            <div class="linha-campos">
+                <div class="campo">
+                    <label for="preco">Preço de venda (R$)</label>
+                    <input type="number" step="0.01" min="0" id="preco" name="preco" value="{{ produto.preco|default:'0.00' }}">
+                </div>
+
+                <div class="campo">
+                    <label for="custo">Custo interno (R$)</label>
+                    <input type="number" step="0.01" min="0" id="custo" name="custo" value="{{ produto.custo|default:'0.00' }}">
+                </div>
+            </div>
+
+            <div class="linha-campos">
+                <div class="campo">
+                    <label for="estoque">Estoque</label>
+                    <input type="number" step="1" min="0" id="estoque" name="estoque" value="{{ produto.estoque|default:'0' }}">
+                </div>
+
+                <div class="campo">
+                    <label for="avaliacao">Avaliação (0 a 5)</label>
+                    <input type="number" step="0.01" min="0" max="5" id="avaliacao" name="avaliacao" value="{{ produto.avaliacao|default:'0.00' }}">
+                </div>
+            </div>
+
+            {% if produto and produto.imagens.all %}
+                <div class="campo">
+                    <label>Imagens atuais</label>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 10px;">
+                        {% for imagem in produto.imagens.all %}
+                            {% if imagem.imagem %}
+                                <label style="cursor: pointer; text-align: center; font-size: 11px; color: var(--papel-fraco);">
+                                    <img src="{{ imagem.imagem.url }}" style="border-radius: 10px; border: 1px solid var(--linha); margin-bottom: 4px; aspect-ratio: 1; object-fit: cover;">
+                                    <input type="checkbox" name="apagar_imagens[]" value="{{ imagem.id }}" style="width: auto; vertical-align: middle;">
+                                    apagar
+                                </label>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+
+            <div class="campo">
+                <label for="imagens">Adicionar imagens</label>
+                <input type="file" id="imagens" name="imagens" multiple accept="image/*">
+            </div>
+
+            <div class="acoes-linha">
+                <button type="submit" class="btn btn-primario">
+                    {% if produto %}Salvar alterações{% else %}Cadastrar produto{% endif %}
+                </button>
+
+                {% if produto %}
+                    <a href="{% url 'gestao_produtos' %}" class="btn btn-secundario">Cancelar</a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function getCookie(name) {
+        const valor = `; ${document.cookie}`;
+        const partes = valor.split(`; ${name}=`);
+        if (partes.length === 2) return partes.pop().split(';').shift();
+        return null;
+    }
+
+    function excluirProduto(pk) {
+        if (!confirm('Tem certeza que deseja excluir este produto? Esta ação não pode ser desfeita.')) {
+            return;
+        }
+
+        const urlBase = "{% url 'gestao_produto_detalhe' 1 %}".replace('/1/', `/${pk}/`);
+
+        fetch(urlBase, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+            },
+        })
+            .then((res) => res.json())
+            .then((dados) => {
+                if (dados.success) {
+                    window.location.href = dados.redirect;
+                } else {
+                    alert('Não foi possível excluir o produto.');
+                }
+            })
+            .catch(() => alert('Erro ao excluir o produto. Tente novamente.'));
+    }
+</script>
+{% endblock %}

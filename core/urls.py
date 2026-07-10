@@ -26,7 +26,10 @@ from .views import (
     OrcamentoView,
     GestaoDashboardView,
     GestaoPedidosView,
-    GestaoPerfilView
+    GestaoPerfilView,
+    GestaoProdutosView,
+    GestaoProjetosView,
+
 
 
 )
@@ -69,6 +72,15 @@ urlpatterns = [
     path("gestao/", GestaoDashboardView.as_view(), name="gestao_dashboard"),
     path("gestao/pedidos/", GestaoPedidosView.as_view(), name="gestao_pedidos"),
     path("gestao/relatorio/", RelatorioOrcamentosView.as_view(), name="gestao_relatorio"),
+
+    # Produtos: sem pk = lista + formulário de novo produto (GET) / criação (POST)
+    # com pk = edição (GET/POST) e exclusão lógica (DELETE)
+    path("gestao/produtos/", GestaoProdutosView.as_view(), name="gestao_produtos"),
+    path("gestao/produtos/<int:pk>/", GestaoProdutosView.as_view(), name="gestao_produto_detalhe"),
+
+    # Projetos: mesmo padrão dos produtos
+    path("gestao/projetos/", GestaoProjetosView.as_view(), name="gestao_projetos"),
+    path("gestao/projetos/<int:pk>/", GestaoProjetosView.as_view(), name="gestao_projeto_detalhe"),
 
     # Uma unica view cuida de listar, criar, editar, trocar status e excluir.
     path("gestao/orcamentos/", OrcamentoView.as_view(), name="orcamentos"),

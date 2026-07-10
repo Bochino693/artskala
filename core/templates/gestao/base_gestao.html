@@ -868,6 +868,14 @@
                 ◆ Dashboard
             </a>
 
+            <a href="{% url 'gestao_produtos' %}" class="nav-item {% if secao_ativa == 'produtos' %}ativo{% endif %}">
+                ◈ Produtos
+            </a>
+
+            <a href="{% url 'gestao_projetos' %}" class="nav-item {% if secao_ativa == 'projetos' %}ativo{% endif %}">
+                ▧ Projetos
+            </a>
+
             <a href="{% url 'orcamentos' %}" class="nav-item {% if secao_ativa == 'orcamentos' %}ativo{% endif %}">
                 ▤ Orçamentos
             </a>
@@ -898,6 +906,18 @@
             <a href="{% url 'gestao_dashboard' %}" class="nav-item {% if secao_ativa == 'dashboard' %}ativo{% endif %}">
                 <span class="nav-icone">◆</span>
                 Dashboard
+            </a>
+
+            <div class="nav-secao">Catálogo</div>
+
+            <a href="{% url 'gestao_produtos' %}" class="nav-item {% if secao_ativa == 'produtos' %}ativo{% endif %}">
+                <span class="nav-icone">◈</span>
+                Produtos
+            </a>
+
+            <a href="{% url 'gestao_projetos' %}" class="nav-item {% if secao_ativa == 'projetos' %}ativo{% endif %}">
+                <span class="nav-icone">▧</span>
+                Projetos
             </a>
 
             <div class="nav-secao">Comercial</div>

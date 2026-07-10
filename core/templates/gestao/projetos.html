@@ -1,0 +1,250 @@
+{% extends "gestao/base.html" %}
+
+{% block titulo %}Projetos{% endblock %}
+
+{% block conteudo %}
+<div class="cabecalho-pagina">
+    <div>
+        <div class="eyebrow">Catálogo</div>
+        <h1 class="titulo-pagina">Projetos</h1>
+        <p class="subtitulo-pagina">
+            Cadastre projetos sob medida, com valor estimado, custo interno e prazo de execução,
+            para usá-los em orçamentos.
+        </p>
+    </div>
+
+    {% if projeto %}
+        <div class="acoes-linha">
+            <a href="{% url 'gestao_projetos' %}" class="btn btn-secundario">+ Novo projeto</a>
+        </div>
+    {% endif %}
+</div>
+
+<div class="grade-cartoes">
+    <div class="cartao-stat">
+        <div class="rotulo">Projetos ativos</div>
+        <div class="valor">{{ total_projetos }}</div>
+    </div>
+
+    <div class="cartao-stat azul">
+        <div class="rotulo">Valor total estimado</div>
+        <div class="valor">R$ {{ valor_total_estimado|floatformat:2 }}</div>
+    </div>
+
+    <div class="cartao-stat verde">
+        <div class="rotulo">Lucro total estimado</div>
+        <div class="valor">R$ {{ lucro_total_estimado|floatformat:2 }}</div>
+    </div>
+
+    <div class="cartao-stat">
+        <div class="rotulo">Com execução futura</div>
+        <div class="valor">{{ projetos_futuros }}</div>
+        <div class="apoio">Data de execução a partir de hoje</div>
+    </div>
+</div>
+
+<div class="duas-colunas">
+    <div class="painel">
+        <h2 class="painel-titulo">Lista de projetos</h2>
+
+        <form method="get" class="linha-campos" style="align-items: end; margin-bottom: 18px;">
+            <div class="campo" style="margin-bottom: 0;">
+                <label for="q">Buscar</label>
+                <input type="text" id="q" name="q" value="{{ busca }}" placeholder="Título, cliente ou descrição...">
+            </div>
+
+            <div class="campo" style="margin-bottom: 0;">
+                <button type="submit" class="btn btn-secundario" style="width: 100%;">Filtrar</button>
+            </div>
+        </form>
+
+        {% if projetos %}
+            <div class="tabela-desktop">
+                <div class="tabela-scroll">
+                    <table class="ledger">
+                        <thead>
+                            <tr>
+                                <th class="col-titulo">Projeto</th>
+                                <th>Cliente</th>
+                                <th>Execução</th>
+                                <th class="num">Valor</th>
+                                <th class="num">Custo</th>
+                                <th class="num">Margem</th>
+                                <th class="col-num"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for proj in projetos %}
+                                <tr>
+                                    <td class="col-titulo">{{ proj.titulo }}</td>
+                                    <td>{{ proj.cliente|default:"—" }}</td>
+                                    <td>{{ proj.data_execucao|date:"d/m/Y"|default:"—" }}</td>
+                                    <td class="num">R$ {{ proj.valor_estimado|floatformat:2 }}</td>
+                                    <td class="num">R$ {{ proj.custo_estimado|floatformat:2 }}</td>
+                                    <td class="num">{{ proj.margem_lucro_percentual|floatformat:1 }}%</td>
+                                    <td class="col-num">
+                                        <div class="acoes-linha">
+                                            <a href="{% url 'gestao_projeto_detalhe' proj.pk %}" class="btn btn-secundario" style="padding: 7px 12px; min-height: 34px;">
+                                                Editar
+                                            </a>
+                                            <button type="button" class="btn btn-perigo" style="padding: 7px 12px; min-height: 34px;" onclick="excluirProjeto({{ proj.pk }})">
+                                                Excluir
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="mobile-card-list">
+                {% for proj in projetos %}
+                    <div class="mobile-card">
+                        <a href="{% url 'gestao_projeto_detalhe' proj.pk %}" style="display: block;">
+                            <div class="mobile-card-topo">
+                                <div>
+                                    <div class="mobile-card-titulo">{{ proj.titulo }}</div>
+                                    <div class="mobile-card-meta">
+                                        {{ proj.cliente|default:"Sem cliente" }} ·
+                                        {{ proj.data_execucao|date:"d/m/Y"|default:"Sem data" }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mobile-card-valor">
+                                <div>
+                                    <div class="rotulo-mini">Valor</div>
+                                    <div class="valor-mini">R$ {{ proj.valor_estimado|floatformat:2 }}</div>
+                                </div>
+                                <div>
+                                    <div class="rotulo-mini">Margem</div>
+                                    <div class="valor-mini">{{ proj.margem_lucro_percentual|floatformat:1 }}%</div>
+                                </div>
+                            </div>
+                        </a>
+                        <div class="acoes-linha" style="margin-top: 12px;">
+                            <a href="{% url 'gestao_projeto_detalhe' proj.pk %}" class="btn btn-secundario" style="flex: 1;">Editar</a>
+                            <button type="button" class="btn btn-perigo" style="flex: 1;" onclick="excluirProjeto({{ proj.pk }})">Excluir</button>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="vazio">
+                <div class="fonte-display">Nenhum projeto encontrado</div>
+                <p>Ajuste os filtros de busca ou cadastre um novo projeto ao lado.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="painel">
+        <h2 class="painel-titulo">{% if projeto %}Editar projeto{% else %}Novo projeto{% endif %}</h2>
+
+        <form method="post"
+              enctype="multipart/form-data"
+              action="{% if projeto %}{% url 'gestao_projeto_detalhe' projeto.pk %}{% else %}{% url 'gestao_projetos' %}{% endif %}">
+            {% csrf_token %}
+
+            <div class="campo">
+                <label for="titulo">Título do projeto</label>
+                <input type="text" id="titulo" name="titulo" value="{{ projeto.titulo|default:'' }}" required>
+            </div>
+
+            <div class="campo">
+                <label for="cliente">Cliente</label>
+                <input type="text" id="cliente" name="cliente" value="{{ projeto.cliente|default:'' }}">
+            </div>
+
+            <div class="campo">
+                <label for="descricao">Descrição</label>
+                <textarea id="descricao" name="descricao" rows="3">{{ projeto.descricao|default:'' }}</textarea>
+            </div>
+
+            <div class="campo">
+                <label for="data_execucao">Data de execução</label>
+                <input type="date" id="data_execucao" name="data_execucao" value="{{ projeto.data_execucao|date:'Y-m-d'|default:'' }}">
+            </div>
+
+            <div class="linha-campos">
+                <div class="campo">
+                    <label for="valor_estimado">Valor estimado (R$)</label>
+                    <input type="number" step="0.01" min="0" id="valor_estimado" name="valor_estimado" value="{{ projeto.valor_estimado|default:'0.00' }}">
+                </div>
+
+                <div class="campo">
+                    <label for="custo_estimado">Custo estimado (R$)</label>
+                    <input type="number" step="0.01" min="0" id="custo_estimado" name="custo_estimado" value="{{ projeto.custo_estimado|default:'0.00' }}">
+                </div>
+            </div>
+
+            {% if projeto and projeto.imagens.all %}
+                <div class="campo">
+                    <label>Imagens atuais</label>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 10px;">
+                        {% for imagem in projeto.imagens.all %}
+                            {% if imagem.imagem %}
+                                <label style="cursor: pointer; text-align: center; font-size: 11px; color: var(--papel-fraco);">
+                                    <img src="{{ imagem.imagem.url }}" style="border-radius: 10px; border: 1px solid var(--linha); margin-bottom: 4px; aspect-ratio: 1; object-fit: cover;">
+                                    <input type="checkbox" name="apagar_imagens[]" value="{{ imagem.id }}" style="width: auto; vertical-align: middle;">
+                                    apagar
+                                </label>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+
+            <div class="campo">
+                <label for="imagens">Adicionar imagens</label>
+                <input type="file" id="imagens" name="imagens" multiple accept="image/*">
+            </div>
+
+            <div class="acoes-linha">
+                <button type="submit" class="btn btn-primario">
+                    {% if projeto %}Salvar alterações{% else %}Cadastrar projeto{% endif %}
+                </button>
+
+                {% if projeto %}
+                    <a href="{% url 'gestao_projetos' %}" class="btn btn-secundario">Cancelar</a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function getCookie(name) {
+        const valor = `; ${document.cookie}`;
+        const partes = valor.split(`; ${name}=`);
+        if (partes.length === 2) return partes.pop().split(';').shift();
+        return null;
+    }
+
+    function excluirProjeto(pk) {
+        if (!confirm('Tem certeza que deseja excluir este projeto? Esta ação não pode ser desfeita.')) {
+            return;
+        }
+
+        const urlBase = "{% url 'gestao_projeto_detalhe' 1 %}".replace('/1/', `/${pk}/`);
+
+        fetch(urlBase, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+            },
+        })
+            .then((res) => res.json())
+            .then((dados) => {
+                if (dados.success) {
+                    window.location.href = dados.redirect;
+                } else {
+                    alert('Não foi possível excluir o projeto.');
+                }
+            })
+            .catch(() => alert('Erro ao excluir o projeto. Tente novamente.'));
+    }
+</script>
+{% endblock %}
