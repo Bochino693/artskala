@@ -829,10 +829,10 @@ class PaymentView(View):
         return render(request, "payment.html")
 
 
+
 # ============================================================
 # ÁREA INTERNA — DASHBOARD
 # ============================================================
-
 class GestaoDashboardView(SuperuserGestaoRequiredMixin, View):
     login_url = "login"
 

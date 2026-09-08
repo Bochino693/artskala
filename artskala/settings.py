@@ -66,6 +66,8 @@ ALLOWED_HOSTS = [
     "localhost",
     "127.0.0.1",
     "artskala.vercel.app",
+    "artskala.com.br",
+    "www.artskala.com.br",
 ]
 
 CSRF_TRUSTED_ORIGINS = [
