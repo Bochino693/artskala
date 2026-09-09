@@ -1,0 +1,12 @@
+{% load static %}
+<!doctype html><html lang="pt-br"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Proposta {{ proposta.pk }} · ArtSkala</title>
+<link rel="stylesheet" href="{% static 'gestao/proposta.css' %}"></head><body>
+<nav><a href="{% url 'orcamento_detalhe' proposta.pk %}">← Voltar ao orçamento</a><button onclick="window.print()">Imprimir / salvar PDF</button></nav>
+<main><header><img src="{% static 'images/artskala-logo.png' %}" alt="ArtSkala"><div>PROPOSTA COMERCIAL<br><strong>#{{ proposta.pk|stringformat:'05d' }}</strong><p>{{ proposta.criacao|date:'d/m/Y' }}</p></div></header>
+<h1>{{ proposta.titulo }}</h1><p>Preparada para <strong>{{ proposta.cliente_nome|default:'Cliente' }}</strong></p>
+<section><div><small>VALIDADE</small><p>{{ proposta.data_validade|date:'d/m/Y'|default:'A combinar' }}</p></div><div><small>PAGAMENTO</small><p>{{ proposta.get_forma_pagamento_display }}</p></div><div><small>PRAZO</small><p>{{ proposta.prazo_execucao|default:'A combinar' }}</p></div></section>
+<table><thead><tr><th>Descrição</th><th>Qtd.</th><th>Unitário</th><th>Total</th></tr></thead><tbody>{% for item in proposta.itens.all %}<tr><td>{{ item.nome_display }}{% if item.data_referencia %}<small>Previsão: {{ item.data_referencia|date:'d/m/Y' }}</small>{% endif %}</td><td>{{ item.quantidade }}</td><td>R$ {{ item.valor_unitario|floatformat:2 }}</td><td>R$ {{ item.subtotal|floatformat:2 }}</td></tr>{% endfor %}</tbody></table>
+<aside><p>Subtotal <strong>R$ {{ proposta.valor_bruto|floatformat:2 }}</strong></p><p>Desconto <strong>R$ {{ proposta.valor_desconto|floatformat:2 }}</strong></p><h2>Total <strong>R$ {{ proposta.valor_total|floatformat:2 }}</strong></h2></aside>
+{% if proposta.observacoes %}<h3>Condições e observações</h3><div>{{ proposta.observacoes|linebreaksbr }}</div>{% endif %}
+<footer>ArtSkala · Comunicação visual</footer></main></body></html>

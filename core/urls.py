@@ -1,4 +1,5 @@
 from django.urls import path
+from .views_comercial import PropostaImpressaoView
 
 from .views import (
     HomeView,
@@ -35,6 +36,7 @@ from .views import (
 )
 
 urlpatterns = [
+    path("gestao/orcamentos/<int:pk>/imprimir/", PropostaImpressaoView.as_view(), name="proposta_impressao"),
     path("", HomeView.as_view(), name="home"),
 
     path("products/", ProductsView.as_view(), name="products"),

@@ -848,9 +848,10 @@
     </style>
 
     {% block extra_head %}{% endblock %}
+    <link rel="stylesheet" href="{% static 'gestao/modern.css' %}">
 </head>
 
-<body>
+<body class="art-gestao">
     <div class="topo-mobile">
         <div class="topo-mobile-linha">
             <div>
@@ -858,7 +859,7 @@
                 <div class="marca-sub" style="margin:0;">Área de gestão</div>
             </div>
 
-            <a href="{% url 'home' %}" class="btn btn-secundario" style="padding:8px 12px; min-height:36px;">
+            <a href="{{ site_url }}" class="btn btn-secundario" style="padding:8px 12px; min-height:36px;">
                 Loja
             </a>
         </div>
@@ -946,11 +947,12 @@
 
             <div class="sidebar-rodape">
                 {{ request.user.username }}<br>
-                <a href="{% url 'home' %}">← Voltar à loja</a>
+                <a href="{{ site_url }}">← Voltar à loja</a>
             </div>
         </aside>
 
         <main class="conteudo">
+            <div class="ak-toolbar"><div><small>ARTSKALA · GESTÃO</small><strong>Seu negócio, em um só lugar</strong></div><a class="btn btn-secundario" href="{{ site_url }}">Abrir site ↗</a></div>
             {% if messages %}
                 <div class="mensagens">
                     {% for message in messages %}

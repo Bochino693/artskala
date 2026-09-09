@@ -1,4 +1,14 @@
 from .models import Carrinho
+from django.conf import settings
+from django.urls import reverse
+
+
+def enderecos_site(request):
+    return {
+        "site_url": settings.SITE_URL,
+        "gestao_url": ("https://" + settings.INTERNAL_HOST + "/gestao/")
+        if settings.INTERNAL_SITE_ENABLED else reverse("gestao_dashboard"),
+    }
 
 
 def carrinho_contexto(request):

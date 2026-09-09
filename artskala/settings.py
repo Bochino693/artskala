@@ -63,14 +63,18 @@ if not SECRET_KEY:
 # ============================================================
 
 ALLOWED_HOSTS = [
+    "artskala.com.br",
+    "www.artskala.com.br",
+    "interno.artskala.com.br",
     "localhost",
     "127.0.0.1",
     "artskala.vercel.app",
-    "artskala.com.br",
-    "www.artskala.com.br",
 ]
 
 CSRF_TRUSTED_ORIGINS = [
+    "https://artskala.com.br",
+    "https://www.artskala.com.br",
+    "https://interno.artskala.com.br",
     "https://artskala.vercel.app",
 ]
 
@@ -123,6 +127,7 @@ MIDDLEWARE = [
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
+    "core.middleware.InternalDomainMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
@@ -148,6 +153,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "core.context_processors.carrinho_contexto",
+                "core.context_processors.enderecos_site",
             ],
         },
     },
@@ -347,6 +353,10 @@ else:
 # ============================================================
 
 LOGIN_URL = "login"
+SITE_URL = os.environ.get("SITE_URL", "https://www.artskala.com.br").rstrip("/")
+INTERNAL_HOST = "interno.artskala.com.br"
+# Ative somente depois de cadastrar o domínio na hospedagem e no DNS.
+INTERNAL_SITE_ENABLED = env_bool("INTERNAL_SITE_ENABLED", False)
 LOGIN_REDIRECT_URL = "home"
 LOGOUT_REDIRECT_URL = "home"
 

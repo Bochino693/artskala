@@ -15,6 +15,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.dateparse import parse_date
+from django.utils.http import url_has_allowed_host_and_scheme
+from django.core.paginator import Paginator
 from django.views import View
 
 from .models import (
@@ -815,7 +817,9 @@ class LoginView(View):
             return render(request, "login.html")
 
         login(request, usuario)
-        return redirect(next_url or "home")
+        if not url_has_allowed_host_and_scheme(next_url or "", {request.get_host()}, require_https=request.is_secure()):
+            next_url = None
+        return redirect(next_url or ("gestao_dashboard" if usuario.is_superuser else "home"))
 
 
 class LogoutView(View):
@@ -829,10 +833,10 @@ class PaymentView(View):
         return render(request, "payment.html")
 
 
-
 # ============================================================
 # ÁREA INTERNA — DASHBOARD
 # ============================================================
+
 class GestaoDashboardView(SuperuserGestaoRequiredMixin, View):
     login_url = "login"
 
@@ -1216,12 +1220,25 @@ class OrcamentoView(SuperuserGestaoRequiredMixin, View):
                 Q(cliente_telefone__icontains=busca)
             )
 
+        resumo = _orcamentos_usuario(request).values("status").annotate(total=Count("id"))
+        contagens = {item["status"]: item["total"] for item in resumo}
+        page_obj = Paginator(orcamentos, 20).get_page(request.GET.get("page"))
+        orcamentos = page_obj.object_list
         linhas_orcamentos = [_montar_linha_orcamento(item) for item in orcamentos]
+        itens_json = [{
+            "origem": "PRODUTO" if i.produto_id else ("PROJETO" if i.projeto_id else "AVULSO"),
+            "produto_id": i.produto_id or "", "projeto_id": i.projeto_id or "",
+            "descricao": i.descricao, "data_referencia": i.data_referencia.isoformat() if i.data_referencia else "",
+            "quantidade": i.quantidade, "valor_unitario": str(i.valor_unitario), "custo_unitario": str(i.custo_unitario)
+        } for i in orcamento.itens.all()] if orcamento else []
 
         ctx = {
             "orcamento": orcamento,
             "orcamentos": orcamentos,
             "linhas_orcamentos": linhas_orcamentos,
+            "page_obj": page_obj,
+            "itens_json": itens_json,
+            "funil": [{"chave": chave, "nome": nome, "total": contagens.get(chave, 0)} for chave, nome in Orcamento.STATUS],
 
             "status_choices": Orcamento.STATUS,
             "tipo_choices": Orcamento.TIPO,
@@ -1240,104 +1257,33 @@ class OrcamentoView(SuperuserGestaoRequiredMixin, View):
         return render(request, self.template_name, ctx)
 
     def post(self, request, pk=None):
-        if pk:
-            orcamento = get_object_or_404(
-                Orcamento,
-                pk=pk,
-                usuario=request.user,
-                ativo=True,
-            )
-        else:
-            orcamento = None
-
-        titulo = request.POST.get("titulo", "").strip()
-
-        if not titulo:
-            messages.error(request, "Informe um título para o orçamento.")
-            return redirect(request.path)
-
-        with transaction.atomic():
-            if orcamento is None:
-                orcamento = Orcamento(usuario=request.user)
-
-            orcamento.titulo = titulo
-            orcamento.tipo = request.POST.get("tipo", "MISTO")
-            orcamento.status = request.POST.get("status", orcamento.status or "RASCUNHO")
-
-            if orcamento.status not in dict(Orcamento.STATUS):
-                orcamento.status = "RASCUNHO"
-
-            orcamento.cliente_nome = request.POST.get("cliente_nome", "").strip()
-            orcamento.cliente_email = request.POST.get("cliente_email", "").strip()
-            orcamento.cliente_telefone = request.POST.get("cliente_telefone", "").strip()
-
-            orcamento.data_validade = _to_date(request.POST.get("data_validade"))
-            orcamento.data_prevista_entrega = _to_date(request.POST.get("data_prevista_entrega"))
-
-            orcamento.desconto_percentual = _to_decimal(request.POST.get("desconto_percentual", "0"))
-            orcamento.custo_extra = _to_decimal(request.POST.get("custo_extra", "0"))
-
-            orcamento.forma_pagamento = request.POST.get("forma_pagamento", "A_COMBINAR")
-            if orcamento.forma_pagamento not in dict(Orcamento.FORMAS_PAGAMENTO):
-                orcamento.forma_pagamento = "A_COMBINAR"
-
-            orcamento.prazo_execucao = request.POST.get("prazo_execucao", "").strip()
-            orcamento.observacoes = request.POST.get("observacoes", "").strip()
-            orcamento.save()
-
-            self._salvar_itens(request, orcamento)
-
+        from .orcamentos import OrcamentoForm, validar_itens
+        try:
+            with transaction.atomic():
+                orcamento = get_object_or_404(
+                    Orcamento.objects.select_for_update(), pk=pk,
+                    usuario=request.user, ativo=True
+                ) if pk else Orcamento(usuario=request.user)
+                # Não silencie erros nem apague itens antes de validar a proposta.
+                dados = request.POST.copy()
+                for field in ("custo_extra", "forma_pagamento", "prazo_execucao", "data_prevista_entrega"):
+                    if field not in dados:
+                        value = getattr(orcamento, field)
+                        dados[field] = "" if value is None else str(value)
+                form = OrcamentoForm(dados, instance=orcamento)
+                if not form.is_valid():
+                    raise ValidationError([f"{field}: {error}" for field, errors in form.errors.items() for error in errors])
+                itens = validar_itens(dados)
+                orcamento = form.save()
+                orcamento.itens.all().delete()
+                for item in itens:
+                    item.orcamento = orcamento
+                    item.save()
+        except ValidationError as exc:
+            messages.error(request, "Não foi salvo: " + "; ".join(exc.messages))
+            return redirect(request.path + ("?novo=1" if not pk else ""))
         messages.success(request, "Orçamento salvo com sucesso!")
         return redirect("orcamento_detalhe", pk=orcamento.pk)
-
-    def _salvar_itens(self, request, orcamento):
-        produtos_ids = request.POST.getlist("item_produto[]")
-        projetos_ids = request.POST.getlist("item_projeto[]")
-        descricoes = request.POST.getlist("item_descricao[]")
-        datas_referencia = request.POST.getlist("item_data[]")
-        quantidades = request.POST.getlist("item_quantidade[]")
-        valores = request.POST.getlist("item_valor[]")
-        custos = request.POST.getlist("item_custo[]")
-
-        linhas = zip(
-            produtos_ids,
-            projetos_ids,
-            descricoes,
-            datas_referencia,
-            quantidades,
-            valores,
-            custos,
-        )
-
-        orcamento.itens.all().delete()
-
-        for produto_id, projeto_id, descricao, data_ref, quantidade, valor, custo in linhas:
-            descricao = descricao.strip()
-
-            if not any([produto_id, projeto_id, descricao]):
-                continue
-
-            try:
-                quantidade_int = max(1, int(quantidade or 1))
-            except (TypeError, ValueError):
-                quantidade_int = 1
-
-            item = ItemOrcamento(
-                orcamento=orcamento,
-                descricao=descricao,
-                data_referencia=_to_date(data_ref),
-                quantidade=quantidade_int,
-                valor_unitario=_to_decimal(valor),
-                custo_unitario=_to_decimal(custo),
-            )
-
-            if produto_id:
-                item.produto_id = produto_id
-
-            if projeto_id:
-                item.projeto_id = projeto_id
-
-            item.save()
 
     def put(self, request, pk):
         orcamento = get_object_or_404(
@@ -1637,4 +1583,3 @@ class GestaoPerfilView(SuperuserGestaoRequiredMixin, View):
 
         messages.success(request, "Perfil da gestão atualizado com sucesso!")
         return redirect("gestao_perfil")
-

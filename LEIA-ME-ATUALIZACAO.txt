@@ -1,0 +1,37 @@
+ATUALIZAÇÃO DA ÁREA INTERNA ARTSKALA
+
+Base analisada: commit a432d72. Este pacote contém arquivos completos alterados,
+não o projeto inteiro. Se sua versão tem alterações posteriores nesses arquivos,
+compare antes de substituir para não perdê-las.
+
+1. Pare o servidor e faça uma cópia da pasta atual do projeto.
+2. Extraia o conteúdo deste ZIP na raiz do projeto (onde está manage.py).
+   As pastas artskala e core devem se juntar às já existentes.
+3. Aceite substituir os arquivos, após conferir a cópia de segurança.
+4. Com o ambiente virtual do projeto ativo, execute:
+   python manage.py check
+   python manage.py test core
+5. Confira a área /gestao/ e um orçamento antes de publicar.
+6. Para enviar ao GitHub, no PowerShell dentro do projeto:
+   git status
+   git add artskala/settings.py core/context_processors.py core/templates/gestao/base_gestao.html core/templates/gestao/orcamentos.html core/tests.py core/urls.py core/views.py core/middleware.py core/orcamentos.py core/static/gestao/modern.css core/static/gestao/proposta.css core/templates/gestao/proposta_impressao.html core/views_comercial.py
+   git commit -m "Melhora gestao interna e propostas da Artskala"
+   git push
+
+ENTREGUE
+- Aparência da gestão interna adaptada, preservando modelos da Artskala.
+- Cards por status, paginação e formulário recolhível para novo orçamento.
+- Proposta para impressão ou salvar PDF pelo navegador.
+- Validação de itens com transação: erros não apagam os itens existentes.
+- Dados decimais de edição serializados como JSON.
+- Preparação para interno.artskala.com.br; acesso exige superusuário.
+- Seis testes automatizados passaram no ambiente de desenvolvimento.
+
+SUBDOMÍNIO
+O ZIP não configura DNS nem hospedagem. Cadastre o domínio na hospedagem,
+configure seu DNS conforme o provedor e só então habilite
+INTERNAL_SITE_ENABLED=true para os links internos usarem o subdomínio.
+SITE_URL configura o destino do botão Abrir site.
+Não foram criadas migrações. O site público não recebeu reformulação visual.
+O pacote não contém banco de dados, credenciais ou dependências.
+A aparência não foi validada em navegador nesta entrega.
