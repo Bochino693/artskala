@@ -64,6 +64,14 @@ class Produto(Prime):
         verbose_name_plural = "Produtos"
         ordering = ["nome_produto"]
 
+    def preco_atual(self):
+        from django.utils import timezone
+        agora = timezone.now()
+        oferta = self.promocoes.filter(ativo=True, inicio__lte=agora, fim__gte=agora).order_by('-percentual').first()
+        if oferta:
+            return (self.preco * (1 - oferta.percentual / Decimal('100'))).quantize(Decimal('0.01'))
+        return self.preco
+
     def lucro_unitario(self):
         return self.preco - self.custo
 
@@ -185,7 +193,7 @@ class ItemCarrinho(Prime):
         unique_together = ("carrinho", "produto")
 
     def subtotal(self):
-        return self.quantidade * self.produto.preco
+        return self.quantidade * self.produto.preco_atual()
 
     def subtotal_custo(self):
         return self.quantidade * self.produto.custo
@@ -198,6 +206,9 @@ class ItemCarrinho(Prime):
 
 
 class Pedido(Prime):
+    cupom_codigo = models.CharField(max_length=40, blank=True, default='')
+    desconto_cupom = models.DecimalField(max_digits=12, decimal_places=2, default=0, validators=[MinValueValidator(0)])
+
     STATUS = (
         ("PENDENTE", "Pendente"),
         ("PAGO", "Pago"),
@@ -251,7 +262,7 @@ class Pedido(Prime):
         total_venda = sum((item.subtotal() for item in self.itens.all()), Decimal("0.00"))
         total_custo = sum((item.subtotal_custo() for item in self.itens.all()), Decimal("0.00"))
 
-        self.valor_total = total_venda
+        self.valor_total = max(Decimal("0.00"), total_venda - self.desconto_cupom)
         self.custo_total = total_custo
 
         if salvar:
@@ -546,3 +557,56 @@ class ItemOrcamento(Prime):
 
     def __str__(self):
         return self.nome_display()
+
+
+class Promocao(Prime):
+    titulo = models.CharField(max_length=150)
+    produto = models.ForeignKey(Produto, on_delete=models.CASCADE, related_name="promocoes")
+    percentual = models.DecimalField(max_digits=5, decimal_places=2, validators=[MinValueValidator(Decimal("0.01")), MaxValueValidator(Decimal("100"))])
+    inicio = models.DateTimeField()
+    fim = models.DateTimeField()
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        if self.inicio and self.fim and self.fim <= self.inicio:
+            raise ValidationError("O fim deve ser posterior ao início.")
+
+    def __str__(self):
+        return self.titulo
+
+
+class Cupom(Prime):
+    codigo = models.CharField(max_length=40, unique=True)
+    percentual = models.DecimalField(max_digits=5, decimal_places=2, validators=[MinValueValidator(Decimal("0.01")), MaxValueValidator(Decimal("100"))])
+    minimo = models.DecimalField(max_digits=12, decimal_places=2, default=0, validators=[MinValueValidator(0)])
+    inicio = models.DateTimeField()
+    fim = models.DateTimeField()
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        self.codigo = self.codigo.strip().upper()
+        if self.inicio and self.fim and self.fim <= self.inicio:
+            raise ValidationError("O fim deve ser posterior ao início.")
+
+    def save(self, *args, **kwargs):
+        self.codigo = self.codigo.strip().upper()
+        return super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.codigo
+
+
+class VideoProjeto(Prime):
+    projeto = models.ForeignKey(Projeto, on_delete=models.CASCADE, related_name="videos")
+    titulo = models.CharField(max_length=150)
+    url = models.URLField(help_text="Link HTTPS de vídeo MP4/WebM hospedado. Não use link da página do YouTube.")
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        from urllib.parse import urlsplit
+        url = urlsplit(self.url)
+        if url.scheme != 'https' or not url.path.lower().endswith(('.mp4', '.webm')):
+            raise ValidationError("Informe um link HTTPS direto para MP4 ou WebM.")
+
+    def __str__(self):
+        return self.titulo

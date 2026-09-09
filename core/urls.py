@@ -35,7 +35,10 @@ from .views import (
 
 )
 
+from .ofertas import promocoes
+
 urlpatterns = [
+    path("promocoes/", promocoes, name="promocoes"),
     path("gestao/orcamentos/<int:pk>/imprimir/", PropostaImpressaoView.as_view(), name="proposta_impressao"),
     path("", HomeView.as_view(), name="home"),
 

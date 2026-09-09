@@ -6,8 +6,8 @@ from django.urls import reverse
 def enderecos_site(request):
     return {
         "site_url": settings.SITE_URL,
-        "gestao_url": ("https://" + settings.INTERNAL_HOST + "/gestao/")
-        if settings.INTERNAL_SITE_ENABLED else reverse("gestao_dashboard"),
+        "google_login_enabled": settings.GOOGLE_LOGIN_ENABLED,
+        "gestao_url": ("https://" + settings.INTERNAL_HOST + "/"),
     }
 
 

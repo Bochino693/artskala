@@ -51,5 +51,61 @@ class ComercialTests(TestCase):
         self.assertEqual(self.client.get(reverse('proposta_impressao', args=[proposta.pk])).status_code, 302)
 
     def test_subdominio(self):
-        response = self.client.get('/', HTTP_HOST='interno.artskala.com.br')
-        self.assertRedirects(response, '/gestao/', fetch_redirect_response=False)
+        response = self.client.get('/', HTTP_HOST='innterno.artskala.com')
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'href="/orcamentos/"')
+
+
+class LojaTests(TestCase):
+    def setUp(self):
+        from .models import CategoriaProdutos, Produto
+        self.produto = Produto.objects.create(categoria=CategoriaProdutos.objects.create(nome_categoria='Placas'), nome_produto='Letreiro', preco=100, estoque=5)
+
+    def test_promocao_e_cupom_sem_acumulo(self):
+        from .models import Promocao, Cupom, ItemCarrinho
+        from .ofertas import desconto_cupom
+        from django.utils import timezone
+        from datetime import timedelta
+        from decimal import Decimal
+        from django.core.exceptions import ValidationError
+        now = timezone.now()
+        Cupom.objects.create(codigo='TESTE', percentual=10, inicio=now-timedelta(days=1), fim=now+timedelta(days=1))
+        item = ItemCarrinho(produto=self.produto, quantidade=2)
+        self.assertEqual(desconto_cupom('teste', [item])[1], Decimal('20.00'))
+        Promocao.objects.create(produto=self.produto, titulo='Oferta', percentual=20, inicio=now-timedelta(days=1), fim=now+timedelta(days=1))
+        self.assertEqual(item.subtotal(), Decimal('160.00'))
+        with self.assertRaises(ValidationError):
+            desconto_cupom('TESTE', [item])
+
+    def test_paginas_publicas(self):
+        from .models import Projeto
+        projeto = Projeto.objects.create(titulo='Fachada')
+        self.assertContains(self.client.get('/projects/%s/' % projeto.pk), 'Fachada')
+        self.assertEqual(self.client.get('/promocoes/').status_code, 200)
+        self.assertEqual(self.client.get('/login/').status_code, 200)
+        self.assertEqual(self.client.get('/register/').status_code, 200)
+
+    def test_login_interno(self):
+        response = self.client.get('/login/', HTTP_HOST='innterno.artskala.com')
+        self.assertContains(response, 'Acesso da equipe')
+        response = self.client.get('/', HTTP_HOST='innterno.artskala.com')
+        self.assertEqual(response.status_code, 302)
+
+
+    def test_checkout_salva_desconto(self):
+        from .models import Carrinho, ItemCarrinho, Cupom, Pedido
+        from django.utils import timezone
+        from datetime import timedelta
+        from decimal import Decimal
+        user = get_user_model().objects.create_user('comprador', password='teste123')
+        self.client.force_login(user)
+        cart = Carrinho.objects.create(usuario=user)
+        ItemCarrinho.objects.create(carrinho=cart, produto=self.produto, quantidade=2)
+        now = timezone.now()
+        Cupom.objects.create(codigo='DEZ', percentual=10, inicio=now-timedelta(days=1), fim=now+timedelta(days=1))
+        self.assertContains(self.client.get('/finalizar/?cupom=DEZ'), '180,00')
+        self.client.post('/finalizar/', {'endereco': 'Rua Teste 1', 'metodo_pagamento': 'A_COMBINAR', 'cupom': 'DEZ'})
+        pedido = Pedido.objects.get()
+        self.assertEqual(pedido.valor_total, Decimal('180.00'))
+        pedido.recalcular_totais()
+        self.assertEqual(pedido.valor_total, Decimal('180.00'))

@@ -22,3 +22,7 @@ urlpatterns = [
     path('system/', admin.site.urls),
     path('', include('core.urls'))
 ]
+
+from django.conf import settings
+if settings.GOOGLE_LOGIN_ENABLED:
+    urlpatterns.insert(0, path('accounts/', include('allauth.urls')))

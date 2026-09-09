@@ -49,6 +49,10 @@ class SuperuserGestaoRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
         if not self.request.user.is_authenticated:
             return redirect("login")
 
+        if getattr(self.request, 'is_interno', False):
+            from django.http import HttpResponseForbidden
+            return HttpResponseForbidden('Acesso permitido somente à equipe autorizada.')
+
         messages.error(
             self.request,
             "Você não tem permissão para acessar a área de gestão."
@@ -538,7 +542,16 @@ class CheckoutView(View):
             defaults=_perfil_defaults(),
         )
 
+        from .ofertas import desconto_cupom
+        codigo, desconto = '', Decimal('0.00')
+        try:
+            codigo, desconto = desconto_cupom(request.GET.get('cupom', ''), itens)
+        except ValidationError as exc:
+            messages.error(request, ' '.join(exc.messages))
         ctx = {
+            "cupom": codigo,
+            "desconto_cupom": desconto,
+            "total_final": total - desconto,
             "carrinho": carrinho,
             "itens": itens,
             "total": total,
@@ -572,8 +585,15 @@ class CheckoutView(View):
             messages.error(request, "Escolha uma forma de pagamento válida.")
             return redirect("checkout")
 
+        from .ofertas import desconto_cupom
+        try:
+            codigo, desconto = desconto_cupom(request.POST.get('cupom', ''), itens)
+        except ValidationError as exc:
+            messages.error(request, ' '.join(exc.messages))
+            return redirect('checkout')
         with transaction.atomic():
             pedido = Pedido.objects.create(
+                cupom_codigo=codigo, desconto_cupom=desconto,
                 usuario=request.user,
                 endereco=endereco,
                 metodo_pagamento=metodo_pagamento,
@@ -585,7 +605,7 @@ class CheckoutView(View):
                     pedido=pedido,
                     produto=item.produto,
                     quantidade=item.quantidade,
-                    preco_unitario=item.produto.preco,
+                    preco_unitario=item.produto.preco_atual(),
                     custo_unitario=item.produto.custo,
                 )
 
@@ -780,7 +800,7 @@ class RegisterView(View):
                     cep=cep,
                 )
 
-                login(request, usuario)
+                login(request, usuario, backend="django.contrib.auth.backends.ModelBackend")
 
         except Exception:
             messages.error(request, "Não foi possível criar sua conta. Tente novamente.")
@@ -816,7 +836,7 @@ class LoginView(View):
             messages.error(request, "Este usuário está inativo.")
             return render(request, "login.html")
 
-        login(request, usuario)
+        login(request, usuario, backend="django.contrib.auth.backends.ModelBackend")
         if not url_has_allowed_host_and_scheme(next_url or "", {request.get_host()}, require_https=request.is_secure()):
             next_url = None
         return redirect(next_url or ("gestao_dashboard" if usuario.is_superuser else "home"))

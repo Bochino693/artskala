@@ -73,7 +73,7 @@ ALLOWED_HOSTS = [
 
 CSRF_TRUSTED_ORIGINS = [
     "https://artskala.com.br",
-    "https://www.artskala.com.br",
+    "https://www.artskala.com",
     "https://interno.artskala.com.br",
     "https://artskala.vercel.app",
 ]
@@ -92,7 +92,7 @@ extra_hosts = os.environ.get("ALLOWED_HOSTS_EXTRA", "")
 for host in extra_hosts.split(","):
     add_unique(ALLOWED_HOSTS, host)
 
-# CSRF_TRUSTED_ORIGINS_EXTRA=https://artskala.com.br,https://www.artskala.com.br
+# CSRF_TRUSTED_ORIGINS_EXTRA=https://artskala.com.br,https://www.artskala.com
 extra_csrf = os.environ.get("CSRF_TRUSTED_ORIGINS_EXTRA", "")
 
 for origin in extra_csrf.split(","):
@@ -353,10 +353,12 @@ else:
 # ============================================================
 
 LOGIN_URL = "login"
-SITE_URL = os.environ.get("SITE_URL", "https://www.artskala.com.br").rstrip("/")
-INTERNAL_HOST = "interno.artskala.com.br"
+SITE_URL = os.environ.get("SITE_URL", "https://www.artskala.com").rstrip("/")
+INTERNAL_HOST = "innterno.artskala.com"
+ALLOWED_HOSTS += [INTERNAL_HOST, "artskala.com", "www.artskala.com"]
+CSRF_TRUSTED_ORIGINS += ["https://" + INTERNAL_HOST, "https://artskala.com", "https://www.artskala.com"]
 # Ative somente depois de cadastrar o domínio na hospedagem e no DNS.
-INTERNAL_SITE_ENABLED = env_bool("INTERNAL_SITE_ENABLED", False)
+INTERNAL_SITE_ENABLED = env_bool("INTERNAL_SITE_ENABLED", not DEBUG)
 LOGIN_REDIRECT_URL = "home"
 LOGOUT_REDIRECT_URL = "home"
 
@@ -379,3 +381,18 @@ CSRF_COOKIE_SECURE = not DEBUG
 
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"
+
+GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")
+GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "")
+GOOGLE_LOGIN_ENABLED = bool(GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET)
+if GOOGLE_LOGIN_ENABLED:
+    INSTALLED_APPS += ["allauth", "allauth.account", "allauth.socialaccount", "allauth.socialaccount.providers.google"]
+    MIDDLEWARE += ["allauth.account.middleware.AccountMiddleware"]
+    AUTHENTICATION_BACKENDS = ["django.contrib.auth.backends.ModelBackend", "allauth.account.auth_backends.AuthenticationBackend"]
+    SOCIALACCOUNT_PROVIDERS = {"google": {"APP": {"client_id": GOOGLE_CLIENT_ID, "secret": GOOGLE_CLIENT_SECRET, "key": ""}, "SCOPE": ["profile", "email"], "AUTH_PARAMS": {"access_type": "online"}, "OAUTH_PKCE_ENABLED": True}}
+    SOCIALACCOUNT_LOGIN_ON_GET = False
+    SOCIALACCOUNT_EMAIL_AUTHENTICATION = False
+    SOCIALACCOUNT_EMAIL_AUTHENTICATION_AUTO_CONNECT = False
+    ACCOUNT_LOGIN_METHODS = {"username", "email"}
+    ACCOUNT_SIGNUP_FIELDS = ["email*", "username*", "password1*", "password2*"]
+    LOGIN_REDIRECT_URL = "/"

@@ -343,7 +343,8 @@
                             Preencha seus dados para criar sua conta.
                         </p>
 
-                        <form method="post" action="{% url 'register' %}">
+                        {% if google_login_enabled %}<form method="post" action="/accounts/google/login/" style="margin-bottom:20px">{% csrf_token %}<button type="submit" class="btn btn-outline-dark w-100">Continuar com Google</button></form>{% endif %}
+                            <form method="post" action="{% url 'register' %}">
 
                             {% csrf_token %}
 

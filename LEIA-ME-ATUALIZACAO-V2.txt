@@ -1,0 +1,69 @@
+ARTSKALA — ATUALIZAÇÃO V2
+
+Este ZIP substitui o pacote anterior e inclui suas alterações.
+Base: a432d72. Faça backup dos arquivos e do banco. Compare arquivos se sua versão
+local tiver mudanças posteriores. Extraia ao lado de manage.py, juntando core/ e
+artskala/ às pastas existentes. Não inclui dados, credenciais nem fotos.
+
+INSTALAÇÃO (ambiente virtual ativo)
+python -m pip install -r requirements.txt
+python manage.py migrate
+python manage.py check
+python manage.py test core
+python manage.py collectstatic --noinput
+
+Esta versão cria a migração core/0004 para promoções, cupons, vídeos e desconto
+persistido nos pedidos. Se sua cópia já tem outra migração 0004, concilie as
+migrações antes de executar migrate. Não apague migrações já aplicadas.
+
+SUBDOMÍNIO — innterno.artskala.com (dois n, exatamente como solicitado)
+- Cadastre innterno.artskala.com como domínio personalizado do serviço Django.
+- Configure no DNS de artskala.com um CNAME chamado innterno, apontando para o
+  destino informado pela hospedagem. O ZIP não cria DNS nem certificado HTTPS.
+- Ambiente: SITE_URL=https://www.artskala.com e INTERNAL_SITE_ENABLED=true.
+- A raiz https://innterno.artskala.com/ é o dashboard, com /orcamentos/,
+  /produtos/, /projetos/ etc.; não há prefixo /gestao no subdomínio.
+- O site antigo /gestao/ redireciona quando INTERNAL_SITE_ENABLED=true.
+- Login próprio da equipe em /login/; exige superusuário. Cookies separados
+  entre site e gestão. O login Google do cliente não concede acesso à gestão.
+
+GOOGLE — login e cadastro no site
+1. Configure uma aplicação OAuth do tipo Web no Google Cloud.
+2. Cadastre o callback exato do domínio usado pelos clientes:
+   https://www.artskala.com/accounts/google/login/callback/
+   Se usar a raiz sem www, cadastre também:
+   https://artskala.com/accounts/google/login/callback/
+3. Na hospedagem, configure GOOGLE_CLIENT_ID e GOOGLE_CLIENT_SECRET.
+   Nunca inclua o segredo no Git. Configure a tela de consentimento; em modo
+   de teste, adicione os usuários de teste antes de tentar entrar.
+4. Execute migrate COM essas variáveis ativas (inclui tabelas do allauth).
+5. Reinicie. O botão Continuar com Google aparece em login e cadastro.
+   Não dupplique as credenciais em SocialApp no admin; foram configuradas por env.
+- Sem credenciais, login por senha continua disponível e botão Google não aparece.
+- Não há associação automática a uma conta existente apenas pelo e-mail.
+- Integração baseada na documentação oficial:
+  https://docs.allauth.org/en/latest/socialaccount/providers/google.html
+- O fluxo OAuth real não foi testado: faltam credenciais e allauth no ambiente
+  de verificação. Instale as dependências antes de ativar e teste uma conta.
+
+COMERCIAL E PORTFÓLIO
+- Links no topo da gestão abrem cadastros de Promoções, Cupons e Vídeos no admin.
+- Promoções: produto, desconto percentual, início/fim e ativo. Se houver mais
+  de uma vigente, usa o maior desconto. Preço também aplicado no carrinho/pedido.
+- Cupons: código, percentual, mínimo elegível, início/fim e ativo. Uso ilimitado
+  enquanto válido; não há limite por cliente. Não acumula com promoção.
+- Aplique o cupom no checkout para ver o total antes de confirmar.
+- Fotos de projetos já existiam: mantidas. Página de detalhes foi adicionada.
+- Vídeos: links HTTPS diretos MP4/WebM, em hospedagem de mídia (por exemplo,
+  URL de vídeo no Cloudinary). Não são links de página YouTube. Não há upload
+  de vídeo nesta versão; cadastre a URL do arquivo hospedado no admin.
+
+VERIFICAÇÃO
+10 testes passaram: orçamento, permissões, subdomínio, páginas públicas,
+promoções, cupom sem acúmulo e valor do pedido após recálculo.
+Sem teste visual no navegador, DNS real ou autenticação real com Google.
+
+GITHUB
+Após conferir localmente: git status, adicione os arquivos listados no
+ARQUIVOS-ALTERADOS.txt com git add, execute git commit e git push.
+Não foi publicado automaticamente no GitHub.

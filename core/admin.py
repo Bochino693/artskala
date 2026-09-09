@@ -638,3 +638,22 @@ class PerfilUsuarioAdmin(admin.ModelAdmin):
         return obj.usuario.username
 
     nome_completo.short_description = "Nome"
+
+
+from .models import Promocao, Cupom, VideoProjeto
+
+@admin.register(Promocao)
+class PromocaoAdmin(admin.ModelAdmin):
+    list_display = ('titulo', 'produto', 'percentual', 'inicio', 'fim', 'ativo')
+    list_filter = ('ativo',)
+    search_fields = ('titulo', 'produto__nome_produto')
+
+@admin.register(Cupom)
+class CupomAdmin(admin.ModelAdmin):
+    list_display = ('codigo', 'percentual', 'minimo', 'inicio', 'fim', 'ativo')
+    search_fields = ('codigo',)
+
+@admin.register(VideoProjeto)
+class VideoProjetoAdmin(admin.ModelAdmin):
+    list_display = ('titulo', 'projeto', 'ativo')
+    search_fields = ('titulo', 'projeto__titulo')

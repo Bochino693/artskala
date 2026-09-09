@@ -552,7 +552,7 @@
                     </a>
                 </li>
 
-            </ul>
+            <li class="nav-item"><a class="nav-link" href="{% url 'promocoes' %}">Promoções</a></li></ul>
 
             {% endwith %}
 
@@ -609,7 +609,7 @@
         {% if request.user.is_staff or request.user.is_superuser %}
 
             <a
-                href="{% url 'gestao_dashboard' %}"
+                href="{{ gestao_url }}"
                 class="quick-dock-link admin-action"
                 aria-label="Painel administrativo"
             >
