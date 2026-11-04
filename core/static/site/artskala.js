@@ -161,11 +161,11 @@
             });
             if (barra) {
                 barra.style.transition = "none";
-                barra.style.width = "0%";
+                barra.style.transform = "scaleX(0)";
                 void barra.offsetWidth;
                 if (!parado) {
-                    barra.style.transition = `width ${TEMPO}ms linear`;
-                    barra.style.width = "100%";
+                    barra.style.transition = `transform ${TEMPO}ms linear`;
+                    barra.style.transform = "scaleX(1)";
                 }
             }
         }
@@ -194,36 +194,12 @@
         tocar();
     });
 
-    /* ------------------------------ fundo com vida (topo da home) */
-    // Pausa as animações fora da tela (economiza bateria) e, com mouse,
-    // a arte acompanha o ponteiro bem de leve, dando profundidade.
+    /* ------------------------------ fundo do topo da home */
+    // Só pausa a animação quando o topo sai da tela (poupa bateria).
     $$("[data-hero-vivo]").forEach(vivo => {
         const hero = vivo.closest(".ak-hero");
-        const svgs = $$("svg", vivo);
-        const parado = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-        if ("IntersectionObserver" in window) {
-            new IntersectionObserver(([e]) => {
-                hero.classList.toggle("ak-hero--fora", !e.isIntersecting);
-                svgs.forEach(svg => { try { if (e.isIntersecting) svg.unpauseAnimations(); else svg.pauseAnimations(); } catch (erro) { /* sem SMIL */ } });
-            }, { threshold: 0 }).observe(hero);
-        }
-        if (parado || !window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
-        let quadro = 0, mx = 0, my = 0;
-        hero.addEventListener("pointermove", e => {
-            const r = hero.getBoundingClientRect();
-            mx = ((e.clientX - r.left) / r.width - 0.5) * 2;
-            my = ((e.clientY - r.top) / r.height - 0.5) * 2;
-            if (!quadro) quadro = requestAnimationFrame(() => {
-                quadro = 0;
-                vivo.style.setProperty("--mx", mx.toFixed(3));
-                vivo.style.setProperty("--my", my.toFixed(3));
-            });
-        });
-        hero.addEventListener("pointerleave", () => { vivo.style.setProperty("--mx", "0"); vivo.style.setProperty("--my", "0"); });
-    });
-    $$(".ak-chamada").forEach(chamada => {
-        if (!("IntersectionObserver" in window)) return;
-        new IntersectionObserver(([e]) => chamada.classList.toggle("ak-chamada--fora", !e.isIntersecting)).observe(chamada);
+        if (!hero || !("IntersectionObserver" in window)) return;
+        new IntersectionObserver(([e]) => hero.classList.toggle("ak-hero--fora", !e.isIntersecting)).observe(hero);
     });
 
     /* ------------------------------ trabalhos passando (home) */
