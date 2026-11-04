@@ -270,3 +270,121 @@ class MigracaoAutomaticaTests(TestCase):
                 mock.patch('django.core.management.call_command') as migrate:
             self.assertEqual(auto_migracao.migrar_pendentes(forcar=True), ['core.0099_teste'])
         migrate.assert_called_once_with('migrate', interactive=False, verbosity=1)
+
+
+class InstagramAutomaticoTests(TestCase):
+    """Posts trazidos pela API oficial do Instagram (requisições simuladas)."""
+
+    def setUp(self):
+        import shutil
+        import tempfile
+        self.pasta = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.pasta, ignore_errors=True)
+        self.media = self.settings(MEDIA_ROOT=self.pasta, INSTAGRAM_TOKEN='token-inicial', CRON_SECRET='segredo-cron')
+        self.media.enable()
+        self.addCleanup(self.media.disable)
+
+    def respostas(self):
+        import io
+        from unittest import mock
+        from PIL import Image
+        foto = io.BytesIO()
+        Image.new('RGB', (60, 60), (236, 50, 55)).save(foto, 'JPEG')
+        posts = {'data': [
+            {'id': '111', 'caption': 'Fachada em ACM pronta! #artskala', 'media_type': 'IMAGE',
+             'media_url': 'https://cdn.exemplo/111.jpg', 'permalink': 'https://www.instagram.com/p/AAA111/',
+             'timestamp': '2026-11-01T12:00:00+0000', 'like_count': 42, 'comments_count': 3},
+            {'id': '222', 'caption': 'Bastidores da instalação', 'media_type': 'VIDEO',
+             'thumbnail_url': 'https://cdn.exemplo/222.jpg', 'media_url': 'https://cdn.exemplo/222.mp4',
+             'permalink': 'https://www.instagram.com/reel/BBB222/', 'timestamp': '2026-10-30T12:00:00+0000'},
+        ]}
+        renovado = {'access_token': 'token-renovado', 'token_type': 'bearer', 'expires_in': 5184000}
+
+        def falso_get(url, params=None, timeout=None):
+            r = mock.Mock(status_code=200)
+            if url.endswith('/me/media'):
+                r.json.return_value = posts
+            elif url.endswith('/refresh_access_token'):
+                r.json.return_value = renovado
+            else:
+                r.content = foto.getvalue()
+                r.json.side_effect = ValueError
+            return r
+        return mock.patch('core.instagram.requests.get', side_effect=falso_get)
+
+    def test_sincroniza_sem_duplicar_e_renova_token(self):
+        from .instagram import sincronizar
+        from .models import ConfigInstagram, PostInstagram
+        with self.respostas():
+            self.assertEqual(sincronizar(), '2 novo(s), 0 atualizado(s)')
+            self.assertEqual(sincronizar(), '0 novo(s), 2 atualizado(s)')
+        self.assertEqual(PostInstagram.objects.count(), 2)
+        reel = PostInstagram.objects.get(instagram_id='222')
+        self.assertEqual(reel.tipo, 'VIDEO')
+        self.assertTrue(reel.imagem)           # capa do vídeo
+        config = ConfigInstagram.objects.get()
+        self.assertEqual(config.token, 'token-renovado')
+        self.assertIsNotNone(config.expira_em)
+
+    def test_home_leva_direto_para_o_post(self):
+        with self.respostas():
+            from .instagram import sincronizar
+            sincronizar()
+        resposta = self.client.get('/')
+        self.assertContains(resposta, 'href="https://www.instagram.com/p/AAA111/"')
+        self.assertContains(resposta, 'Fachada em ACM pronta!')
+        self.assertContains(resposta, 'bi-play-fill')   # selo de vídeo
+        self.assertContains(resposta, '42')
+
+    def test_endpoint_do_cron_exige_segredo(self):
+        self.assertEqual(self.client.get('/api/instagram/sincronizar/').status_code, 403)
+        with self.respostas():
+            resposta = self.client.get('/api/instagram/sincronizar/', HTTP_AUTHORIZATION='Bearer segredo-cron')
+        self.assertEqual(resposta.status_code, 200)
+        self.assertTrue(resposta.json()['ok'])
+
+    def test_sem_token_avisa(self):
+        from .instagram import ErroInstagram, sincronizar
+        with self.settings(INSTAGRAM_TOKEN=''):
+            with self.assertRaises(ErroInstagram):
+                sincronizar()
+
+
+class FotosNitidasTests(TestCase):
+    def test_filtro_tamanho(self):
+        from .templatetags.artskala import tamanho
+        url = 'https://res.cloudinary.com/x/image/upload/v1/media/projetos/a.jpg'
+        self.assertEqual(tamanho(url, '480x480'), 'https://res.cloudinary.com/x/image/upload/c_fill,g_auto,w_480,h_480,q_auto:good,f_auto/v1/media/projetos/a.jpg')
+        self.assertIn('c_limit,w_1600', tamanho(url, '1600'))
+        self.assertEqual(tamanho('/media/a.jpg', '480x480'), '/media/a.jpg')
+
+    def test_icone_da_aba(self):
+        resposta = self.client.get('/favicon.ico')
+        self.assertEqual(resposta.status_code, 301)
+        self.assertIn('images/favicon.ico', resposta['Location'])
+        self.assertContains(self.client.get('/'), 'apple-touch-icon')
+
+
+class PaginaProdutoTests(TestCase):
+    def setUp(self):
+        from .models import CategoriaProdutos, Produto
+        self.produto = Produto.objects.create(categoria=CategoriaProdutos.objects.create(nome_categoria='Toldos'),
+                                              nome_produto='Toldo retrátil', preco=1890, estoque=3)
+
+    def test_ficha_e_carrinho_sem_recarregar(self):
+        from .models import ItemCarrinho
+        resposta = self.client.get('/products/%s/' % self.produto.pk)
+        self.assertContains(resposta, 'class="ak-form-carrinho"')
+        self.assertContains(resposta, 'Toldo%20retr%C3%A1til')      # WhatsApp já com o nome do produto
+        user = get_user_model().objects.create_user('cliente', password='teste123')
+        self.client.force_login(user)
+        r = self.client.post('/carrinho/adicionar/%s/' % self.produto.pk, {'quantidade': 2}, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(r.json()['total_itens'], 2)
+        self.assertEqual(ItemCarrinho.objects.get().quantidade, 2)
+
+    def test_sem_estoque_vira_orcamento(self):
+        self.produto.estoque = 0
+        self.produto.save()
+        resposta = self.client.get('/products/%s/' % self.produto.pk)
+        self.assertNotContains(resposta, 'class="ak-form-carrinho"')
+        self.assertContains(resposta, 'Pedir orçamento deste produto')

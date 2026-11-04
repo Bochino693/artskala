@@ -36,9 +36,11 @@ from .views import (
 )
 
 from .ofertas import promocoes
+from .views_instagram import sincronizar_instagram
 
 urlpatterns = [
     path("promocoes/", promocoes, name="promocoes"),
+    path("api/instagram/sincronizar/", sincronizar_instagram, name="instagram_sincronizar"),
     path("gestao/orcamentos/<int:pk>/imprimir/", PropostaImpressaoView.as_view(), name="proposta_impressao"),
     path("", HomeView.as_view(), name="home"),
 

@@ -30,6 +30,7 @@ from .models import (
     Orcamento,
     Pedido,
     PerfilUsuario,
+    PostInstagram,
     Produto,
     Projeto,
 )
@@ -194,6 +195,8 @@ class HomeView(View):
             ),
             "total_produtos": Produto.objects.filter(ativo=True).count(),
             "total_projetos": Projeto.objects.filter(ativo=True).count(),
+            "posts_instagram": PostInstagram.objects.filter(ativo=True)
+            .exclude(imagem="").exclude(imagem__isnull=True)[:6],
         }
         return render(request, "home.html", ctx)
 

@@ -1,0 +1,5 @@
+{
+  "crons": [
+    { "path": "/api/instagram/sincronizar/", "schedule": "17 11 * * *" }
+  ]
+}

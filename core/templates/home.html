@@ -1,9 +1,9 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static artskala %}
 
 {% block title %}ArtSkala | Fachadas, Toldos, Letreiros e Comunicação Visual{% endblock %}
 
-{% block extra_head %}<link href="{% static 'site/home.css' %}?v=20261104" rel="stylesheet">{% endblock %}
+{% block extra_head %}<link href="{% static 'site/home.css' %}?v=20261105" rel="stylesheet">{% endblock %}
 
 {% block content %}
 
@@ -47,7 +47,7 @@
                             {% with foto=produto.imagens.all.0 atual=produto.preco_atual %}
                             <article class="ak-vitrine-slide {% if forloop.first %}ativo{% endif %}" data-slide aria-roledescription="slide" aria-label="{{ forloop.counter }} de {{ vitrine|length }}">
                                 <a class="ak-vitrine-foto" href="{% url 'product_detail' produto.id %}">
-                                    <img src="{{ foto.imagem.url }}" alt="{{ produto.nome_produto }}" width="800" height="600" decoding="async" {% if forloop.first %}fetchpriority="high"{% else %}loading="lazy"{% endif %}>
+                                    <img src="{{ foto.imagem.url|tamanho:'1200x900' }}" alt="{{ produto.nome_produto }}" width="800" height="600" decoding="async" {% if forloop.first %}fetchpriority="high"{% else %}loading="lazy"{% endif %}>
                                 </a>
                                 <div class="ak-vitrine-ficha">
                                     <div>
@@ -69,7 +69,7 @@
                         <div class="ak-vitrine-minis" role="group" aria-label="Escolher produto">
                             {% for produto in vitrine %}
                                 <button type="button" class="ak-vitrine-mini {% if forloop.first %}ativo{% endif %}" data-ir="{{ forloop.counter0 }}" aria-label="Mostrar {{ produto.nome_produto }}" aria-pressed="{% if forloop.first %}true{% else %}false{% endif %}">
-                                    <img src="{{ produto.imagens.all.0.imagem.url }}" alt="" width="56" height="56" loading="lazy">
+                                    <img src="{{ produto.imagens.all.0.imagem.url|tamanho:'112x112' }}" alt="" width="56" height="56" loading="lazy">
                                 </button>
                             {% endfor %}
                         </div>
@@ -220,17 +220,38 @@
                     <a href="{{ whats }}" target="_blank" rel="noopener" class="btn btn-outline-dark">Pedir orçamento</a>
                 </div>
             </div>
-            <div class="ak-insta-mosaico" aria-label="Fotos de projetos">
-                {% for projeto in projetos|slice:":6" %}
-                    {% with foto=projeto.imagens.all.0 %}
-                        <a href="{% if foto and foto.imagem %}{% url 'project_detail' projeto.id %}{% else %}https://www.instagram.com/artskalaa/{% endif %}" aria-label="{{ projeto.titulo }}">
-                            {% if foto and foto.imagem %}<img src="{{ foto.imagem.url }}" alt="" loading="lazy" width="200" height="200">{% else %}<i class="bi bi-image" aria-hidden="true"></i>{% endif %}
+            <div class="ak-insta-mosaico" aria-label="Últimos posts do Instagram">
+                {% if posts_instagram %}
+                    {% for post in posts_instagram %}
+                        <a class="ak-insta-post" href="{{ post.link }}" target="_blank" rel="noopener" aria-label="Ver no Instagram: {{ post.legenda|truncatechars:80|default:'post da ArtSkala' }}">
+                            <img src="{{ post.imagem.url|tamanho:'480x480' }}" srcset="{{ post.imagem.url|tamanho:'320x320' }} 320w, {{ post.imagem.url|tamanho:'640x640' }} 640w" sizes="(max-width: 575px) 31vw, 210px" alt="" loading="lazy" decoding="async" width="320" height="320">
+                            {% if post.tipo == 'VIDEO' %}<span class="ak-insta-tipo" aria-hidden="true"><i class="bi bi-play-fill"></i></span>{% elif post.tipo == 'CAROUSEL_ALBUM' %}<span class="ak-insta-tipo" aria-hidden="true"><i class="bi bi-collection-fill"></i></span>{% endif %}
+                            <span class="ak-insta-legenda">
+                                <i class="bi bi-instagram" aria-hidden="true"></i>
+                                {% if post.legenda %}<span>{{ post.legenda|truncatechars:120 }}</span>{% endif %}
+                                {% if post.curtidas is not None %}<small><i class="bi bi-heart-fill" aria-hidden="true"></i> {{ post.curtidas }} &nbsp; <i class="bi bi-chat-fill" aria-hidden="true"></i> {{ post.comentarios|default:0 }}</small>{% endif %}
+                            </span>
                         </a>
-                    {% endwith %}
-                {% endfor %}
+                    {% endfor %}
+                {% else %}
+                    {% for projeto in projetos|slice:":6" %}
+                        {% with foto=projeto.imagens.all.0 %}
+                            {% if foto and foto.imagem %}
+                                <a class="ak-insta-post" href="{% url 'project_detail' projeto.id %}" aria-label="{{ projeto.titulo }}">
+                                    <img src="{{ foto.imagem.url|tamanho:'480x480' }}" srcset="{{ foto.imagem.url|tamanho:'320x320' }} 320w, {{ foto.imagem.url|tamanho:'640x640' }} 640w" sizes="(max-width: 575px) 31vw, 210px" alt="" loading="lazy" decoding="async" width="320" height="320">
+                                    <span class="ak-insta-legenda">
+                                        <i class="bi bi-images" aria-hidden="true"></i>
+                                        <span>{{ projeto.titulo }}</span>
+                                        {% if projeto.cliente %}<small>{{ projeto.cliente }}</small>{% endif %}
+                                    </span>
+                                </a>
+                            {% endif %}
+                        {% endwith %}
+                    {% endfor %}
+                {% endif %}
                 {# completa o mosaico até 6 quadros; o CSS esconde o que passar #}
                 {% for i in "123456" %}
-                    <a href="https://www.instagram.com/artskalaa/" target="_blank" rel="noopener" aria-label="Instagram da ArtSkala"><i class="bi bi-instagram" aria-hidden="true"></i></a>
+                    <a class="ak-insta-vago" href="https://www.instagram.com/artskalaa/" target="_blank" rel="noopener" aria-label="Instagram da ArtSkala"><i class="bi bi-instagram" aria-hidden="true"></i></a>
                 {% endfor %}
             </div>
         </div>

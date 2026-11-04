@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load artskala %}
 
 {% block title %}{{ projeto.titulo }} | Projetos ArtSkala{% endblock %}
 
@@ -29,8 +30,8 @@
                     <div class="ak-galeria">
                         {% for imagem in imagens %}
                             {% if imagem.ativo and imagem.imagem %}
-                                <button type="button" data-ampliar="{{ imagem.imagem.url }}" aria-label="Ampliar foto {{ forloop.counter }} de {{ projeto.titulo }}">
-                                    <img src="{{ imagem.imagem.url }}" alt="{{ projeto.titulo }} — foto {{ forloop.counter }}" loading="lazy" decoding="async">
+                                <button type="button" data-ampliar="{{ imagem.imagem.url|tamanho:'2000' }}" aria-label="Ampliar foto {{ forloop.counter }} de {{ projeto.titulo }}">
+                                    <img src="{{ imagem.imagem.url|tamanho:'1400' }}" alt="{{ projeto.titulo }} — foto {{ forloop.counter }}" loading="lazy" decoding="async">
                                 </button>
                             {% endif %}
                         {% endfor %}

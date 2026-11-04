@@ -12,6 +12,8 @@ from .models import (
     Pedido,
     ItemPedido,
     PerfilUsuario,
+    PostInstagram,
+    ConfigInstagram,
 )
 
 
@@ -657,3 +659,28 @@ class CupomAdmin(admin.ModelAdmin):
 class VideoProjetoAdmin(admin.ModelAdmin):
     list_display = ('titulo', 'projeto', 'ativo')
     search_fields = ('titulo', 'projeto__titulo')
+
+
+@admin.register(PostInstagram)
+class PostInstagramAdmin(admin.ModelAdmin):
+    list_display = ("__str__", "tipo", "publicado_em", "curtidas", "ativo")
+    list_filter = ("ativo", "tipo")
+    list_editable = ("ativo",)
+    search_fields = ("legenda",)
+    readonly_fields = ("instagram_id", "link", "publicado_em", "curtidas", "comentarios")
+    actions = ["sincronizar_agora"]
+
+    @admin.action(description="Buscar posts novos no Instagram agora")
+    def sincronizar_agora(self, request, queryset):
+        from .instagram import ErroInstagram, registrar_erro, sincronizar
+        try:
+            self.message_user(request, "Instagram: " + sincronizar())
+        except ErroInstagram as erro:
+            registrar_erro(erro)
+            self.message_user(request, f"Instagram: {erro}", level="error")
+
+
+@admin.register(ConfigInstagram)
+class ConfigInstagramAdmin(admin.ModelAdmin):
+    list_display = ("__str__", "expira_em", "ultima_sincronizacao", "ultimo_resultado")
+    readonly_fields = ("expira_em", "ultima_sincronizacao", "ultimo_resultado")

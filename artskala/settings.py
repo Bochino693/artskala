@@ -397,6 +397,11 @@ LOGGING = {
     },
 }
 
+# Instagram automático (core/instagram.py): token da "Instagram API com login
+# do Instagram" e o segredo que o agendador da Vercel envia (CRON_SECRET).
+INSTAGRAM_TOKEN = os.environ.get("INSTAGRAM_TOKEN", "").strip()
+CRON_SECRET = os.environ.get("CRON_SECRET", "").strip()
+
 # Aplica migrações pendentes quando o site sobe (core/auto_migracao.py).
 MIGRAR_AO_INICIAR = env_bool("MIGRAR_AO_INICIAR", EXIGIR_VARIAVEIS and bool(DATABASE_URL))
 LOGIN_REDIRECT_URL = "home"

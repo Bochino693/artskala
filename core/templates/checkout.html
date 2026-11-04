@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load artskala %}
 
 {% block title %}Finalizar pedido | ArtSkala{% endblock %}
 
@@ -32,7 +33,7 @@
                                     <td>
                                         <div class="d-flex align-items-center gap-3">
                                             {% with foto=item.produto.imagens.all.0 %}
-                                                <span class="ak-categoria-icone" style="width:52px;height:52px;border-radius:14px">{% if foto and foto.imagem %}<img src="{{ foto.imagem.url }}" alt="">{% else %}<i class="bi bi-image" aria-hidden="true"></i>{% endif %}</span>
+                                                <span class="ak-categoria-icone" style="width:52px;height:52px;border-radius:14px">{% if foto and foto.imagem %}<img src="{{ foto.imagem.url|tamanho:'104x104' }}" alt="">{% else %}<i class="bi bi-image" aria-hidden="true"></i>{% endif %}</span>
                                             {% endwith %}
                                             <strong>{{ item.produto.nome_produto }}</strong>
                                         </div>
