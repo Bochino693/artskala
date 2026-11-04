@@ -1,4 +1,5 @@
 {% extends "gestao/base_gestao.html" %}
+{% load artskala %}
 
 {% block titulo %}Projetos{% endblock %}
 
@@ -28,12 +29,12 @@
 
     <div class="cartao-stat azul">
         <div class="rotulo">Valor total estimado</div>
-        <div class="valor">R$ {{ valor_total_estimado|floatformat:2 }}</div>
+        <div class="valor">{{ valor_total_estimado|brl }}</div>
     </div>
 
     <div class="cartao-stat verde">
         <div class="rotulo">Lucro total estimado</div>
-        <div class="valor">R$ {{ lucro_total_estimado|floatformat:2 }}</div>
+        <div class="valor">{{ lucro_total_estimado|brl }}</div>
     </div>
 
     <div class="cartao-stat">
@@ -79,9 +80,9 @@
                                     <td class="col-titulo">{{ proj.titulo }}</td>
                                     <td>{{ proj.cliente|default:"—" }}</td>
                                     <td>{{ proj.data_execucao|date:"d/m/Y"|default:"—" }}</td>
-                                    <td class="num">R$ {{ proj.valor_estimado|floatformat:2 }}</td>
-                                    <td class="num">R$ {{ proj.custo_estimado|floatformat:2 }}</td>
-                                    <td class="num">{{ proj.margem_lucro_percentual|floatformat:1 }}%</td>
+                                    <td class="num">{{ proj.valor_estimado|brl }}</td>
+                                    <td class="num">{{ proj.custo_estimado|brl }}</td>
+                                    <td class="num">{{ proj.margem_lucro_percentual|pct }}</td>
                                     <td class="col-num">
                                         <div class="acoes-linha">
                                             <a href="{% url 'gestao_projeto_detalhe' proj.pk %}" class="btn btn-secundario" style="padding: 7px 12px; min-height: 34px;">
@@ -115,11 +116,11 @@
                             <div class="mobile-card-valor">
                                 <div>
                                     <div class="rotulo-mini">Valor</div>
-                                    <div class="valor-mini">R$ {{ proj.valor_estimado|floatformat:2 }}</div>
+                                    <div class="valor-mini">{{ proj.valor_estimado|brl }}</div>
                                 </div>
                                 <div>
                                     <div class="rotulo-mini">Margem</div>
-                                    <div class="valor-mini">{{ proj.margem_lucro_percentual|floatformat:1 }}%</div>
+                                    <div class="valor-mini">{{ proj.margem_lucro_percentual|pct }}</div>
                                 </div>
                             </div>
                         </a>

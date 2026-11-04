@@ -1,5 +1,7 @@
 import json
 import re
+
+from django.conf import settings
 from decimal import Decimal, InvalidOperation
 
 from django.contrib import messages
@@ -42,21 +44,28 @@ from django.shortcuts import redirect
 
 
 class SuperuserGestaoRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
+    """Acesso à gestão pela função da pessoa (core/equipe.py). Superusuário pode
+    tudo; Vendas e Produção só as telas da sua função."""
     login_url = "interno_login"
+    secao_gestao = None
 
     def test_func(self):
-        return self.request.user.is_authenticated and self.request.user.is_superuser
+        from .equipe import pode
+        return pode(self.request.user, self.secao_gestao)
 
     def handle_no_permission(self):
         from django.contrib.auth.views import redirect_to_login
+        from .equipe import eh_equipe
 
-        if getattr(self.request, 'is_interno', False) and self.request.user.is_authenticated:
+        user = self.request.user
+        if user.is_authenticated and eh_equipe(user):
+            # é da equipe, mas a função não abre esta tela
+            messages.error(self.request, "Sua função na equipe não tem acesso a esta tela.")
+            return redirect("gestao_dashboard")
+        if getattr(self.request, 'is_interno', False) and user.is_authenticated:
             from django.http import HttpResponseForbidden
             return HttpResponseForbidden('Acesso permitido somente à equipe autorizada.')
-
-        # Sem login (ou logado como cliente): login da equipe, voltando para a
-        # tela que a pessoa tentou abrir.
-        if self.request.user.is_authenticated:
+        if user.is_authenticated:
             messages.error(
                 self.request,
                 "Você não tem permissão para acessar a área de gestão. Entre com um usuário da equipe."
@@ -69,13 +78,9 @@ class SuperuserGestaoRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
 # ============================================================
 
 def _to_decimal(valor, default="0"):
-    try:
-        if valor is None:
-            return Decimal(default)
-        valor = str(valor).strip().replace(".", "").replace(",", ".") if "," in str(valor) else str(valor).strip()
-        return Decimal(valor)
-    except (InvalidOperation, TypeError, ValueError):
-        return Decimal(default)
+    """Aceita "R$ 1.234,56", "1234.56", "1,5"... (campos com máscara da gestão)."""
+    from .dinheiro import para_decimal
+    return para_decimal(valor, default)
 
 
 def _to_date(valor):
@@ -126,8 +131,10 @@ def _resumo_carrinho(carrinho):
 
 
 def _orcamentos_usuario(request):
+    """Orçamentos da equipe toda (a gestão é só para superusuários)."""
     return (
-        Orcamento.objects.filter(usuario=request.user, ativo=True)
+        Orcamento.objects.filter(ativo=True)
+        .select_related("usuario")
         .prefetch_related("itens", "itens__produto", "itens__projeto")
     )
 
@@ -945,91 +952,27 @@ class PaymentView(View):
 # ============================================================
 
 class GestaoDashboardView(SuperuserGestaoRequiredMixin, View):
-    login_url = "login"
+    secao_gestao = "dashboard"
+    """Painel: cartões do mês, gráficos (SVG) e a fila do que precisa de atenção."""
 
     def get(self, request):
-        orcamentos = _orcamentos_usuario(request)
-        pedidos = (
-            Pedido.objects.filter(usuario=request.user)
-            .prefetch_related("itens__produto")
-            .order_by("-criacao")
-        )
+        from .painel import dados_do_painel
 
-        total_orcamentos = orcamentos.count()
-        total_pedidos = pedidos.count()
-
-        valor_total_orcamentos = sum(
-            (orcamento.valor_total() for orcamento in orcamentos),
-            Decimal("0.00"),
-        )
-
-        valor_aprovado = sum(
-            (orcamento.valor_total() for orcamento in orcamentos if orcamento.status == "APROVADO"),
-            Decimal("0.00"),
-        )
-
-        custo_aprovado = sum(
-            (orcamento.custo_total() for orcamento in orcamentos if orcamento.status == "APROVADO"),
-            Decimal("0.00"),
-        )
-
-        lucro_aprovado = valor_aprovado - custo_aprovado
-
-        valor_pedidos = sum(
-            (pedido.valor_total for pedido in pedidos),
-            Decimal("0.00"),
-        )
-
-        custo_pedidos = sum(
-            (pedido.custo_total for pedido in pedidos),
-            Decimal("0.00"),
-        )
-
-        lucro_pedidos = valor_pedidos - custo_pedidos
-
-        lucro_estimado = lucro_aprovado + lucro_pedidos
-
-        resumo_status = orcamentos.values("status").annotate(total=Count("id"))
-        resumo_status_dict = {item["status"]: item["total"] for item in resumo_status}
-
-        resumo_status_lista = [
-            {
-                "chave": chave,
-                "rotulo": rotulo,
-                "total": resumo_status_dict.get(chave, 0),
-            }
-            for chave, rotulo in Orcamento.STATUS
-        ]
-
-        grafico_orcamentos = _dados_grafico_mensal_orcamentos(orcamentos.order_by("criacao"))
-
+        try:
+            meses = int(request.GET.get("meses", 12))
+        except (TypeError, ValueError):
+            meses = 12
+        meses = meses if meses in (6, 12, 24) else 12
+        painel = dados_do_painel(meses)
         ctx = {
-            "total_orcamentos": total_orcamentos,
-            "total_pedidos": total_pedidos,
-
-            "valor_total_orcamentos": valor_total_orcamentos,
-            "valor_aprovado": valor_aprovado,
-            "custo_aprovado": custo_aprovado,
-            "lucro_aprovado": lucro_aprovado,
-
-            "lucro_estimado": lucro_estimado,
-
-            "valor_pedidos": valor_pedidos,
-            "custo_pedidos": custo_pedidos,
-            "lucro_pedidos": lucro_pedidos,
-
-            "resumo_status_lista": resumo_status_lista,
-            "orcamentos_recentes": orcamentos.order_by("-criacao")[:6],
-            "pedidos_recentes": pedidos[:6],
-
-            "grafico_labels": json.dumps(grafico_orcamentos["labels"]),
-            "grafico_receita": json.dumps(grafico_orcamentos["receita"]),
-            "grafico_custo": json.dumps(grafico_orcamentos["custo"]),
-            "grafico_lucro": json.dumps(grafico_orcamentos["lucro"]),
-
+            "kpis": painel["kpis"],
+            "graficos": painel["graficos"],
+            "fila": painel["fila"],
+            "meses": meses,
+            "orcamentos_recentes": _orcamentos_usuario(request).order_by("-criacao")[:6],
+            "pedidos_recentes": Pedido.objects.select_related("usuario").order_by("-criacao")[:6],
             "secao_ativa": "dashboard",
         }
-
         return render(request, "gestao/dashboard.html", ctx)
 
 
@@ -1038,6 +981,7 @@ class GestaoDashboardView(SuperuserGestaoRequiredMixin, View):
 # ============================================================
 
 class GestaoProdutosView(SuperuserGestaoRequiredMixin, View):
+    secao_gestao = "produtos"
     login_url = "login"
     template_name = "gestao/produtos.html"
 
@@ -1150,6 +1094,7 @@ class GestaoProdutosView(SuperuserGestaoRequiredMixin, View):
 # ============================================================
 
 class GestaoProjetosView(SuperuserGestaoRequiredMixin, View):
+    secao_gestao = "projetos"
     login_url = "login"
     template_name = "gestao/projetos.html"
 
@@ -1293,6 +1238,7 @@ def _stats_projetos(qs_todos):
 # ============================================================
 
 class OrcamentoView(SuperuserGestaoRequiredMixin, View):
+    secao_gestao = "orcamentos"
     login_url = "login"
     template_name = "gestao/orcamentos.html"
 
@@ -1301,7 +1247,6 @@ class OrcamentoView(SuperuserGestaoRequiredMixin, View):
             orcamento = get_object_or_404(
                 Orcamento.objects.prefetch_related("itens__produto", "itens__projeto"),
                 pk=pk,
-                usuario=request.user,
                 ativo=True,
             )
         else:
@@ -1357,6 +1302,8 @@ class OrcamentoView(SuperuserGestaoRequiredMixin, View):
 
             "produtos": Produto.objects.filter(ativo=True).order_by("nome_produto"),
             "projetos": Projeto.objects.filter(ativo=True).order_by("titulo"),
+            "formas_pagamento": Orcamento.FORMAS_PAGAMENTO,
+            "origem": {"endereco": settings.ENDERECO_LOJA, "lat": settings.ORIGEM_LAT, "lng": settings.ORIGEM_LNG},
 
             "secao_ativa": "orcamentos",
         }
@@ -1369,11 +1316,13 @@ class OrcamentoView(SuperuserGestaoRequiredMixin, View):
             with transaction.atomic():
                 orcamento = get_object_or_404(
                     Orcamento.objects.select_for_update(), pk=pk,
-                    usuario=request.user, ativo=True
+                    ativo=True
                 ) if pk else Orcamento(usuario=request.user)
                 # Não silencie erros nem apague itens antes de validar a proposta.
                 dados = request.POST.copy()
-                for field in ("custo_extra", "forma_pagamento", "prazo_execucao", "data_prevista_entrega"):
+                for field in ("custo_extra", "forma_pagamento", "prazo_execucao", "data_prevista_entrega",
+                              "cliente_documento", "cep", "endereco", "numero", "complemento", "bairro",
+                              "cidade", "uf", "latitude", "longitude", "distancia_km", "tempo_deslocamento_min"):
                     if field not in dados:
                         value = getattr(orcamento, field)
                         dados[field] = "" if value is None else str(value)
@@ -1396,7 +1345,6 @@ class OrcamentoView(SuperuserGestaoRequiredMixin, View):
         orcamento = get_object_or_404(
             Orcamento,
             pk=pk,
-            usuario=request.user,
             ativo=True,
         )
 
@@ -1437,7 +1385,6 @@ class OrcamentoView(SuperuserGestaoRequiredMixin, View):
         orcamento = get_object_or_404(
             Orcamento,
             pk=pk,
-            usuario=request.user,
             ativo=True,
         )
 
@@ -1459,93 +1406,7 @@ class OrcamentoView(SuperuserGestaoRequiredMixin, View):
 # ÁREA INTERNA — PEDIDOS
 # ============================================================
 
-class GestaoPedidosView(SuperuserGestaoRequiredMixin, View):
-    login_url = "login"
-
-    def get(self, request):
-        pedidos = (
-            Pedido.objects.filter(usuario=request.user)
-            .order_by("-criacao")
-            .prefetch_related("itens__produto")
-        )
-
-        status_filtro = request.GET.get("status", "").strip()
-        busca = request.GET.get("q", "").strip()
-
-        if status_filtro:
-            pedidos = pedidos.filter(status=status_filtro)
-
-        if busca:
-            pedidos = pedidos.filter(
-                Q(id__icontains=busca) |
-                Q(endereco__icontains=busca)
-            )
-
-        ctx = {
-            "pedidos": pedidos,
-            "status_choices": Pedido.STATUS,
-            "status_filtro": status_filtro,
-            "busca": busca,
-            "secao_ativa": "pedidos",
-        }
-
-        return render(request, "gestao/pedidos.html", ctx)
-
-
-class GestaoPedidoDetalheView(SuperuserGestaoRequiredMixin, View):
-    login_url = "login"
-
-    def get(self, request, pk):
-        pedido = get_object_or_404(
-            Pedido.objects.prefetch_related("itens__produto"),
-            pk=pk,
-            usuario=request.user,
-        )
-
-        ctx = {
-            "pedido": pedido,
-            "itens": pedido.itens.select_related("produto"),
-            "status_choices": Pedido.STATUS,
-            "secao_ativa": "pedidos",
-        }
-
-        return render(request, "gestao/pedido_detalhe.html", ctx)
-
-    def put(self, request, pk):
-        pedido = get_object_or_404(Pedido, pk=pk, usuario=request.user)
-
-        try:
-            dados = json.loads(request.body or "{}")
-        except json.JSONDecodeError:
-            return JsonResponse(
-                {
-                    "success": False,
-                    "erro": "JSON inválido.",
-                },
-                status=400,
-            )
-
-        novo_status = dados.get("status")
-
-        if novo_status not in dict(Pedido.STATUS):
-            return JsonResponse(
-                {
-                    "success": False,
-                    "erro": "Status inválido.",
-                },
-                status=400,
-            )
-
-        pedido.status = novo_status
-        pedido.save(update_fields=["status", "modificado"])
-
-        return JsonResponse(
-            {
-                "success": True,
-                "status": pedido.status,
-                "status_display": pedido.get_status_display(),
-            }
-        )
+# GestaoPedidosView e GestaoPedidoDetalheView ficam em core/views_gestao.py
 
 
 # ============================================================
@@ -1553,6 +1414,7 @@ class GestaoPedidoDetalheView(SuperuserGestaoRequiredMixin, View):
 # ============================================================
 
 class RelatorioOrcamentosView(SuperuserGestaoRequiredMixin, View):
+    secao_gestao = "relatorio"
     login_url = "login"
 
     def get(self, request):
@@ -1642,6 +1504,7 @@ class RelatorioOrcamentosView(SuperuserGestaoRequiredMixin, View):
 
 
 class GestaoPerfilView(SuperuserGestaoRequiredMixin, View):
+    secao_gestao = "perfil"
     template_name = "gestao/perfil.html"
 
     def get(self, request):

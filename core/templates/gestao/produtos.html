@@ -1,4 +1,5 @@
 {% extends "gestao/base_gestao.html" %}
+{% load artskala %}
 
 {% block titulo %}Produtos{% endblock %}
 
@@ -28,13 +29,13 @@
 
     <div class="cartao-stat azul">
         <div class="rotulo">Valor em estoque</div>
-        <div class="valor">R$ {{ valor_estoque_total|floatformat:2 }}</div>
+        <div class="valor">{{ valor_estoque_total|brl }}</div>
         <div class="apoio">Preço de venda × quantidade</div>
     </div>
 
     <div class="cartao-stat verde">
         <div class="rotulo">Lucro potencial em estoque</div>
-        <div class="valor">R$ {{ lucro_estoque_total|floatformat:2 }}</div>
+        <div class="valor">{{ lucro_estoque_total|brl }}</div>
         <div class="apoio">Estimado sobre o estoque atual</div>
     </div>
 
@@ -90,11 +91,11 @@
                         <tbody>
                             {% for p in produtos %}
                                 <tr>
-                                    <td class="col-titulo">{{ p.nome_produto }}</td>
+                                    <td class="col-titulo">{{ p.nome_produto }}<br><code class="codigo-mini">{{ p|codigo }}</code></td>
                                     <td>{{ p.categoria.nome_categoria }}</td>
-                                    <td class="num">R$ {{ p.preco|floatformat:2 }}</td>
-                                    <td class="num">R$ {{ p.custo|floatformat:2 }}</td>
-                                    <td class="num">{{ p.margem_lucro_percentual|floatformat:1 }}%</td>
+                                    <td class="num">{% if p.preco > 0 %}{{ p.preco|brl }}{% else %}<span class="texto-fraco">Sob consulta</span>{% endif %}</td>
+                                    <td class="num">{{ p.custo|brl }}</td>
+                                    <td class="num">{{ p.margem_lucro_percentual|pct }}</td>
                                     <td class="num">
                                         {% if p.estoque <= 0 %}
                                             <span class="selo RECUSADO">Zerado</span>
@@ -107,6 +108,7 @@
                                             <a href="{% url 'gestao_produto_detalhe' p.pk %}" class="btn btn-secundario" style="padding: 7px 12px; min-height: 34px;">
                                                 Editar
                                             </a>
+                                            <a href="{% url 'gestao_etiquetas' %}?tipo=produto&ids={{ p.pk }}" class="btn btn-secundario" style="padding: 7px 12px; min-height: 34px;" title="Etiqueta de preço">Etiqueta</a>
                                             <button type="button" class="btn btn-perigo" style="padding: 7px 12px; min-height: 34px;" onclick="excluirProduto({{ p.pk }})">
                                                 Excluir
                                             </button>
@@ -132,11 +134,11 @@
                             <div class="mobile-card-valor">
                                 <div>
                                     <div class="rotulo-mini">Preço</div>
-                                    <div class="valor-mini">R$ {{ p.preco|floatformat:2 }}</div>
+                                    <div class="valor-mini">{{ p.preco|brl }}</div>
                                 </div>
                                 <div>
                                     <div class="rotulo-mini">Margem</div>
-                                    <div class="valor-mini">{{ p.margem_lucro_percentual|floatformat:1 }}%</div>
+                                    <div class="valor-mini">{{ p.margem_lucro_percentual|pct }}</div>
                                 </div>
                             </div>
                         </a>
@@ -158,7 +160,7 @@
     <div class="painel">
         <h2 class="painel-titulo">{% if produto %}Editar produto{% else %}Novo produto{% endif %}</h2>
 
-        <form method="post"
+        <form method="post" id="form-produto"
               enctype="multipart/form-data"
               action="{% if produto %}{% url 'gestao_produto_detalhe' produto.pk %}{% else %}{% url 'gestao_produtos' %}{% endif %}">
             {% csrf_token %}
@@ -174,11 +176,7 @@
                     <option value="">Selecione...</option>
                     {% for categoria in categorias %}
                         <option value="{{ categoria.id }}" {% if produto and produto.categoria_id == categoria.id %}selected{% endif %}>
-                            {% if p.categoria %}
-                                {{ p.categoria.nome_categoria }}
-                            {% else %}
-                                Sem categoria
-                            {% endif %}
+                            {{ categoria.nome_categoria }}
                         </option>
                     {% endfor %}
                 </select>
@@ -191,13 +189,24 @@
 
             <div class="linha-campos">
                 <div class="campo">
-                    <label for="preco">Preço de venda (R$)</label>
-                    <input type="number" step="0.01" min="0" id="preco" name="preco" value="{{ produto.preco|default:'0.00' }}">
+                    <label for="custo">Custo interno</label>
+                    <input type="text" id="custo" name="custo" value="{{ produto.custo|default:'0'|stringformat:'s' }}">
                 </div>
 
                 <div class="campo">
-                    <label for="custo">Custo interno (R$)</label>
-                    <input type="number" step="0.01" min="0" id="custo" name="custo" value="{{ produto.custo|default:'0.00' }}">
+                    <label for="preco">Preço de venda <small class="texto-fraco">(0,00 = sob consulta)</small></label>
+                    <input type="text" id="preco" name="preco" value="{{ produto.preco|default:'0'|stringformat:'s' }}">
+                </div>
+            </div>
+
+            <div class="calculadora" data-calc-preco>
+                <div class="calculadora-titulo"><span>Calculadora de preço</span>
+                    <span class="acoes-linha"><input type="text" data-campo="pct" data-margem value="40" aria-label="Margem desejada" style="width:92px;min-height:32px"><button type="button" class="btn btn-secundario btn-mini" data-usar-sugerido>Usar preço sugerido</button></span>
+                </div>
+                <div class="calculadora-linha">
+                    <div class="calculadora-numero"><small>Lucro por unidade</small><strong data-calc="lucro">R$ 0,00</strong></div>
+                    <div class="calculadora-numero"><small>Margem / markup</small><strong data-calc="margem">0% · 0,00×</strong></div>
+                    <div class="calculadora-numero"><small>Sugerido p/ a margem</small><strong data-calc="sugerido">R$ 0,00</strong></div>
                 </div>
             </div>
 
@@ -241,6 +250,7 @@
                 </button>
 
                 {% if produto %}
+                    <a href="{% url 'gestao_etiquetas' %}?tipo=produto&ids={{ produto.pk }}" class="btn btn-secundario">Imprimir etiqueta</a>
                     <a href="{% url 'gestao_produtos' %}" class="btn btn-secundario">Cancelar</a>
                 {% endif %}
             </div>
@@ -250,6 +260,36 @@
 {% endblock %}
 
 {% block extra_js %}
+<script>
+    // Calculadora: custo + preço -> lucro, margem e markup; margem desejada -> preço sugerido.
+    (function () {
+        const caixa = document.querySelector("[data-calc-preco]");
+        if (!caixa || !window.Gestao) return;
+        const custo = document.getElementById("custo"), preco = document.getElementById("preco"), margem = caixa.querySelector("[data-margem]");
+        const saida = k => caixa.querySelector(`[data-calc="${k}"]`);
+        const fmt = (n, c = 1) => n.toLocaleString("pt-BR", { minimumFractionDigits: c, maximumFractionDigits: c });
+        try { const m = localStorage.getItem("ak-margem"); if (m) margem.value = m; } catch (e) { /* */ }
+        function conta() {
+            const c = Gestao.lerNumero(custo.value), p = Gestao.lerNumero(preco.value), m = Math.min(95, Gestao.lerNumero(margem.value));
+            const lucro = p - c;
+            saida("lucro").textContent = Gestao.formatarBRL(lucro);
+            saida("lucro").parentNode.className = "calculadora-numero " + (p > 0 ? (lucro > 0 ? "bom" : "ruim") : "");
+            saida("margem").textContent = p > 0 ? `${fmt(lucro / p * 100)}% · ${c > 0 ? fmt(p / c, 2) + "×" : "—"}` : "Sob consulta";
+            const sugerido = c > 0 ? c / (1 - m / 100) : 0;
+            saida("sugerido").textContent = Gestao.formatarBRL(sugerido);
+            return sugerido;
+        }
+        [custo, preco, margem].forEach(el => el.addEventListener("input", conta));
+        margem.addEventListener("change", () => { try { localStorage.setItem("ak-margem", margem.value); } catch (e) { /* */ } });
+        caixa.querySelector("[data-usar-sugerido]").addEventListener("click", () => {
+            const s = conta();
+            if (s > 0) Gestao.definirValor(preco, Math.round(s * 100) / 100);
+            conta();
+        });
+        document.addEventListener("DOMContentLoaded", conta);
+        setTimeout(conta, 0);
+    })();
+</script>
 <script>
     function getCookie(name) {
         const valor = `; ${document.cookie}`;

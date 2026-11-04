@@ -1,0 +1,163 @@
+{% extends "gestao/base_gestao.html" %}
+{% load artskala %}
+{% block titulo %}Equipe e clientes{% endblock %}
+
+{% block conteudo %}
+<div class="cabecalho-pagina">
+    <div>
+        <div class="eyebrow">Pessoas</div>
+        <h1 class="titulo-pagina">Equipe e clientes</h1>
+        <div class="subtitulo-pagina">Quem entra na gestão e com qual função (como no Lazer &amp; Sport), e os clientes cadastrados no site com o quanto já compraram.</div>
+    </div>
+    <div class="acoes-linha">
+        <div class="segmentos" role="tablist">
+            <a href="?aba=equipe" class="{% if aba == 'equipe' %}ativo{% endif %}">Equipe</a>
+            <a href="?aba=clientes" class="{% if aba == 'clientes' %}ativo{% endif %}">Clientes</a>
+        </div>
+        {% if aba == 'equipe' %}<button type="button" class="btn btn-primario" data-nova-pessoa>+ Pessoa na equipe</button>{% endif %}
+    </div>
+</div>
+
+{% if aba == 'equipe' %}
+<div class="grade-cartoes">
+    <div class="cartao-stat verde"><div class="rotulo">Contas ativas</div><div class="valor">{{ ativos }}</div><div class="apoio">Com acesso à gestão</div></div>
+    {% for f in funcoes %}
+        <div class="cartao-stat {% cycle 'vermelho' 'azul' 'violeta' %}"><div class="rotulo">{{ f.icone }} {{ f.titulo }}</div><div class="valor">{{ contagem_funcoes|get_item:f.codigo }}</div><div class="apoio">{{ f.descricao }}</div></div>
+    {% endfor %}
+</div>
+
+<div class="painel">
+    {% if equipe %}
+    <div class="tabela-responsiva">
+        <table class="ledger tabela-cartoes">
+            <thead><tr><th>Pessoa</th><th>Função</th><th>Situação</th><th>Último acesso</th><th></th></tr></thead>
+            <tbody>
+            {% for p in equipe %}
+                <tr class="{% if not p.u.is_active %}inativo{% endif %}">
+                    <td data-rotulo="Pessoa">
+                        <div class="pessoa">
+                            <span class="avatar-inicial">{{ p.u.first_name|default:p.u.username|slice:":1"|upper }}</span>
+                            <span><strong>{{ p.u.get_full_name|default:p.u.username }}</strong><small>{{ p.u.username }}{% if p.u.email %} · {{ p.u.email }}{% endif %}{% if p.u == request.user %} · <b>você</b>{% endif %}</small></span>
+                        </div>
+                    </td>
+                    <td data-rotulo="Função">{% for f in funcoes %}{% if f.codigo == p.funcao %}<span class="funcao-selo funcao-{{ f.codigo }}">{{ f.icone }} {{ f.titulo }}</span>{% endif %}{% endfor %}{% if not p.funcao %}<span class="texto-fraco">Sem função</span>{% endif %}</td>
+                    <td data-rotulo="Situação"><span class="selo {% if p.u.is_active %}APROVADO{% else %}RECUSADO{% endif %}">{% if p.u.is_active %}Ativo{% else %}Inativo{% endif %}</span></td>
+                    <td data-rotulo="Último acesso">{{ p.u.last_login|date:"d/m/Y H:i"|default:"Nunca entrou" }}</td>
+                    <td class="col-num">
+                        <div class="acoes-linha">
+                            <button type="button" class="btn btn-secundario btn-mini" data-editar
+                                data-pk="{{ p.u.pk }}" data-first_name="{{ p.u.first_name }}" data-last_name="{{ p.u.last_name }}"
+                                data-username="{{ p.u.username }}" data-email="{{ p.u.email }}" data-funcao="{{ p.funcao }}"
+                                data-ativo="{% if p.u.is_active %}1{% else %}0{% endif %}" data-eu="{% if p.u == request.user %}1{% endif %}">Editar</button>
+                            {% if p.u != request.user %}
+                            <form method="post" data-sem-aviso>
+                                {% csrf_token %}<input type="hidden" name="acao" value="alternar"><input type="hidden" name="pk" value="{{ p.u.pk }}">
+                                <button type="submit" class="btn {% if p.u.is_active %}btn-perigo{% else %}btn-secundario{% endif %} btn-mini">{% if p.u.is_active %}Desativar{% else %}Reativar{% endif %}</button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        <div class="vazio"><div class="fonte-display">Só você por aqui</div>Cadastre quem trabalha com você: cada pessoa entra com o próprio usuário.</div>
+    {% endif %}
+</div>
+
+<dialog class="modal-pessoa" id="modal-pessoa">
+    <form method="post" data-sem-aviso>
+        {% csrf_token %}
+        <input type="hidden" name="acao" value="salvar">
+        <input type="hidden" name="pk" value="">
+        <div class="modal-cabeca"><h2 data-modal-titulo>Nova pessoa na equipe</h2><button type="button" class="modal-fechar" data-fechar aria-label="Fechar">×</button></div>
+        <div class="linha-campos">
+            <div class="campo"><label for="p-nome">Nome</label><input id="p-nome" name="first_name" maxlength="150" required></div>
+            <div class="campo"><label for="p-sobrenome">Sobrenome</label><input id="p-sobrenome" name="last_name" maxlength="150"></div>
+        </div>
+        <div class="linha-campos">
+            <div class="campo"><label for="p-usuario">Usuário (para entrar)</label><input id="p-usuario" name="username" maxlength="150" required autocomplete="off" autocapitalize="none" spellcheck="false"></div>
+            <div class="campo"><label for="p-email">E-mail</label><input id="p-email" type="email" name="email" maxlength="254"></div>
+        </div>
+        <div class="campo"><label for="p-senha">Senha <small class="texto-fraco" data-dica-senha>(mínimo 8 caracteres)</small></label><input id="p-senha" type="password" name="password" autocomplete="new-password" minlength="8"></div>
+        <fieldset class="funcoes-opcoes">
+            <legend>Função</legend>
+            {% for f in funcoes %}
+                <label class="funcao-opcao"><input type="radio" name="funcao" value="{{ f.codigo }}" {% if forloop.counter == 2 %}checked{% endif %}><span><strong>{{ f.icone }} {{ f.titulo }}</strong><small>{{ f.descricao }}</small></span></label>
+            {% endfor %}
+        </fieldset>
+        <label class="check-linha" data-linha-ativo><input type="checkbox" name="ativo" value="1" checked> Conta ativa (pode entrar)</label>
+        <div class="acoes-linha" style="margin-top:16px"><button type="submit" class="btn btn-primario">Salvar</button><button type="button" class="btn btn-secundario" data-fechar>Cancelar</button></div>
+    </form>
+</dialog>
+
+{% else %}
+<div class="grade-cartoes">
+    <div class="cartao-stat azul"><div class="rotulo">Clientes cadastrados</div><div class="valor">{{ clientes_total|numero_br }}</div><div class="apoio">Contas criadas no site</div></div>
+    <div class="cartao-stat verde"><div class="rotulo">Já compraram</div><div class="valor">{{ clientes_com_pedido|numero_br }}</div><div class="apoio">Com pelo menos 1 pedido</div></div>
+    <div class="cartao-stat ambar"><div class="rotulo">Novos em 30 dias</div><div class="valor">{{ clientes_novos|numero_br }}</div><div class="apoio">Cadastros recentes</div></div>
+</div>
+
+<div class="painel">
+    <form method="get" class="acoes-linha" style="margin-bottom:16px;align-items:end">
+        <input type="hidden" name="aba" value="clientes">
+        <div class="campo" style="flex:1;min-width:220px;margin-bottom:0"><label for="q">Buscar cliente</label><input id="q" name="q" value="{{ busca }}" placeholder="Nome, e-mail, telefone ou cidade"></div>
+        <button class="btn btn-secundario" type="submit">Buscar</button>
+    </form>
+    {% if clientes %}
+    <div class="tabela-responsiva">
+        <table class="ledger tabela-cartoes">
+            <thead><tr><th>Cliente</th><th>Contato</th><th>Cidade</th><th class="num">Pedidos</th><th class="num">Total comprado</th><th>Cliente desde</th><th></th></tr></thead>
+            <tbody>
+            {% for c in clientes %}
+                <tr>
+                    <td data-rotulo="Cliente"><div class="pessoa"><span class="avatar-inicial cliente">{{ c.u.first_name|default:c.u.username|slice:":1"|upper }}</span><span><strong>{{ c.u.get_full_name|default:c.u.username }}</strong><small>{{ c.u.username }}</small></span></div></td>
+                    <td data-rotulo="Contato">{% if c.u.email %}<a href="mailto:{{ c.u.email }}">{{ c.u.email }}</a>{% endif %}{% if c.telefone %}<br><small class="texto-fraco">{{ c.telefone }}</small>{% endif %}</td>
+                    <td data-rotulo="Cidade">{{ c.cidade|default:"—" }}</td>
+                    <td class="num" data-rotulo="Pedidos">{{ c.n_pedidos }}</td>
+                    <td class="num" data-rotulo="Total comprado"><strong>{{ c.gasto|brl }}</strong></td>
+                    <td data-rotulo="Cliente desde">{{ c.u.date_joined|date:"d/m/Y" }}</td>
+                    <td class="col-num"><div class="acoes-linha">{% if c.n_pedidos %}<a class="btn btn-secundario btn-mini" href="{% url 'gestao_pedidos' %}?q={{ c.u.email|default:c.u.username|urlencode }}">Pedidos</a>{% endif %}{% if c.whatsapp %}<a class="btn btn-secundario btn-mini" href="{{ c.whatsapp }}" target="_blank" rel="noopener">WhatsApp</a>{% endif %}</div></td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        <div class="vazio"><div class="fonte-display">{% if busca %}Ninguém com essa busca{% else %}Nenhum cliente cadastrado ainda{% endif %}</div>{% if busca %}Tente outro nome ou e-mail.{% else %}Quando alguém criar conta no site, aparece aqui.{% endif %}</div>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    const modal = document.getElementById("modal-pessoa");
+    if (!modal) return;
+    const form = modal.querySelector("form");
+    const titulo = modal.querySelector("[data-modal-titulo]");
+    const dicaSenha = modal.querySelector("[data-dica-senha]");
+    function abrir(dados) {
+        form.reset();
+        form.elements.pk.value = dados ? dados.pk : "";
+        ["first_name", "last_name", "username", "email"].forEach(n => { form.elements[n].value = dados ? dados[n] || "" : ""; });
+        const funcao = dados && dados.funcao ? dados.funcao : "vendas";
+        form.querySelectorAll("[name=funcao]").forEach(r => { r.checked = r.value === funcao; r.disabled = !!(dados && dados.eu) && r.value !== "gestao"; });
+        form.elements.ativo.checked = !dados || dados.ativo === "1";
+        modal.querySelector("[data-linha-ativo]").hidden = !!(dados && dados.eu);
+        form.elements.password.required = !dados;
+        dicaSenha.textContent = dados ? "(deixe em branco para manter a atual)" : "(mínimo 8 caracteres)";
+        titulo.textContent = dados ? "Editar " + (dados.first_name || dados.username) : "Nova pessoa na equipe";
+        modal.showModal();
+        setTimeout(() => form.elements.first_name.focus(), 0);
+    }
+    document.querySelector("[data-nova-pessoa]").addEventListener("click", () => abrir(null));
+    document.querySelectorAll("[data-editar]").forEach(b => b.addEventListener("click", () => abrir({ ...b.dataset })));
+    modal.querySelectorAll("[data-fechar]").forEach(b => b.addEventListener("click", () => modal.close()));
+    modal.addEventListener("click", e => { if (e.target === modal) modal.close(); });
+})();
+</script>
+{% endblock %}

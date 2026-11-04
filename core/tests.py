@@ -592,3 +592,125 @@ class PrintsDoInstagramTests(TestCase):
                                                     'foto': SimpleUploadedFile('a.jpg', b'nao-e-imagem')})
         self.assertEqual(r.status_code, 400)
         self.assertContains(self.client.get('/gestao/instagram/'), 'id="dados-categorias"')
+
+
+class SuperGestaoTests(TestCase):
+    """Gestão nova: dinheiro, busca rápida, pedidos de todos, etiquetas, equipe e painel."""
+
+    def setUp(self):
+        from .models import CategoriaProdutos, ItemPedido, Pedido, PerfilUsuario, Produto
+        self.gestor = get_user_model().objects.create_superuser('equipe', 'e@example.com', 'senha-forte-123')
+        self.client.force_login(self.gestor)
+        cat = CategoriaProdutos.objects.create(nome_categoria='Placas')
+        self.produto = Produto.objects.create(categoria=cat, nome_produto='Placa ACM', preco=150, custo=60, estoque=3)
+        self.cliente = get_user_model().objects.create_user('marina', 'marina@example.com', 'senha-forte-123', first_name='Marina')
+        PerfilUsuario.objects.create(usuario=self.cliente, telefone='(11) 98765-4321', cidade='São Paulo', estado='SP')
+        self.pedido = Pedido.objects.create(usuario=self.cliente, status='PAGO', endereco='Rua A, 10')
+        ItemPedido.objects.create(pedido=self.pedido, produto=self.produto, quantidade=2, preco_unitario=150, custo_unitario=60)
+        self.pedido.recalcular_totais()
+
+    def test_dinheiro(self):
+        from decimal import Decimal
+        from .dinheiro import codigo, formatar_brl, ler_codigo, para_decimal
+        self.assertEqual(para_decimal('R$ 1.234,56'), Decimal('1234.56'))
+        self.assertEqual(para_decimal('1234.5'), Decimal('1234.5'))
+        self.assertEqual(para_decimal('0,01'), Decimal('0.01'))
+        self.assertEqual(para_decimal('12,5 %'), Decimal('12.5'))
+        self.assertEqual(para_decimal('abc'), Decimal('0'))
+        self.assertEqual(formatar_brl(Decimal('206748')), 'R$ 206.748,00')
+        self.assertEqual(formatar_brl(-3.5), '-R$ 3,50')
+        self.assertEqual(codigo(self.produto), 'PRD-%06d' % self.produto.pk)
+        self.assertEqual(ler_codigo('prd 12'), ('PRD', 12))
+        self.assertIsNone(ler_codigo('placa'))
+
+    def test_valores_com_mascara_sao_salvos(self):
+        r = self.client.post('/interno/produtos/%s/' % self.produto.pk, {
+            'nome_produto': 'Placa ACM', 'categoria': self.produto.categoria_id, 'preco': '1.500,90',
+            'custo': '600,00', 'estoque': '4', 'avaliacao': '0'})
+        self.assertEqual(r.status_code, 302)
+        self.produto.refresh_from_db()
+        self.assertEqual(str(self.produto.preco), '1500.90')
+        pagina = self.client.get('/interno/produtos/')
+        self.assertContains(pagina, 'R$ 1.500,90')
+        self.assertContains(pagina, 'Placas')
+        self.assertNotContains(pagina, 'Sem categoria')
+
+    def test_orcamento_com_endereco_distancia_e_valores_mascarados(self):
+        from .models import Orcamento
+        r = self.client.post('/interno/orcamentos/', {
+            'titulo': 'Fachada', 'tipo': 'MISTO', 'cliente_nome': 'Kasuko', 'cliente_telefone': '(11) 99999-9999',
+            'cliente_documento': '111.444.777-35', 'cep': '03132-000', 'endereco': 'Rua do Oratório', 'numero': '1200',
+            'bairro': 'Mooca', 'cidade': 'São Paulo', 'uf': 'sp', 'latitude': '-23.558500', 'longitude': '-46.599000',
+            'distancia_km': '12.4', 'tempo_deslocamento_min': '28', 'desconto_percentual': '10,00', 'custo_extra': '1.200,00',
+            'forma_pagamento': 'PIX',
+            'item_produto[]': [''], 'item_projeto[]': [''], 'item_descricao[]': ['Fachada (2,50 × 1,20 m = 3,00 m²)'],
+            'item_data[]': [''], 'item_quantidade[]': ['1'], 'item_valor[]': ['2.400,00'], 'item_custo[]': ['900,50']})
+        self.assertEqual(r.status_code, 302, r)
+        o = Orcamento.objects.get(titulo='Fachada')
+        self.assertEqual((str(o.distancia_km), o.uf, str(o.custo_extra), str(o.desconto_percentual)), ('12.4', 'SP', '1200.00', '10.00'))
+        self.assertEqual(str(o.itens.get().valor_unitario), '2400.00')
+        self.assertIn('Rua do Oratório, 1200', o.endereco_completo())
+        detalhe = self.client.get('/interno/orcamentos/%s/' % o.pk)
+        self.assertContains(detalhe, '12,4 km')
+        self.assertContains(self.client.get('/interno/orcamentos/%s/imprimir/' % o.pk), 'km da ArtSkala')
+
+    def test_pedidos_de_todos_os_clientes_e_status(self):
+        lista = self.client.get('/interno/pedidos/')
+        self.assertContains(lista, 'Marina')
+        self.assertContains(lista, 'R$ 300,00')
+        detalhe = self.client.get('/interno/pedidos/%s/' % self.pedido.pk)
+        self.assertContains(detalhe, 'https://wa.me/5511987654321')
+        r = self.client.put('/interno/pedidos/%s/' % self.pedido.pk, '{"status": "ENVIADO"}', content_type='application/json')
+        self.assertTrue(r.json()['success'])
+        self.pedido.refresh_from_db()
+        self.assertEqual(self.pedido.status, 'ENVIADO')
+
+    def test_busca_rapida_por_codigo_e_nome(self):
+        r = self.client.get('/interno/buscar/', {'q': 'PRD-%06d' % self.produto.pk}).json()
+        self.assertTrue(r['exato'])
+        self.assertEqual(r['resultados'][0]['url'], '/interno/produtos/%s/' % self.produto.pk)
+        nomes = [x['titulo'] for x in self.client.get('/interno/buscar/', {'q': 'marina'}).json()['resultados']]
+        self.assertTrue(any('Marina' in n for n in nomes))
+
+    def test_etiquetas_e_qrcode(self):
+        pagina = self.client.get('/interno/etiquetas/', {'tipo': 'pedido', 'ids': str(self.pedido.pk)})
+        self.assertContains(pagina, 'dados-etiquetas')
+        self.assertContains(pagina, 'PED-%06d' % self.pedido.pk)
+        self.assertContains(pagina, 'rolo-100x150')
+        qr = self.client.get('/interno/etiquetas/qr.svg', {'d': 'https://artskala.com.br/products/1/'})
+        self.assertEqual(qr['Content-Type'], 'image/svg+xml')
+        self.assertIn(b'<svg', qr.content)
+
+    def test_painel_com_graficos(self):
+        pagina = self.client.get('/interno/?meses=6')
+        self.assertContains(pagina, 'dados-graficos')
+        self.assertContains(pagina, 'Pedido pago aguardando envio')
+        self.assertContains(pagina, 'R$ 300,00')
+
+    def test_equipe_funcoes_e_acesso(self):
+        r = self.client.post('/interno/equipe/', {'acao': 'salvar', 'first_name': 'Bruna', 'username': 'bruna',
+                                                  'email': 'bruna@example.com', 'password': 'senha-forte-987', 'funcao': 'vendas'})
+        self.assertEqual(r.status_code, 302)
+        bruna = get_user_model().objects.get(username='bruna')
+        self.assertTrue(bruna.is_staff)
+        self.assertFalse(bruna.is_superuser)
+        self.assertContains(self.client.get('/interno/equipe/?aba=clientes'), 'Marina')
+        # não dá para tirar a função Gestão de si mesmo
+        self.client.post('/interno/equipe/', {'acao': 'salvar', 'pk': self.gestor.pk, 'username': 'equipe', 'funcao': 'vendas'})
+        self.gestor.refresh_from_db()
+        self.assertTrue(self.gestor.is_superuser)
+        # vendas entra, vê pedidos, mas não relatórios nem equipe
+        self.client.logout()
+        entrou = self.client.post('/interno/login/', {'username': 'bruna', 'password': 'senha-forte-987'})
+        self.assertEqual(entrou['Location'], '/interno/')
+        self.assertEqual(self.client.get('/interno/pedidos/').status_code, 200)
+        self.assertEqual(self.client.get('/interno/relatorio/')['Location'], '/interno/')
+        self.assertEqual(self.client.get('/interno/equipe/')['Location'], '/interno/')
+        menu = self.client.get('/interno/').content.decode()
+        self.assertIn('/interno/pedidos/', menu)
+        self.assertNotIn('/interno/relatorio/', menu)
+        # desativada não entra mais
+        bruna.is_active = False
+        bruna.save()
+        self.client.logout()
+        self.assertContains(self.client.post('/interno/login/', {'username': 'bruna', 'password': 'senha-forte-987'}), 'incorretos')

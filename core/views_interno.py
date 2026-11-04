@@ -20,8 +20,9 @@ class LoginEquipeForm(AuthenticationForm):
     }
 
     def confirm_login_allowed(self, user):
+        from .equipe import eh_equipe
         super().confirm_login_allowed(user)
-        if not user.is_superuser:
+        if not eh_equipe(user):
             raise forms.ValidationError(self.error_messages["sem_acesso"], code="sem_acesso")
 
 
@@ -32,7 +33,8 @@ class LoginEquipeView(auth_views.LoginView):
 
     def dispatch(self, request, *args, **kwargs):
         # Quem já é da equipe vai direto para a gestão (ou para onde ia).
-        if request.method == "GET" and request.user.is_authenticated and request.user.is_superuser:
+        from .equipe import eh_equipe
+        if request.method == "GET" and request.user.is_authenticated and eh_equipe(request.user):
             destino = request.GET.get("next", "")
             if not url_has_allowed_host_and_scheme(destino, {request.get_host()}, require_https=request.is_secure()):
                 destino = reverse("gestao_dashboard")

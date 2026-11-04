@@ -1,0 +1,76 @@
+/* Painel: gráficos em SVG, fila de trabalho e listas recentes. */
+.grade-kpis { grid-template-columns: repeat(auto-fit, minmax(208px, 1fr)) !important; }
+
+.graf-painel { min-width: 0; }
+.graf-cabeca { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+.graf-cabeca .painel-titulo { margin-bottom: 2px; }
+.graf-sub { margin: 0; color: #667389; font-size: 13px; }
+.graf-legenda { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; color: #4b5870; font-weight: 600; }
+.graf-legenda i { display: inline-block; width: 10px; height: 10px; margin-right: 6px; border-radius: 3px; vertical-align: -1px; }
+.graf-legenda i.linha { height: 3px; width: 14px; border-radius: 2px; vertical-align: 2px; }
+.graf { position: relative; width: 100%; min-height: 120px; }
+.graf svg { display: block; width: 100%; height: auto; overflow: visible; }
+.graf-barra { transition: opacity .15s ease; }
+.graf-vazio { display: grid; place-items: center; min-height: 160px; padding: 20px; border: 1px dashed #d7dce5; border-radius: 14px; color: #667389; font-size: 14px; text-align: center; }
+.graf-totais { display: flex; gap: 28px; flex-wrap: wrap; margin-top: 8px; padding-top: 12px; border-top: 1px solid var(--linha); }
+.graf-totais small { display: block; color: #667389; font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
+.graf-totais strong { font: 800 18px "IBM Plex Mono", monospace; }
+.graf-grade { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+
+.graf-dica {
+    position: fixed; z-index: 60; display: flex; flex-direction: column; gap: 3px; min-width: 170px; padding: 10px 12px;
+    border-radius: 12px; background: #1b2332; color: #fff; font-size: 12.5px; box-shadow: 0 14px 34px rgba(17, 22, 34, .3); pointer-events: none;
+}
+.graf-dica strong { font-size: 13px; text-transform: capitalize; margin-bottom: 2px; }
+.graf-dica span { display: flex; align-items: center; gap: 6px; }
+.graf-dica span b { margin-left: auto; font-variant-numeric: tabular-nums; }
+.graf-dica i { display: inline-block; width: 9px; height: 9px; border-radius: 3px; }
+.graf-dica small { color: #aab3c5; margin-top: 2px; }
+
+.graf-barras { display: flex; flex-direction: column; gap: 12px; }
+.graf-barras-topo { display: flex; justify-content: space-between; gap: 10px; font-size: 13.5px; }
+.graf-barras-topo span { font-weight: 700; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.graf-barras-topo b { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.graf-barras-trilho { height: 10px; margin-top: 5px; border-radius: 999px; background: #eef1f6; overflow: hidden; }
+.graf-barras-trilho span { display: block; height: 100%; border-radius: 999px; transition: width .6s ease; }
+.graf-barras small { color: #667389; font-size: 12px; }
+
+.graf-donut { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
+.graf-donut svg { width: 190px; height: 190px; transform: rotate(0deg); flex: 0 0 auto; }
+.graf-fatia { transition: stroke-width .15s ease; cursor: default; }
+.graf-fatia:hover { stroke-width: 7.6; }
+.graf-donut-legenda { list-style: none; margin: 0; padding: 0; flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 8px; }
+.graf-donut-legenda li { display: grid; grid-template-columns: 12px 1fr auto; gap: 2px 8px; align-items: center; font-size: 13.5px; }
+.graf-donut-legenda i { width: 12px; height: 12px; border-radius: 4px; }
+.graf-donut-legenda span { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.graf-donut-legenda small { grid-column: 2 / -1; color: #667389; font-size: 12px; }
+
+.fila { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.fila-item { display: grid; grid-template-columns: 10px 1fr auto; gap: 12px; align-items: center; padding: 11px 12px; border: 1px solid var(--linha); border-radius: 12px; }
+.fila-item div { min-width: 0; display: flex; flex-direction: column; }
+.fila-item small { color: #667389; font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fila-ponto { width: 10px; height: 10px; border-radius: 50%; background: #8a94a6; }
+.fila-item.critico { border-color: #f3cdd4; background: #fff7f8; }
+.fila-item.critico .fila-ponto { background: #c9233c; box-shadow: 0 0 0 4px rgba(201, 35, 60, .14); }
+.fila-item.atencao .fila-ponto { background: #b7791f; box-shadow: 0 0 0 4px rgba(183, 121, 31, .14); }
+.fila-item.info .fila-ponto { background: #286caf; }
+
+.recentes { list-style: none; margin: 0; padding: 0; }
+.recentes li a { display: grid; grid-template-columns: 1fr auto auto; gap: 12px; align-items: center; padding: 10px 2px; border-bottom: 1px solid #eef1f6; }
+.recentes li:last-child a { border-bottom: 0; }
+.recentes li a span:first-child { min-width: 0; display: flex; flex-direction: column; }
+.recentes strong { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.recentes small { color: #667389; font-size: 12.5px; }
+.recentes b { font-variant-numeric: tabular-nums; font-size: 14px; white-space: nowrap; }
+.recentes-vazio { padding: 12px 0; color: #667389; }
+.ak-link { color: #b21f35; font-weight: 700; font-size: 13.5px; }
+
+@media (max-width: 960px) {
+    .graf-grade { grid-template-columns: 1fr; }
+}
+@media (max-width: 560px) {
+    .recentes li a { grid-template-columns: 1fr auto; }
+    .recentes li a .selo { display: none; }
+    .fila-item { grid-template-columns: 10px 1fr; }
+    .fila-item .btn { grid-column: 2; justify-self: start; }
+}
