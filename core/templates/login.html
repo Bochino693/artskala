@@ -302,20 +302,20 @@
     }
 
     @media (max-width: 575px) {
-        .login-title {
-            font-size: 3rem;
-            letter-spacing: -2px;
-        }
-
-        .login-subtitle {
-            font-size: 1.02rem;
-            line-height: 1.65;
-        }
-
-        .login-card {
-            padding: 26px;
-            border-radius: 30px;
-        }
+        /* apresentação curta em cima, depois o formulário; tudo centralizado */
+        .login-row { padding-top: 22px; padding-bottom: 28px; --bs-gutter-y: 1rem; }
+        .login-row > .col-lg-7 { order: 0; text-align: center; }
+        .login-row > .col-lg-5 { order: 1 !important; }
+        .login-badge { margin-bottom: 8px; }
+        .login-title { margin: 0; font-size: 2rem; letter-spacing: -1px; }
+        .login-subtitle, .login-info-grid { display: none; }
+        .login-card { padding: 20px 16px; border-radius: 24px; }
+        .login-card-title, .login-card-text { text-align: center; }
+        .login-card-title { font-size: 1.4rem; }
+        .login-card-text { margin-bottom: 14px; font-size: .92rem; }
+        .login-card .form-label, .login-card label { margin-bottom: 4px; font-size: .86rem; }
+        .login-card .form-control { min-height: 46px; }
+        .login-card .btn { min-height: 46px; }
     }
 </style>
 
@@ -471,7 +471,7 @@
                                 Entre com seu usuário e senha para continuar.
                             </p>
 
-                            {% if google_login_enabled %}<form method="post" action="/accounts/google/login/" style="margin-bottom:20px">{% csrf_token %}<button type="submit" class="btn btn-outline-dark w-100">Continuar com Google</button></form>{% endif %}
+                            {% if google_login_enabled %}<form method="post" action="/accounts/google/login/" class="ak-google-form">{% csrf_token %}<button type="submit" class="ak-btn-google"><svg class="ak-google-g" viewBox="0 0 48 48" width="20" height="20" aria-hidden="true" focusable="false"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg><span>Continuar com Google</span></button></form><div class="ak-ou"><span>ou entre com seu usuário</span></div>{% endif %}
                             <form method="post" action="{% url 'login' %}">
 
                                 {% csrf_token %}

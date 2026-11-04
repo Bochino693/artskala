@@ -98,7 +98,30 @@
     <div class="cartao-stat azul"><div class="rotulo">Clientes cadastrados</div><div class="valor">{{ clientes_total|numero_br }}</div><div class="apoio">Contas criadas no site</div></div>
     <div class="cartao-stat verde"><div class="rotulo">Já compraram</div><div class="valor">{{ clientes_com_pedido|numero_br }}</div><div class="apoio">Com pelo menos 1 pedido</div></div>
     <div class="cartao-stat ambar"><div class="rotulo">Novos em 30 dias</div><div class="valor">{{ clientes_novos|numero_br }}</div><div class="apoio">Cadastros recentes</div></div>
+    <div class="cartao-stat {% if google.ativo %}verde{% else %}vermelho{% endif %}">
+        <div class="rotulo">Cadastro com Google</div>
+        <div class="valor">{% if google.ativo %}{{ google.total|numero_br }}{% else %}Desligado{% endif %}</div>
+        <div class="apoio">{% if google.ativo %}cliente{{ google.total|pluralize }} entraram pelo Google{% else %}O botão ainda não aparece no site{% endif %}</div>
+    </div>
 </div>
+
+<details class="ak-ajuda" {% if not google.ativo %}open{% endif %}>
+    <summary><span class="ak-ajuda-icone">G</span> {% if google.ativo %}Entrar com o Google está ligado{% else %}Como ligar o cadastro e a entrada com o Google{% endif %}</summary>
+    <div class="ak-ajuda-corpo">
+        {% if google.ativo %}
+            <p>O botão <b>Continuar com Google</b> já aparece nas telas de login e de cadastro. Quem entra por ele ganha a etiqueta <span class="selo-google">Google</span> na lista abaixo.</p>
+            <p>Endereço de retorno cadastrado no Google: <code>{{ google.retorno }}</code></p>
+        {% else %}
+            <ol>
+                <li>Abra o <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener">console do Google</a> e vá em <b>APIs e serviços › Credenciais › Criar credenciais › ID do cliente OAuth</b> (tipo <i>Aplicativo da Web</i>).</li>
+                <li>Em <b>Origens JavaScript autorizadas</b> coloque <code>{{ google.origem }}</code>.</li>
+                <li>Em <b>URIs de redirecionamento autorizados</b> coloque <code>{{ google.retorno }}</code>.</li>
+                <li>Na Vercel (<b>Settings › Environment Variables</b>) crie <code>GOOGLE_CLIENT_ID</code> e <code>GOOGLE_CLIENT_SECRET</code> com os dois valores que o Google mostrar e faça um novo deploy.</li>
+            </ol>
+            <p class="texto-fraco">Pronto: o botão aparece sozinho no login e no cadastro, e esta tela passa a contar quem entrou pelo Google.</p>
+        {% endif %}
+    </div>
+</details>
 
 <div class="painel">
     <form method="get" class="acoes-linha" style="margin-bottom:16px;align-items:end">
@@ -113,7 +136,7 @@
             <tbody>
             {% for c in clientes %}
                 <tr>
-                    <td data-rotulo="Cliente"><div class="pessoa"><span class="avatar-inicial cliente">{{ c.u.first_name|default:c.u.username|slice:":1"|upper }}</span><span><strong>{{ c.u.get_full_name|default:c.u.username }}</strong><small>{{ c.u.username }}</small></span></div></td>
+                    <td data-rotulo="Cliente"><div class="pessoa"><span class="avatar-inicial cliente">{{ c.u.first_name|default:c.u.username|slice:":1"|upper }}</span><span><strong>{{ c.u.get_full_name|default:c.u.username }}{% if c.google %} <span class="selo-google" title="Cadastro feito com o Google">Google</span>{% endif %}</strong><small>{{ c.u.username }}</small></span></div></td>
                     <td data-rotulo="Contato">{% if c.u.email %}<a href="mailto:{{ c.u.email }}">{{ c.u.email }}</a>{% endif %}{% if c.telefone %}<br><small class="texto-fraco">{{ c.telefone }}</small>{% endif %}</td>
                     <td data-rotulo="Cidade">{{ c.cidade|default:"—" }}</td>
                     <td class="num" data-rotulo="Pedidos">{{ c.n_pedidos }}</td>

@@ -714,3 +714,50 @@ class SuperGestaoTests(TestCase):
         bruna.save()
         self.client.logout()
         self.assertContains(self.client.post('/interno/login/', {'username': 'bruna', 'password': 'senha-forte-987'}), 'incorretos')
+
+
+class GoogleLoginTests(TestCase):
+    """Entrar/cadastrar com o Google: o que a gestão mostra e o botão do site."""
+
+    def setUp(self):
+        self.gestor = get_user_model().objects.create_superuser('equipe', 'e@example.com', 'senha-forte-123')
+
+    def test_gestao_explica_como_ligar_quando_esta_desligado(self):
+        from django.test import override_settings
+        self.client.force_login(self.gestor)
+        with override_settings(GOOGLE_LOGIN_ENABLED=False):
+            pagina = self.client.get('/interno/equipe/?aba=clientes')
+        self.assertContains(pagina, 'Cadastro com Google')
+        self.assertContains(pagina, 'Desligado')
+        self.assertContains(pagina, 'GOOGLE_CLIENT_ID')
+        self.assertContains(pagina, '/accounts/google/login/callback/')
+
+    def test_gestao_mostra_o_selo_de_quem_entrou_pelo_google(self):
+        from unittest import mock
+        from django.test import override_settings
+        cliente = get_user_model().objects.create_user('ana', 'ana@example.com', 'senha-forte-123', first_name='Ana')
+        self.client.force_login(self.gestor)
+        with override_settings(GOOGLE_LOGIN_ENABLED=True), mock.patch('core.google.ids_com_google', return_value={cliente.pk}):
+            pagina = self.client.get('/interno/equipe/?aba=clientes')
+        self.assertContains(pagina, 'Entrar com o Google está ligado')
+        self.assertContains(pagina, 'selo-google')
+
+    def test_sem_google_o_site_nao_mostra_o_botao(self):
+        from django.conf import settings
+        if settings.GOOGLE_LOGIN_ENABLED:
+            self.skipTest('Google ligado neste ambiente')
+        self.assertNotContains(self.client.get('/login/'), 'ak-btn-google')
+        self.assertNotContains(self.client.get('/register/'), 'ak-btn-google')
+
+    def test_com_google_o_botao_aparece_e_leva_ao_google(self):
+        from django.conf import settings
+        if not settings.GOOGLE_LOGIN_ENABLED:
+            self.skipTest('rode com GOOGLE_CLIENT_ID e GOOGLE_CLIENT_SECRET para testar')
+        for url in ('/login/', '/register/'):
+            pagina = self.client.get(url)
+            self.assertContains(pagina, 'Continuar com Google')
+            self.assertContains(pagina, 'action="/accounts/google/login/"')
+        resposta = self.client.post('/accounts/google/login/')
+        self.assertEqual(resposta.status_code, 302)
+        self.assertIn('accounts.google.com', resposta['Location'])
+        self.assertIn('callback', resposta['Location'])

@@ -47,7 +47,7 @@ certo e gratuito é a exportação oficial da própria conta:
      --tipo produto --categoria "Fachadas"   cria produtos em vez de projetos
 
 VERIFICAÇÃO
-python manage.py test core  -> 52 testes (importador, Instagram, vitrine, área interna, gestão, páginas).
+python manage.py test core  -> 56 testes (importador, Instagram, vitrine, área interna, gestão, páginas).
 Conferido no navegador em 1440 px e 390 px (celular).
 
 ÁREA INTERNA — artskala.com.br/interno/ (sem subdomínio)
@@ -174,3 +174,26 @@ GESTÃO NOVA (artskala.com.br/interno/)
   e senha. Funções: Gestão (tudo), Vendas (orçamentos, pedidos, produtos,
   etiquetas) e Produção (orçamentos, projetos, etiquetas). Desativar tira o
   acesso na hora. Aba Clientes: quem comprou, quanto e o WhatsApp.
+
+ENTRAR E CADASTRAR COM O GOOGLE
+O botão "Continuar com Google" existe nas telas de login e de cadastro, mas só
+aparece quando as duas chaves do Google estão na Vercel. Para ligar:
+1. console.cloud.google.com > APIs e serviços > Credenciais > Criar credenciais
+   > ID do cliente OAuth > Aplicativo da Web.
+2. Origens JavaScript autorizadas: https://artskala.com.br
+3. URIs de redirecionamento autorizados:
+   https://artskala.com.br/accounts/google/login/callback/
+4. Vercel > Settings > Environment Variables: GOOGLE_CLIENT_ID e
+   GOOGLE_CLIENT_SECRET (os dois valores do Google) > novo deploy.
+Na gestão, Equipe e clientes > Clientes mostra se o Google está ligado, quantos
+clientes entraram por ele e a etiqueta "Google" ao lado de cada um (a mesma
+explicação, com o endereço certo, aparece lá enquanto estiver desligado).
+
+SITE NO CELULAR (até 575 px)
+Tudo centralizado e compacto: títulos, selos e botões no centro; categorias,
+projetos, passos e diferenciais em 2 colunas; seções com menos espaço; topo
+das páginas, faixa de orçamento e rodapé centralizados (rodapé em 2 colunas);
+login e cadastro com a apresentação curta em cima e o formulário em 2 colunas.
+A home no celular caiu de ~12.000 px para ~8.900 px de altura e a lista de
+projetos de ~8.500 para ~4.100 px. Conferido em 360, 390 e 414 px, sem rolagem
+lateral em nenhuma página.

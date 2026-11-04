@@ -320,3 +320,16 @@ tr.inativo td { opacity: .55; }
     .mais-lista { right: auto; left: 0; }
 }
 @media (max-width: 860px) { .mais-menu { display: none; } }
+
+/* ---------------------------------------------------- ajuda (Google) */
+.ak-ajuda { margin: 0 0 14px; border: 1px solid var(--linha); border-radius: 14px; background: #fff; overflow: hidden; }
+.ak-ajuda > summary { display: flex; align-items: center; gap: 10px; padding: 11px 14px; font-weight: 700; font-size: 14px; cursor: pointer; list-style: none; }
+.ak-ajuda > summary::-webkit-details-marker { display: none; }
+.ak-ajuda > summary::after { content: "▾"; margin-left: auto; color: #667389; transition: transform .2s ease; }
+.ak-ajuda[open] > summary::after { transform: rotate(180deg); }
+.ak-ajuda-icone { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: #fff; border: 1px solid #dadce0; color: #4285f4; font: 800 13px Inter, system-ui, sans-serif; }
+.ak-ajuda-corpo { padding: 2px 16px 14px 48px; font-size: 13.5px; color: #4b5870; }
+.ak-ajuda-corpo ol { margin: 0 0 8px; padding-left: 18px; display: grid; gap: 6px; }
+.ak-ajuda-corpo code { padding: 1px 6px; border-radius: 6px; background: #f0f2f7; color: #202b3e; font: 600 12px "IBM Plex Mono", monospace; word-break: break-all; }
+.ak-ajuda-corpo p { margin: 0 0 6px; }
+.selo-google { display: inline-block; margin-left: 4px; padding: 1px 7px; border: 1px solid #dadce0; border-radius: 999px; background: #fff; color: #4285f4; font: 800 10.5px Inter, system-ui, sans-serif; letter-spacing: .02em; vertical-align: 1px; }
