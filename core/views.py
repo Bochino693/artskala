@@ -1,4 +1,5 @@
 import json
+import re
 from decimal import Decimal, InvalidOperation
 
 from django.contrib import messages
@@ -41,24 +42,26 @@ from django.shortcuts import redirect
 
 
 class SuperuserGestaoRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
-    login_url = "login"
+    login_url = "interno_login"
 
     def test_func(self):
         return self.request.user.is_authenticated and self.request.user.is_superuser
 
     def handle_no_permission(self):
-        if not self.request.user.is_authenticated:
-            return redirect("login")
+        from django.contrib.auth.views import redirect_to_login
 
-        if getattr(self.request, 'is_interno', False):
+        if getattr(self.request, 'is_interno', False) and self.request.user.is_authenticated:
             from django.http import HttpResponseForbidden
             return HttpResponseForbidden('Acesso permitido somente à equipe autorizada.')
 
-        messages.error(
-            self.request,
-            "Você não tem permissão para acessar a área de gestão."
-        )
-        return redirect("home")
+        # Sem login (ou logado como cliente): login da equipe, voltando para a
+        # tela que a pessoa tentou abrir.
+        if self.request.user.is_authenticated:
+            messages.error(
+                self.request,
+                "Você não tem permissão para acessar a área de gestão. Entre com um usuário da equipe."
+            )
+        return redirect_to_login(self.request.get_full_path(), reverse("interno_login"))
 
 
 # ============================================================
@@ -182,6 +185,70 @@ def _dados_grafico_mensal_orcamentos(orcamentos):
 # SITE PÚBLICO
 # ============================================================
 
+def _chave_foto(nome):
+    """Mesmo arquivo de foto em lugares diferentes (produto e projeto): nome sem a
+    pasta, a extensão e o sufixo aleatório que o storage põe em nomes repetidos."""
+    base = str(nome).rsplit("/", 1)[-1].rsplit(".", 1)[0].lower()
+    return re.sub(r"_[a-z0-9]{5,8}$", "", base)
+
+
+def _faixa_trabalhos(limite=14, minimo=10):
+    """Duas faixas de fotos que passam sozinhas na home: projetos numa direção e
+    produtos/serviços na outra, sem repetir a mesma foto. Cada faixa é repetida até
+    ter fotos suficientes para cobrir a tela sem buraco no giro."""
+    vistas = set()
+    ida = []
+    for projeto in _projetos_ativos().order_by("-criacao")[:limite]:
+        fotos = [f for f in projeto.imagens.all() if f.imagem]
+        if not fotos:
+            continue
+        vistas.update(_chave_foto(f.imagem.name) for f in fotos)
+        ida.append({
+            "foto": fotos[0].imagem.url,
+            "titulo": projeto.titulo,
+            "legenda": projeto.cliente or "Projeto realizado",
+            "tag": "Projeto",
+            "link": reverse("project_detail", args=[projeto.pk]),
+        })
+
+    volta = []
+    for produto in _produtos_ativos().order_by("-criacao")[:limite * 3]:
+        usadas = 0
+        for foto in produto.imagens.all():
+            chave = _chave_foto(foto.imagem.name) if foto.imagem else None
+            if chave is None or chave in vistas:
+                continue
+            vistas.add(chave)
+            volta.append({
+                "foto": foto.imagem.url,
+                "titulo": produto.nome_produto,
+                "preco": produto.preco_atual(),
+                "tag": produto.categoria.nome_categoria if produto.categoria_id else "Produto",
+                "link": reverse("product_detail", args=[produto.pk]),
+            })
+            usadas += 1
+            if usadas == 2:
+                break
+        if len(volta) >= limite:
+            break
+
+    if len(ida) + len(volta) < 4:
+        return None
+    if len(volta) < 4 or len(ida) < 4:          # pouca coisa: uma faixa só
+        ida, volta = ida + volta, []
+
+    linhas = []
+    for itens, sentido in ((ida, "ida"), (volta, "volta")):
+        if not itens:
+            continue
+        repetidos = list(itens)
+        while len(repetidos) < minimo:            # cópias: fora do leitor de tela e do Tab
+            repetidos += [dict(item, repetido=True) for item in itens]
+        # ~5 s por foto: mesma velocidade nas duas faixas
+        linhas.append({"itens": repetidos, "sentido": sentido, "tempo": len(repetidos) * 5})
+    return {"linhas": linhas, "total": len(ida) + len(volta)}
+
+
 class HomeView(View):
     def get(self, request):
         produtos = list(_produtos_ativos().order_by("-criacao")[:8])
@@ -197,6 +264,7 @@ class HomeView(View):
             "total_projetos": Projeto.objects.filter(ativo=True).count(),
             "posts_instagram": PostInstagram.objects.filter(ativo=True)
             .exclude(imagem="").exclude(imagem__isnull=True)[:6],
+            "trabalhos": _faixa_trabalhos(),
         }
         return render(request, "home.html", ctx)
 

@@ -5,7 +5,7 @@ catálogo com foto e o botão "Pedir orçamento deste produto" no WhatsApp, sem
 carrinho. Só os produtos de pronta entrega da loja têm preço.
 
 Cada leva de fotos é um "lote" com a sua migração (0007 = lote 1,
-0008 = lote 2...). A migração roda uma vez só: não recria um item que já
+0008 = lote 2, 0009 = lote 3...). A migração roda uma vez só: não recria um item que já
 exista com o mesmo nome, nem um que a equipe tenha apagado depois.
 """
 from pathlib import Path
@@ -109,6 +109,126 @@ ITENS = [
             "divisórias e portões. Orçamento sob consulta."
         ),
     },
+    # ------------------------------------------------------------ lote 3
+    {
+        "lote": 3,
+        "nome": "Letras caixa em PVC e acrílico",
+        "categoria": "Letreiros",
+        "fotos": ["letras-caixa-pvc.jpg"],
+        "descricao": (
+            "Letras caixa com volume, recortadas em PVC expandido ou acrílico e "
+            "pintadas na cor da marca. Para fachadas, recepções e paredes de "
+            "destaque, com ou sem iluminação. Orçamento sob consulta."
+        ),
+    },
+    {
+        "lote": 3,
+        "nome": "Fresagem CNC de ACM e acrílico",
+        "categoria": "Letreiros",
+        "fotos": ["fresagem-cnc-acm.jpg"],
+        "descricao": (
+            "Corte e usinagem em router CNC de chapas de ACM, acrílico, PVC e MDF: "
+            "letras, logos, fachadas e peças sob medida com acabamento preciso. "
+            "Orçamento sob consulta."
+        ),
+    },
+    {
+        "lote": 3,
+        "nome": "Placa em ACM com impressão digital",
+        "categoria": "Placas",
+        "fotos": ["placa-acm-impressa-kasuko.jpg"],
+        "descricao": (
+            "Placa rígida em ACM com impressão digital em alta resolução, como a "
+            "da Kasuko Sushi: cores vivas, resistente ao tempo e pronta para "
+            "parede, fachada ou cavalete. Orçamento sob consulta."
+        ),
+    },
+    {
+        "lote": 3,
+        "nome": "Placa redonda em acrílico e ACM",
+        "categoria": "Placas",
+        "fotos": ["placa-redonda-dojo.jpg"],
+        "descricao": (
+            "Placa circular com o logo em acrílico e base em ACM, como a do "
+            "Sun-Dome Dojo Karatê-Do. Pode ter iluminação de LED e é feita no "
+            "tamanho que você precisar. Orçamento sob consulta."
+        ),
+    },
+    {
+        "lote": 3,
+        "nome": "Placa de identificação em acrílico recortado",
+        "categoria": "Placas",
+        "fotos": ["placa-acrilico-artskala.jpg"],
+        "descricao": (
+            "Placa de identificação com o logo recortado em acrílico, número e "
+            "endereço, como a da nossa sede. Ideal para galpões, portarias, "
+            "salas e condomínios. Orçamento sob consulta."
+        ),
+    },
+    {
+        "lote": 3,
+        "nome": "Letreiro neon de LED",
+        "categoria": "Letreiros",
+        "fotos": ["letreiro-neon-led.jpg"],
+        "descricao": (
+            "Letreiro com o nome ou a frase que você quiser em LED neon flexível, "
+            "montado sobre acrílico. Econômico, não esquenta e deixa recepções, "
+            "lojas e eventos com cara de marca. Orçamento sob consulta."
+        ),
+    },
+    {
+        "lote": 3,
+        "nome": "Quadro decorativo impresso em alta resolução",
+        "categoria": "Impressão digital",
+        "fotos": ["quadro-impresso-ems.jpg"],
+        "descricao": (
+            "Quadro com impressão digital em alta resolução sobre chapa rígida, "
+            "como o da EMS Engenharia: para recepções, escritórios e salas de "
+            "reunião, no tamanho da sua parede. Orçamento sob consulta."
+        ),
+    },
+    {
+        "lote": 3,
+        "nome": "Banner e painel em lona impressa",
+        "categoria": "Impressão digital",
+        "fotos": ["painel-lona-impresso.jpg"],
+        "descricao": (
+            "Banner, painel e faixa em lona com impressão digital de alta "
+            "definição, com acabamento em bastão, ilhós ou estrutura. Para "
+            "eventos, lojas, oficinas e decoração. Orçamento sob consulta."
+        ),
+    },
+    {
+        "lote": 3,
+        "nome": "Envelopamento de veículos",
+        "categoria": "Adesivos",
+        "fotos": ["envelopamento-kombi.jpg"],
+        "descricao": (
+            "Troca de cor e proteção da pintura com envelopamento em vinil "
+            "automotivo: carros, Kombis, vans e motos, com acabamento brilho, "
+            "fosco ou metálico. Orçamento sob consulta."
+        ),
+    },
+]
+
+# Fotos novas que entram em itens que já existem (carrossel do produto).
+FOTOS_EXTRAS = [
+    {
+        "lote": 3,
+        "produto": "Adesivação de veículos e frotas",
+        "fotos": [
+            "adesivacao-kombi-rappi.jpg",
+            "adesivacao-choperia-villy.jpg",
+            "adesivacao-picape-ranch.jpg",
+            "adesivacao-leone-faixas.jpg",
+            "adesivacao-correios.jpg",
+        ],
+    },
+    {
+        "lote": 3,
+        "produto": "Peças em acrílico e PVC recortadas",
+        "fotos": ["placa-recortada-oval.jpg"],
+    },
 ]
 
 # Portfólio (Projetos realizados) com os trabalhos das fotos, por cliente.
@@ -150,6 +270,70 @@ PROJETOS = [
         "cliente": "",
         "fotos": ["luminoso-led-neon.jpg"],
         "descricao": "Peça luminosa recortada no formato do hambúrguer, com impressão em alta definição e LED neon.",
+    },
+    # ------------------------------------------------------------ lote 3
+    {
+        "lote": 3,
+        "titulo": "Placa da Kasuko Sushi",
+        "cliente": "Kasuko Sushi",
+        "fotos": ["placa-acm-impressa-kasuko.jpg"],
+        "descricao": "Placa em ACM com impressão digital em alta resolução para a Kasuko Sushi – Culinária Japonesa.",
+    },
+    {
+        "lote": 3,
+        "titulo": "Placa do Sun-Dome Dojo Karatê-Do",
+        "cliente": "Sun-Dome Dojo Karatê-Do",
+        "fotos": ["placa-redonda-dojo.jpg"],
+        "descricao": "Placa redonda com o símbolo do dojo em acrílico sobre base de ACM.",
+    },
+    {
+        "lote": 3,
+        "titulo": "Quadro da EMS Engenharia",
+        "cliente": "EMS Engenharia",
+        "fotos": ["quadro-impresso-ems.jpg"],
+        "descricao": "Quadro decorativo impresso em alta resolução, com a marca da EMS Engenharia sobre a ponte estaiada.",
+    },
+    {
+        "lote": 3,
+        "titulo": "Adesivação da Kombi Rappi",
+        "cliente": "Rappi",
+        "fotos": ["adesivacao-kombi-rappi.jpg"],
+        "descricao": "Kombi adesivada por completo com a identidade da Rappi, com QR Code e chamadas da campanha.",
+    },
+    {
+        "lote": 3,
+        "titulo": "Adesivação da picape Choperia Dom Villy",
+        "cliente": "Choperia Dom Villy",
+        "fotos": ["adesivacao-choperia-villy.jpg"],
+        "descricao": "Logo, telefone e Instagram da Choperia Dom Villy aplicados nas portas da picape.",
+    },
+    {
+        "lote": 3,
+        "titulo": "Adesivação da picape Saruê Ranch",
+        "cliente": "Saruê Ranch",
+        "fotos": ["adesivacao-picape-ranch.jpg"],
+        "descricao": "Nome, Instagram e brasão da Saruê Ranch em adesivo de recorte na picape prata.",
+    },
+    {
+        "lote": 3,
+        "titulo": "Adesivação do carro da Leone Faixas",
+        "cliente": "Leone Faixas",
+        "fotos": ["adesivacao-leone-faixas.jpg"],
+        "descricao": "Redes sociais e @ da Leone Faixas em adesivo nas portas do carro.",
+    },
+    {
+        "lote": 3,
+        "titulo": "Adesivação de veículo dos Correios",
+        "cliente": "Correios",
+        "fotos": ["adesivacao-correios.jpg"],
+        "descricao": "Aplicação da marca dos Correios em veículo de entrega.",
+    },
+    {
+        "lote": 3,
+        "titulo": "Placa de identificação da sede ArtSkala",
+        "cliente": "ArtSkala Comunicação Visual",
+        "fotos": ["placa-acrilico-artskala.jpg"],
+        "descricao": "A placa da nossa própria casa: logo recortado em acrílico, com número e galpão, no portão da sede.",
     },
 ]
 
@@ -196,6 +380,25 @@ def semear_projetos(Projeto, ImagemProjeto, lotes=(2,)):
         _salvar_fotos(item["fotos"], lambda nome, arquivo: ImagemProjeto(projeto=projeto).imagem.save(nome, arquivo, save=True))
         criados += 1
     return criados
+
+
+def semear_fotos_extras(Produto, ImagemProduto, lotes=(3,)):
+    """Põe as fotos de FOTOS_EXTRAS nos itens que existem (e ainda não têm a foto).
+    Devolve quantas fotos entraram."""
+    criadas = 0
+    for extra in FOTOS_EXTRAS:
+        if extra.get("lote", 1) not in lotes:
+            continue
+        produto = Produto.objects.filter(nome_produto=extra["produto"]).first()
+        if produto is None:
+            continue
+        for nome in extra["fotos"]:
+            ja_tem = ImagemProduto.objects.filter(produto=produto, imagem__contains=Path(nome).stem).exists()
+            if ja_tem or not (PASTA_FOTOS / nome).exists():
+                continue
+            _salvar_fotos([nome], lambda n, arquivo: ImagemProduto(produto=produto).imagem.save(n, arquivo, save=True))
+            criadas += 1
+    return criadas
 
 
 def melhorar_foto(arquivo, nome="foto.jpg"):

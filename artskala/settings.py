@@ -367,9 +367,12 @@ else:
 
 LOGIN_URL = "login"
 
-# Área interna (gestão) em subdomínio próprio. INTERNAL_HOST pode ser trocado
-# pela variável de ambiente; o endereço antigo (innterno.artskala.com) segue
-# aceito para quem ainda tiver o link salvo.
+# E-mail oficial de atendimento (rodapé, home e contato).
+EMAIL_CONTATO = os.environ.get("EMAIL_CONTATO", "artskala@gmail.com").strip()
+
+# Área interna (gestão): fica em /interno/ no próprio site, sem depender de
+# subdomínio. Se um dia o DNS de INTERNAL_HOST for apontado para a Vercel, ele
+# também abre a gestão (sem o prefixo); o endereço antigo segue aceito.
 INTERNAL_HOST = os.environ.get("INTERNAL_HOST", "interno.artskala.com.br").strip().lower()
 INTERNAL_HOSTS = {INTERNAL_HOST, "interno.artskala.com.br", "innterno.artskala.com"}
 
@@ -380,10 +383,6 @@ SITE_URL = os.environ.get("SITE_URL", f"https://{_dominio_site}").rstrip("/")
 for _host in sorted(INTERNAL_HOSTS) + ["artskala.com", "www.artskala.com", _dominio_site, "www." + _dominio_site]:
     add_unique(ALLOWED_HOSTS, _host)
     add_unique(CSRF_TRUSTED_ORIGINS, "https://" + _host)
-
-# /gestao/ no site público leva para o subdomínio interno. Desligue
-# (INTERNAL_SITE_ENABLED=false) enquanto o DNS do interno não estiver pronto.
-INTERNAL_SITE_ENABLED = env_bool("INTERNAL_SITE_ENABLED", not DEBUG)
 
 # Erros 500 e avisos vão para o log da Vercel (Deployments > Logs). Sem
 # isto o Django em produção não mostra o motivo de um erro em lugar nenhum.

@@ -194,6 +194,125 @@
         tocar();
     });
 
+    /* ------------------------------ trabalhos passando (home) */
+    // Cada faixa anda sozinha; ao passar o mouse ela desacelera até parar,
+    // dá para arrastar com o dedo ou o mouse e o botão pausa tudo.
+    $$("[data-trampos]").forEach(secao => {
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+        const linhas = $$(".ak-trampos-linha", secao).map(linha => {
+            const trilho = $(".ak-trampos-trilho", linha);
+            const grupo = $(".ak-trampos-grupo", linha);
+            const tempo = parseFloat(getComputedStyle(linha).getPropertyValue("--ak-tempo")) || 60;
+            return {
+                linha, trilho, grupo, tempo,
+                sentido: linha.classList.contains("ak-trampos-linha--volta") ? -1 : 1,
+                largura: 0, pos: 0, vel: 0, mouse: false, foco: false, arraste: null, bloquear: false,
+            };
+        }).filter(l => l.trilho && l.grupo);
+        if (!linhas.length) return;
+
+        secao.classList.add("ak-trampos--js");
+        let pausado = false;
+        let visivel = true;
+        let ultimo = 0;
+        let quadro = 0;
+
+        const medir = () => linhas.forEach(l => {
+            l.largura = l.grupo.getBoundingClientRect().width;
+            if (l.sentido < 0 && !l.pos) l.pos = l.largura * 0.37;   // começa em outro ponto
+        });
+        const pintar = l => {
+            if (!l.largura) return;
+            l.pos = ((l.pos % l.largura) + l.largura) % l.largura;
+            l.trilho.style.transform = `translate3d(${-l.pos}px,0,0)`;
+        };
+
+        function passo(agora) {
+            const dt = Math.min(0.05, ultimo ? (agora - ultimo) / 1000 : 0);
+            ultimo = agora;
+            linhas.forEach(l => {
+                if (l.arraste) return;
+                const alvo = pausado || l.mouse || l.foco ? 0 : (l.largura / l.tempo) * l.sentido;
+                l.vel += (alvo - l.vel) * Math.min(1, dt * 4);        // freia e acelera suave
+                l.pos += l.vel * dt;
+                pintar(l);
+            });
+            quadro = visivel ? requestAnimationFrame(passo) : 0;
+        }
+        const ligar = () => { if (!quadro && visivel && !document.hidden) { ultimo = 0; quadro = requestAnimationFrame(passo); } };
+        const desligar = () => { cancelAnimationFrame(quadro); quadro = 0; };
+
+        linhas.forEach(l => {
+            l.linha.addEventListener("pointerenter", e => { if (e.pointerType === "mouse") l.mouse = true; });
+            l.linha.addEventListener("pointerleave", e => { if (e.pointerType === "mouse") l.mouse = false; });
+            l.linha.addEventListener("focusin", () => { l.foco = true; });
+            l.linha.addEventListener("focusout", () => { l.foco = false; });
+            l.linha.addEventListener("dragstart", e => e.preventDefault());
+
+            l.linha.addEventListener("pointerdown", e => {
+                if (e.pointerType === "mouse" && e.button !== 0) return;
+                l.arraste = { x: e.clientX, pos: l.pos, ultimoX: e.clientX, t: performance.now(), moveu: false, id: e.pointerId };
+            });
+            l.linha.addEventListener("pointermove", e => {
+                const a = l.arraste;
+                if (!a || a.id !== e.pointerId) return;
+                const dx = e.clientX - a.x;
+                if (!a.moveu && Math.abs(dx) > 6) {
+                    a.moveu = true;
+                    l.linha.classList.add("arrastando");
+                    try { l.linha.setPointerCapture(e.pointerId); } catch (erro) { /* sem captura */ }
+                }
+                if (!a.moveu) return;
+                const agora = performance.now();
+                const dtx = Math.max(1, agora - a.t);
+                l.vel = (-(e.clientX - a.ultimoX) / dtx) * 1000;      // embalo ao soltar
+                a.ultimoX = e.clientX;
+                a.t = agora;
+                l.pos = a.pos - dx;
+                pintar(l);
+            });
+            const soltar = e => {
+                const a = l.arraste;
+                if (!a || a.id !== e.pointerId) return;
+                l.arraste = null;
+                l.vel = Math.max(-1500, Math.min(1500, l.vel || 0));
+                if (a.moveu) {
+                    // o clique que vem logo depois de arrastar não abre o link
+                    l.bloquear = true;
+                    setTimeout(() => { l.bloquear = false; l.linha.classList.remove("arrastando"); }, 120);
+                }
+            };
+            l.linha.addEventListener("click", ev => {
+                if (l.bloquear) { ev.preventDefault(); ev.stopPropagation(); }
+            }, { capture: true });
+            l.linha.addEventListener("pointerup", soltar);
+            l.linha.addEventListener("pointercancel", soltar);
+        });
+
+        const botao = $("[data-trampos-pausa]", secao);
+        if (botao) {
+            botao.addEventListener("click", () => {
+                pausado = !pausado;
+                botao.setAttribute("aria-pressed", String(pausado));
+                $("span", botao).textContent = pausado ? "Continuar" : "Pausar";
+                $("i", botao).className = pausado ? "bi bi-play-fill" : "bi bi-pause-fill";
+            });
+        }
+
+        if ("IntersectionObserver" in window) {
+            new IntersectionObserver(([entrada]) => {
+                visivel = entrada.isIntersecting;
+                visivel ? ligar() : desligar();
+            }, { rootMargin: "120px 0px" }).observe(secao);
+        }
+        document.addEventListener("visibilitychange", () => (document.hidden ? desligar() : ligar()));
+        window.addEventListener("resize", medir, { passive: true });
+        window.addEventListener("load", medir);
+        medir();
+        linhas.forEach(pintar);
+        ligar();
+    });
+
     /* --------------------------------------------- zoom das fotos */
     const zoom = $("#ak-zoom");
     if (zoom && typeof zoom.showModal === "function") {

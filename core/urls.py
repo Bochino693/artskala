@@ -37,11 +37,11 @@ from .views import (
 
 from .ofertas import promocoes
 from .views_instagram import GestaoInstagramView, sincronizar_instagram
+from .views_interno import LoginEquipeView, SairEquipeView
 
 urlpatterns = [
     path("promocoes/", promocoes, name="promocoes"),
     path("api/instagram/sincronizar/", sincronizar_instagram, name="instagram_sincronizar"),
-    path("gestao/orcamentos/<int:pk>/imprimir/", PropostaImpressaoView.as_view(), name="proposta_impressao"),
     path("", HomeView.as_view(), name="home"),
 
     path("products/", ProductsView.as_view(), name="products"),
@@ -76,24 +76,34 @@ urlpatterns = [
 
     path("pendings/", PendingOrdersView.as_view(), name="pendings"),
 
-    path("gestao/", GestaoDashboardView.as_view(), name="gestao_dashboard"),
-    path("gestao/pedidos/", GestaoPedidosView.as_view(), name="gestao_pedidos"),
-    path("gestao/instagram/", GestaoInstagramView.as_view(), name="gestao_instagram"),
-    path("gestao/relatorio/", RelatorioOrcamentosView.as_view(), name="gestao_relatorio"),
-
-    # Produtos: sem pk = lista + formulário de novo produto (GET) / criação (POST)
-    # com pk = edição (GET/POST) e exclusão lógica (DELETE)
-    path("gestao/produtos/", GestaoProdutosView.as_view(), name="gestao_produtos"),
-    path("gestao/produtos/<int:pk>/", GestaoProdutosView.as_view(), name="gestao_produto_detalhe"),
-
-    # Projetos: mesmo padrão dos produtos
-    path("gestao/projetos/", GestaoProjetosView.as_view(), name="gestao_projetos"),
-    path("gestao/projetos/<int:pk>/", GestaoProjetosView.as_view(), name="gestao_projeto_detalhe"),
-
-    # Uma unica view cuida de listar, criar, editar, trocar status e excluir.
-    path("gestao/orcamentos/", OrcamentoView.as_view(), name="orcamentos"),
-    path("gestao/orcamentos/<int:pk>/", OrcamentoView.as_view(), name="orcamento_detalhe"),
-
-    path("gestao/perfil/", GestaoPerfilView.as_view(), name="gestao_perfil"),
 
 ]
+
+# ============================================================
+# ÁREA INTERNA (gestão) — por rota no próprio site, sem subdomínio.
+# /interno/... é o endereço oficial; /gestao/... abre as mesmas telas para
+# os links antigos continuarem funcionando.
+# ============================================================
+ROTAS_INTERNAS = [
+    ("", GestaoDashboardView.as_view(), "gestao_dashboard"),
+    ("login/", LoginEquipeView.as_view(), "interno_login"),
+    ("sair/", SairEquipeView.as_view(), "interno_logout"),
+    ("pedidos/", GestaoPedidosView.as_view(), "gestao_pedidos"),
+    ("instagram/", GestaoInstagramView.as_view(), "gestao_instagram"),
+    ("relatorio/", RelatorioOrcamentosView.as_view(), "gestao_relatorio"),
+    # Produtos: sem pk = lista + formulário de novo produto (GET) / criação (POST)
+    # com pk = edição (GET/POST) e exclusão lógica (DELETE)
+    ("produtos/", GestaoProdutosView.as_view(), "gestao_produtos"),
+    ("produtos/<int:pk>/", GestaoProdutosView.as_view(), "gestao_produto_detalhe"),
+    # Projetos: mesmo padrão dos produtos
+    ("projetos/", GestaoProjetosView.as_view(), "gestao_projetos"),
+    ("projetos/<int:pk>/", GestaoProjetosView.as_view(), "gestao_projeto_detalhe"),
+    # Uma única view cuida de listar, criar, editar, trocar status e excluir.
+    ("orcamentos/", OrcamentoView.as_view(), "orcamentos"),
+    ("orcamentos/<int:pk>/", OrcamentoView.as_view(), "orcamento_detalhe"),
+    ("orcamentos/<int:pk>/imprimir/", PropostaImpressaoView.as_view(), "proposta_impressao"),
+    ("perfil/", GestaoPerfilView.as_view(), "gestao_perfil"),
+]
+
+urlpatterns += [path("interno/" + rota, view, name=nome) for rota, view, nome in ROTAS_INTERNAS]
+urlpatterns += [path("gestao/" + rota, view) for rota, view, _nome in ROTAS_INTERNAS]
