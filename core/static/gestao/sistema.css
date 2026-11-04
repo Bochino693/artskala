@@ -228,3 +228,95 @@ tr.inativo td { opacity: .55; }
 .segmentos a { padding: 7px 13px; border-radius: 999px; font-size: 13px; font-weight: 700; color: #4b5870; }
 .segmentos a.ativo { background: #c9233c; color: #fff; }
 .acoes-linha form { display: inline-flex; margin: 0; }
+
+/* ======================================================================
+   DENSIDADE — mais informação por tela, menos espaço vazio.
+   ====================================================================== */
+.art-gestao { font-size: 14px; }
+.art-gestao .layout { grid-template-columns: 228px minmax(0, 1fr); }
+.art-gestao .sidebar { padding: 18px 12px 14px; }
+.art-gestao .marca { font-size: 20px; }
+.art-gestao .marca-sub { font-size: 10px; margin-bottom: 4px; }
+.art-gestao .nav-secao { margin: 14px 0 5px 8px; font-size: 10px; }
+.art-gestao .nav-item { padding: 7px 10px; border-radius: 9px; font-size: 13.5px; gap: 9px; }
+.art-gestao .nav-icone { font-size: 12px; width: 16px; }
+.art-gestao .sidebar-rodape { padding-top: 12px; font-size: 12px; }
+.art-gestao .conteudo { max-width: 1520px; padding: 14px 24px 40px; }
+
+.barra-topo { display: flex; align-items: center; gap: 12px; margin: 0 0 16px; padding: 0 0 12px; border-bottom: 1px solid var(--linha); }
+.barra-busca {
+    flex: 1; min-width: 0; max-width: 560px; display: flex; align-items: center; gap: 9px; height: 38px; padding: 0 12px;
+    border: 1px solid var(--linha); border-radius: 10px; background: #fff; color: #667389; font-size: 13.5px; cursor: pointer; text-align: left;
+}
+.barra-busca span { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.barra-busca:hover { border-color: #e7b9c1; color: #b21f35; }
+.barra-busca kbd { padding: 1px 6px; border: 1px solid #cbd3e0; border-bottom-width: 2px; border-radius: 5px; background: #f6f7fb; font: 600 11px Inter, system-ui, sans-serif; }
+.ak-atalhos { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+.ak-atalhos .btn { min-height: 36px; padding: 7px 12px; font-size: 13px; border-radius: 10px; }
+.mais-menu { position: relative; }
+.mais-menu summary { list-style: none; cursor: pointer; letter-spacing: .1em; }
+.mais-menu summary::-webkit-details-marker { display: none; }
+.mais-lista { position: absolute; right: 0; top: calc(100% + 6px); z-index: 40; min-width: 190px; display: flex; flex-direction: column; padding: 6px; border: 1px solid var(--linha); border-radius: 12px; background: #fff; box-shadow: 0 16px 40px rgba(20, 28, 45, .16); }
+.mais-lista a { padding: 8px 10px; border-radius: 8px; font-size: 13.5px; }
+.mais-lista a:hover { background: #fff0f2; color: #b21f35; }
+
+.art-gestao .cabecalho-pagina { margin-bottom: 14px; gap: 12px; align-items: center; }
+.art-gestao .eyebrow { margin-bottom: 3px; font-size: 11px; }
+.art-gestao .titulo-pagina, .art-gestao h1.titulo-pagina { font-size: clamp(21px, 2vw, 25px); letter-spacing: -.5px; margin: 0; }
+.art-gestao .subtitulo-pagina { font-size: 13px; margin-top: 3px; max-width: 820px; }
+
+.art-gestao .grade-cartoes { grid-template-columns: repeat(auto-fit, minmax(168px, 1fr)); gap: 10px; margin-bottom: 14px; }
+.art-gestao .cartao-stat { min-height: 0; padding: 11px 14px 11px 16px; border-radius: 14px; }
+.art-gestao .cartao-stat::after { width: 84px; height: 84px; right: -34px; top: -38px; }
+.art-gestao .cartao-stat .rotulo { font-size: 10px; letter-spacing: .08em; }
+.art-gestao .cartao-stat .valor { margin-top: 4px; font-size: clamp(17px, 1.45vw, 21px); }
+.art-gestao .cartao-stat .apoio { margin-top: 3px; font-size: 11.5px; line-height: 1.35; }
+
+.art-gestao .painel { padding: 14px 16px; border-radius: 14px; }
+.art-gestao .painel-titulo { font-size: 15px; margin: 0 0 10px; }
+.art-gestao .duas-colunas { gap: 14px; }
+.art-gestao .tres-colunas { gap: 10px; }
+.art-gestao .ak-pipeline { gap: 8px; margin-bottom: 14px; }
+.art-gestao .ak-pipeline a, .art-gestao .ak-pipeline .cartao-stat { padding: 9px 12px; }
+.art-gestao .ak-pipeline a strong { font-size: 20px; }
+
+.art-gestao table.ledger th { padding: 8px 10px; font-size: 10.5px; }
+.art-gestao table.ledger td { padding: 8px 10px; font-size: 13.5px; }
+.art-gestao .campo { margin-bottom: 10px; }
+.art-gestao label { margin-bottom: 4px; font-size: 12px; }
+.art-gestao .linha-campos { gap: 10px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+.art-gestao input, .art-gestao select, .art-gestao textarea { min-height: 36px; padding: 7px 10px; font-size: 14px; }
+.art-gestao .btn { min-height: 36px; padding: 7px 13px; font-size: 13px; border-radius: 10px; }
+.art-gestao .mensagem { padding: 9px 12px; font-size: 13px; }
+.art-gestao .ak-editor { padding: 12px 14px; margin-bottom: 14px; }
+.art-gestao .ak-editor[open] > summary { margin-bottom: 12px; }
+.art-gestao .mobile-card { padding: 12px; }
+.calculadora { padding: 10px 12px; margin-bottom: 12px; }
+.distancia-numero { padding: 10px 14px; }
+.distancia-numero strong { font-size: 24px; }
+
+@media (max-width: 860px) {
+    .barra-topo { flex-wrap: wrap; margin-bottom: 12px; }
+    .barra-busca { max-width: none; flex-basis: 100%; }
+    .ak-atalhos { margin-left: 0; width: 100%; display: grid !important; grid-template-columns: repeat(4, auto); justify-content: start; }
+    .art-gestao .conteudo { padding: 12px 12px 90px; }
+    .art-gestao .grade-cartoes { grid-template-columns: 1fr 1fr; }
+}
+/* afixos (R$, %, m) continuam com espaço mesmo com a densidade */
+.art-gestao .campo-afixo > input { padding-left: 38px; }
+.art-gestao .campo-afixo--pct > input, .art-gestao .campo-afixo--medida > input { padding-left: 10px; padding-right: 30px; }
+.art-gestao .campo-passos > input { padding-left: 4px; padding-right: 4px; }
+.art-gestao .selo-select { min-width: 134px; }
+.art-gestao td .acoes-linha { flex-wrap: nowrap; gap: 6px; }
+.art-gestao td .btn, .art-gestao td .btn-mini { white-space: nowrap; }
+.art-gestao .ak-pipeline a { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 9px 12px; font-size: 13px; font-weight: 700; }
+.art-gestao .ak-pipeline a strong { display: inline; font-size: 18px; }
+@media (max-width: 860px) {
+    .barra-busca { display: none; }   /* no celular a lupa fica no topo */
+    .barra-topo { padding-bottom: 10px; }
+    .ak-atalhos { display: flex !important; flex-wrap: nowrap; overflow-x: auto; gap: 6px; scrollbar-width: none; }
+    .ak-atalhos::-webkit-scrollbar { display: none; }
+    .ak-atalhos .btn { width: auto !important; flex: 0 0 auto; }
+    .mais-lista { right: auto; left: 0; }
+}
+@media (max-width: 860px) { .mais-menu { display: none; } }

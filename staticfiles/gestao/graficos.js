@@ -141,7 +141,7 @@
             vazio(caixa, "Nenhum orçamento cadastrado ainda.");
     }
     function top(caixa) {
-        const linhas = D.top.map(t => ({ nome: t.nome, base: t.valor, direita: brl(t.valor), baixo: `${t.qtd} unidade${t.qtd === 1 ? "" : "s"}` }));
+        const linhas = D.top.slice(0, 5).map(t => ({ nome: t.nome, base: t.valor, direita: `${brl(t.valor)} <small>· ${t.qtd} un.</small>` }));
         if (!horizontais(caixa, linhas, ["#c9233c", "#d8495d", "#e06a7b", "#e88a97", "#efa9b2", "#f4c4cb"]))
             vazio(caixa, "Os campeões aparecem quando houver vendas no período.");
     }
@@ -153,7 +153,7 @@
         if (!total) return vazio(caixa, "Sem vendas por categoria no período.");
         const box = document.createElement("div");
         box.className = "graf-donut";
-        const svg = el("svg", { viewBox: "0 0 42 42", width: 190, height: 190, role: "img", "aria-label": "Receita por categoria" });
+        const svg = el("svg", { viewBox: "0 0 42 42", width: 140, height: 140, role: "img", "aria-label": "Receita por categoria" });
         el("circle", { cx: 21, cy: 21, r: 15.915, fill: "none", stroke: "#eef1f6", "stroke-width": 6.5 }, svg);
         let acumulado = 0;
         fatias.forEach(f => {
@@ -171,7 +171,7 @@
         box.appendChild(svg);
         const legenda = document.createElement("ul");
         legenda.className = "graf-donut-legenda";
-        legenda.innerHTML = fatias.map(f => `<li><i style="background:${f.cor}"></i><span>${f.nome}</span><b>${(f.valor / total * 100).toLocaleString("pt-BR", { maximumFractionDigits: 0 })}%</b><small>${brl(f.valor)}</small></li>`).join("");
+        legenda.innerHTML = fatias.map(f => `<li title="${brl(f.valor)}"><i style="background:${f.cor}"></i><span>${f.nome}</span><small>${curto(f.valor)}</small><b>${(f.valor / total * 100).toLocaleString("pt-BR", { maximumFractionDigits: 0 })}%</b></li>`).join("");
         box.appendChild(legenda);
         caixa.replaceChildren(box);
     }

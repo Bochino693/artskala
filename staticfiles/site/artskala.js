@@ -194,6 +194,38 @@
         tocar();
     });
 
+    /* ------------------------------ fundo com vida (topo da home) */
+    // Pausa as animações fora da tela (economiza bateria) e, com mouse,
+    // a arte acompanha o ponteiro bem de leve, dando profundidade.
+    $$("[data-hero-vivo]").forEach(vivo => {
+        const hero = vivo.closest(".ak-hero");
+        const svgs = $$("svg", vivo);
+        const parado = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        if ("IntersectionObserver" in window) {
+            new IntersectionObserver(([e]) => {
+                hero.classList.toggle("ak-hero--fora", !e.isIntersecting);
+                svgs.forEach(svg => { try { if (e.isIntersecting) svg.unpauseAnimations(); else svg.pauseAnimations(); } catch (erro) { /* sem SMIL */ } });
+            }, { threshold: 0 }).observe(hero);
+        }
+        if (parado || !window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
+        let quadro = 0, mx = 0, my = 0;
+        hero.addEventListener("pointermove", e => {
+            const r = hero.getBoundingClientRect();
+            mx = ((e.clientX - r.left) / r.width - 0.5) * 2;
+            my = ((e.clientY - r.top) / r.height - 0.5) * 2;
+            if (!quadro) quadro = requestAnimationFrame(() => {
+                quadro = 0;
+                vivo.style.setProperty("--mx", mx.toFixed(3));
+                vivo.style.setProperty("--my", my.toFixed(3));
+            });
+        });
+        hero.addEventListener("pointerleave", () => { vivo.style.setProperty("--mx", "0"); vivo.style.setProperty("--my", "0"); });
+    });
+    $$(".ak-chamada").forEach(chamada => {
+        if (!("IntersectionObserver" in window)) return;
+        new IntersectionObserver(([e]) => chamada.classList.toggle("ak-chamada--fora", !e.isIntersecting)).observe(chamada);
+    });
+
     /* ------------------------------ trabalhos passando (home) */
     // Cada faixa anda sozinha; ao passar o mouse ela desacelera até parar,
     // dá para arrastar com o dedo ou o mouse e o botão pausa tudo.
