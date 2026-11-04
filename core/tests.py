@@ -471,8 +471,10 @@ class VitrineInstagramTests(TestCase):
         self.assertFalse(Produto.objects.exists())          # a migração não roda nos testes
         loja = Produto.objects.create(categoria=CategoriaProdutos.objects.create(nome_categoria='Banners'),
                                       nome_produto='Banner em lona', preco=89, estoque=10)
-        self.assertEqual(semear(Produto, CategoriaProdutos, ImagemProduto), len(ITENS))
+        lote1 = [i for i in ITENS if i.get('lote', 1) == 1]
+        self.assertEqual(semear(Produto, CategoriaProdutos, ImagemProduto), len(lote1))
         self.assertEqual(semear(Produto, CategoriaProdutos, ImagemProduto), 0)
+        self.assertEqual(semear(Produto, CategoriaProdutos, ImagemProduto, lotes=(2,)), len(ITENS) - len(lote1))
         novos = Produto.objects.exclude(pk=loja.pk)
         self.assertEqual(novos.count(), len(ITENS))
         self.assertFalse(novos.exclude(preco=0).exists())
@@ -487,3 +489,63 @@ class VitrineInstagramTests(TestCase):
         catalogo = self.client.get('/products/')
         self.assertContains(catalogo, 'R$ 89,00')                 # item da loja continua com preço
         self.assertContains(catalogo, 'Luminoso recortado com LED neon')
+
+
+    def test_portfolio_de_projetos(self):
+        from .models import ImagemProjeto, Projeto
+        from .vitrine import PROJETOS, semear_projetos
+        self.assertEqual(semear_projetos(Projeto, ImagemProjeto), len(PROJETOS))
+        self.assertEqual(semear_projetos(Projeto, ImagemProjeto), 0)
+        le_petit = Projeto.objects.get(cliente='Le Petit Macarons Boutique')
+        self.assertEqual(le_petit.imagens.count(), 3)
+        self.assertContains(self.client.get('/projects/%s/' % le_petit.pk), 'data-ampliar')
+        self.assertContains(self.client.get('/'), 'Comunicação visual da Galpão Motoparts')
+
+
+class PrintsDoInstagramTests(TestCase):
+    """Gestão > Instagram > prints: cada recorte vira produto sob consulta ou projeto."""
+
+    def setUp(self):
+        import shutil
+        import tempfile
+        self.pasta = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.pasta, ignore_errors=True)
+        self.media = self.settings(MEDIA_ROOT=self.pasta)
+        self.media.enable()
+        self.addCleanup(self.media.disable)
+        self.client.force_login(get_user_model().objects.create_superuser('equipe', 'e@example.com', 'senha-forte-123'))
+
+    def foto(self, largura=330):
+        import io
+        from PIL import Image
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        b = io.BytesIO()
+        Image.new('RGB', (largura, largura), (200, 30, 40)).save(b, 'JPEG')
+        return SimpleUploadedFile('recorte.jpg', b.getvalue(), content_type='image/jpeg')
+
+    def test_recorte_vira_produto_sob_consulta_ampliado(self):
+        from PIL import Image
+        from .models import Produto
+        r = self.client.post('/gestao/instagram/', {'acao': 'print_item', 'tipo': 'produto', 'nome': 'Totem vertical',
+                                                    'categoria': '', 'categoria_nova': 'Totens', 'foto': self.foto()})
+        self.assertTrue(r.json()['ok'])
+        produto = Produto.objects.get(nome_produto='Totem vertical')
+        self.assertEqual((produto.preco, produto.estoque, produto.categoria.nome_categoria), (0, 0, 'Totens'))
+        self.assertEqual(Image.open(produto.imagens.get().imagem.path).width, 660)   # print pequeno sai 2x
+        repetido = self.client.post('/gestao/instagram/', {'acao': 'print_item', 'tipo': 'produto', 'nome': 'Totem vertical',
+                                                           'categoria': 'Totens', 'foto': self.foto()})
+        self.assertEqual(repetido.status_code, 409)
+
+    def test_recorte_vira_projeto(self):
+        from .models import Projeto
+        r = self.client.post('/gestao/instagram/', {'acao': 'print_item', 'tipo': 'projeto', 'nome': 'Fachada Studio 4',
+                                                    'cliente': 'Studio 4', 'foto': self.foto(900)})
+        self.assertTrue(r.json()['ok'])
+        self.assertEqual(Projeto.objects.get().imagens.count(), 1)
+
+    def test_recusa_arquivo_que_nao_e_imagem(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        r = self.client.post('/gestao/instagram/', {'acao': 'print_item', 'nome': 'X', 'categoria': 'Placas',
+                                                    'foto': SimpleUploadedFile('a.jpg', b'nao-e-imagem')})
+        self.assertEqual(r.status_code, 400)
+        self.assertContains(self.client.get('/gestao/instagram/'), 'id="dados-categorias"')

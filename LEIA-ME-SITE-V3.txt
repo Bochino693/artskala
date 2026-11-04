@@ -93,3 +93,17 @@ Na mesma tela dá para esconder um post do site ou adicionar um post à mão
 (link, foto, legenda, curtidas) se preferir não conectar a conta.
 Opcional: CRON_SECRET na Vercel deixa a busca diária protegida por senha;
 sem ele, só o agendador da Vercel pode chamar, no máximo uma vez por hora.
+
+ITENS A PARTIR DE PRINTS DO INSTAGRAM (Gestão > Instagram > painel 3)
+1. No computador, abra o perfil @artskalaa e tire print da grade de fotos
+   (pode tirar vários, um embaixo do outro).
+2. Em Gestão > Instagram, painel "3. Criar itens a partir de prints do
+   perfil", escolha os prints: cada foto é recortada sozinha.
+3. Desmarque as fotos com o efeito do mouse por cima, balões de mensagem ou
+   cortadas. Nas outras, escolha Produto (sob consulta) ou Projeto realizado,
+   dê o nome e a categoria (ou crie uma nova) e clique em "Criar itens
+   marcados". Fotos pequenas são ampliadas com nitidez automaticamente.
+Produtos criados assim entram sem preço e sem estoque ("Sob consulta", com
+orçamento no WhatsApp). Para vender pela loja, edite o produto em Gestão >
+Produtos e coloque preço e estoque. Para a melhor qualidade, troque depois
+pela foto original na edição do produto ou do projeto.
