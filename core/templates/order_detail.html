@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block title %}Pedido #{{ pedido.pk }} | ArtSkala{% endblock %}
+
+{% block content %}
+
+<section class="ak-pagina-topo">
+    <div class="container">
+        <nav class="ak-trilha" aria-label="Você está em">
+            <a href="{% url 'home' %}">Início</a> <span aria-hidden="true">/</span>
+            <a href="{% url 'orders' %}">Meus pedidos</a> <span aria-hidden="true">/</span>
+            <span aria-current="page">#{{ pedido.pk }}</span>
+        </nav>
+        <span class="ak-status ak-status--{{ pedido.status }}">{{ pedido.get_status_display }}</span>
+        <h1>Pedido <span>#{{ pedido.pk }}</span></h1>
+        <p>Feito em {{ pedido.criacao|date:"d/m/Y \à\s H:i" }} · Pagamento: {{ pedido.get_metodo_pagamento_display }}</p>
+    </div>
+</section>
+
+<section class="ak-secao ak-secao--compacta">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="ak-caixa ak-caixa-corpo">
+                    <h2 class="h5 fw-black mb-3">Itens</h2>
+                    <table class="ak-linhas">
+                        <thead><tr><th>Produto</th><th class="text-center">Qtd.</th><th class="text-end">Unitário</th><th class="text-end">Subtotal</th></tr></thead>
+                        <tbody>
+                        {% for item in itens %}
+                            <tr>
+                                <td><strong>{{ item.produto.nome_produto }}</strong></td>
+                                <td class="text-center">{{ item.quantidade }}</td>
+                                <td class="text-end"><span class="preco-brl" data-preco="{{ item.preco_unitario|stringformat:'s' }}">R$ {{ item.preco_unitario|floatformat:2 }}</span></td>
+                                <td class="text-end fw-bold"><span class="preco-brl" data-preco="{{ item.subtotal|stringformat:'s' }}">R$ {{ item.subtotal|floatformat:2 }}</span></td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% if pedido.endereco %}
+                    <div class="ak-caixa ak-caixa-corpo mt-4">
+                        <h2 class="h6 fw-black mb-2"><i class="bi bi-geo-alt text-danger me-1" aria-hidden="true"></i> Entrega / instalação</h2>
+                        <p class="mb-0" style="color:var(--ak-texto-suave)">{{ pedido.endereco }}</p>
+                    </div>
+                {% endif %}
+            </div>
+            <aside class="col-lg-4">
+                <div class="ak-caixa ak-caixa-corpo">
+                    <h2 class="h5 fw-black mb-3">Resumo</h2>
+                    {% if pedido.desconto_cupom %}
+                        <div class="ak-resumo-linha"><span>Cupom {{ pedido.cupom_codigo }}</span><strong>− <span class="preco-brl" data-preco="{{ pedido.desconto_cupom|stringformat:'s' }}">R$ {{ pedido.desconto_cupom|floatformat:2 }}</span></strong></div>
+                    {% endif %}
+                    <div class="ak-resumo-total"><span>Total</span><strong class="preco-brl" data-preco="{{ pedido.valor_total|stringformat:'s' }}">R$ {{ pedido.valor_total|floatformat:2 }}</strong></div>
+                    <a href="{{ whats }}" target="_blank" rel="noopener" class="btn btn-danger w-100 mt-4"><i class="bi bi-whatsapp me-1" aria-hidden="true"></i> Falar sobre este pedido</a>
+                    <a href="{% url 'orders' %}" class="btn btn-outline-dark w-100 mt-2">Todos os pedidos</a>
+                </div>
+            </aside>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

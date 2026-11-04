@@ -4,6 +4,9 @@
 
 {% block title %}ArtSkala | Login{% endblock %}
 
+{# os avisos ficam dentro do formulário desta página #}
+{% block mensagens %}{% endblock %}
+
 {% block content %}
 
 <style>
@@ -19,7 +22,7 @@
     .login-page {
         position: relative;
         overflow: hidden;
-        min-height: calc(100vh - 92px);
+        min-height: calc(100vh - var(--ak-topo-altura));
         background:
             linear-gradient(
                 90deg,
@@ -49,7 +52,7 @@
     }
 
     .login-row {
-        min-height: calc(100vh - 92px);
+        min-height: calc(100vh - var(--ak-topo-altura));
         padding-top: 70px;
         padding-bottom: 70px;
     }

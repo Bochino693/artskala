@@ -1,4 +1,7 @@
-from .models import Carrinho
+from django.db.models import Count, Q
+from django.utils.functional import SimpleLazyObject
+
+from .models import Carrinho, CategoriaProdutos
 from django.conf import settings
 from django.urls import reverse
 
@@ -25,3 +28,16 @@ def carrinho_contexto(request):
             total_itens = sum(item.quantidade for item in carrinho.itens.all())
 
     return {"carrinho_total_itens": total_itens}
+
+
+def menu_site(request):
+    """Categorias do painel "Produtos" do cabeçalho e do menu do celular.
+    Só consulta o banco se a página usar o menu."""
+    def categorias():
+        return list(
+            CategoriaProdutos.objects.filter(ativo=True)
+            .annotate(total_produtos=Count("produtos", filter=Q(produtos__ativo=True)))
+            .order_by("nome_categoria")
+        )
+
+    return {"menu_categorias": SimpleLazyObject(categorias)}

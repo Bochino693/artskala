@@ -1,0 +1,14 @@
+{% comment %}Faixa vermelha de orçamento no fim das páginas do catálogo.{% endcomment %}
+<section class="ak-faixa-vermelha ak-secao--compacta">
+    <div class="container d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-4">
+        <div>
+            <span class="ak-selo ak-selo--branco">Sob medida</span>
+            <h2 class="ak-titulo mb-2">Não achou o que precisa? <span>A gente faz.</span></h2>
+            <p class="ak-sub">Conte o que você imagina: medimos, criamos a arte, produzimos e instalamos.</p>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{{ whats }}" target="_blank" rel="noopener" class="btn ak-btn-branco"><i class="bi bi-whatsapp me-1" aria-hidden="true"></i> Pedir orçamento</a>
+            <a href="{% url 'projects' %}" class="btn ak-btn-contorno-branco">Ver projetos</a>
+        </div>
+    </div>
+</section>

@@ -1,1 +1,87 @@
-{% extends 'base.html' %}{% block content %}<main class="container py-5" style="max-width:760px"><h1>Finalizar pedido</h1>{% for item in itens %}<p>{{ item.produto.nome_produto }} × {{ item.quantidade }} — R$ {{ item.subtotal|floatformat:2 }}</p>{% endfor %}<h2>Subtotal: R$ {{ total|floatformat:2 }}</h2><form method="get"><label>Cupom<input class="form-control" name="cupom" maxlength="40" value="{{ cupom }}"></label><button class="btn btn-outline-dark my-2">Aplicar cupom</button></form><p>Desconto: R$ {{ desconto_cupom|floatformat:2 }}</p><h2>Total: R$ {{ total_final|floatformat:2 }}</h2><form method="post">{% csrf_token %}<label class="d-block">Endereço de entrega<input class="form-control mb-3" required name="endereco" maxlength="255"></label><label class="d-block">Pagamento<select class="form-select mb-3" name="metodo_pagamento">{% for chave, nome in metodos_pagamento %}<option value="{{ chave }}">{{ nome }}</option>{% endfor %}</select></label><input type="hidden" name="cupom" value="{{ cupom }}"><p>O cupom vale para itens sem promoção. Preços e validade são conferidos novamente ao confirmar.</p><button class="btn btn-danger">Confirmar pedido</button></form></main>{% endblock %}
+{% extends 'base.html' %}
+
+{% block title %}Finalizar pedido | ArtSkala{% endblock %}
+
+{% block content %}
+
+<section class="ak-pagina-topo">
+    <div class="container">
+        <nav class="ak-trilha" aria-label="Você está em">
+            <a href="{% url 'home' %}">Início</a> <span aria-hidden="true">/</span>
+            <a href="{% url 'cart' %}">Carrinho</a> <span aria-hidden="true">/</span>
+            <span aria-current="page">Finalizar</span>
+        </nav>
+        <span class="ak-selo"><i class="bi bi-shield-check" aria-hidden="true"></i> Último passo</span>
+        <h1>Finalizar <span>pedido</span></h1>
+        <p>Confira os itens, aplique um cupom se tiver e informe onde entregar ou instalar.</p>
+    </div>
+</section>
+
+<section class="ak-secao ak-secao--compacta">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-lg-7">
+                <div class="ak-caixa">
+                    <div class="ak-caixa-corpo">
+                        <h2 class="h5 fw-black mb-3">Itens do pedido</h2>
+                        <table class="ak-linhas">
+                            <thead><tr><th>Produto</th><th class="text-center">Qtd.</th><th class="text-end">Subtotal</th></tr></thead>
+                            <tbody>
+                            {% for item in itens %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-3">
+                                            {% with foto=item.produto.imagens.all.0 %}
+                                                <span class="ak-categoria-icone" style="width:52px;height:52px;border-radius:14px">{% if foto and foto.imagem %}<img src="{{ foto.imagem.url }}" alt="">{% else %}<i class="bi bi-image" aria-hidden="true"></i>{% endif %}</span>
+                                            {% endwith %}
+                                            <strong>{{ item.produto.nome_produto }}</strong>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">{{ item.quantidade }}</td>
+                                    <td class="text-end fw-bold"><span class="preco-brl" data-preco="{{ item.subtotal|stringformat:'s' }}">R$ {{ item.subtotal|floatformat:2 }}</span></td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="ak-caixa mt-4">
+                    <form method="get" class="ak-caixa-corpo">
+                        <label class="fw-bold mb-2" for="campo-cupom"><i class="bi bi-ticket-perforated text-danger me-1" aria-hidden="true"></i> Cupom de desconto</label>
+                        <div class="d-flex gap-2">
+                            <input class="form-control" id="campo-cupom" name="cupom" maxlength="40" value="{{ cupom }}" placeholder="Digite o código" style="text-transform:uppercase">
+                            <button class="btn btn-outline-dark flex-shrink-0">Aplicar</button>
+                        </div>
+                        <small class="d-block mt-2" style="color:var(--ak-texto-suave)">O cupom vale para itens sem promoção e não acumula com ofertas.</small>
+                    </form>
+                </div>
+            </div>
+
+            <div class="col-lg-5">
+                <form method="post" class="ak-caixa ak-caixa-corpo position-sticky" style="top: calc(var(--ak-topo-altura) + 20px)">
+                    {% csrf_token %}
+                    <h2 class="h5 fw-black mb-3">Resumo</h2>
+                    <div class="ak-resumo-linha"><span>Subtotal</span><strong class="preco-brl" data-preco="{{ total|stringformat:'s' }}">R$ {{ total|floatformat:2 }}</strong></div>
+                    <div class="ak-resumo-linha"><span>Desconto{% if cupom %} ({{ cupom }}){% endif %}</span><strong>− <span class="preco-brl" data-preco="{{ desconto_cupom|stringformat:'s' }}">R$ {{ desconto_cupom|floatformat:2 }}</span></strong></div>
+                    <div class="ak-resumo-total"><span>Total</span><strong class="preco-brl" data-preco="{{ total_final|stringformat:'s' }}">R$ {{ total_final|floatformat:2 }}</strong></div>
+
+                    <label class="d-block fw-bold mt-4 mb-2" for="campo-endereco">Endereço de entrega ou instalação</label>
+                    <input class="form-control mb-3" id="campo-endereco" required name="endereco" maxlength="255" value="{% if perfil.endereco %}{{ perfil.endereco }}{% if perfil.cidade %} — {{ perfil.cidade }}{% if perfil.estado %}/{{ perfil.estado }}{% endif %}{% endif %}{% endif %}" placeholder="Rua, número, bairro, cidade">
+
+                    <label class="d-block fw-bold mb-2" for="campo-pagamento">Forma de pagamento</label>
+                    <select class="form-select mb-3" id="campo-pagamento" name="metodo_pagamento">
+                        {% for chave, nome in metodos_pagamento %}<option value="{{ chave }}" {% if chave == 'A_COMBINAR' %}selected{% endif %}>{{ nome }}</option>{% endfor %}
+                    </select>
+
+                    <input type="hidden" name="cupom" value="{{ cupom }}">
+                    <div class="ak-aviso mb-3"><i class="bi bi-info-circle" aria-hidden="true"></i><span>Preços e validade do cupom são conferidos de novo ao confirmar. A equipe entra em contato para combinar prazo e instalação.</span></div>
+                    <button class="btn btn-danger w-100 py-3"><i class="bi bi-check2-circle me-1" aria-hidden="true"></i> Confirmar pedido</button>
+                    <a href="{% url 'cart' %}" class="btn btn-outline-dark w-100 mt-2">Voltar ao carrinho</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

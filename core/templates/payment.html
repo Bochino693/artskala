@@ -1,10 +1,34 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends 'base.html' %}
 
-</body>
-</html>
+{% block title %}Pagamento | ArtSkala{% endblock %}
+
+{% block content %}
+
+<section class="ak-pagina-topo">
+    <div class="container">
+        <nav class="ak-trilha" aria-label="Você está em">
+            <a href="{% url 'home' %}">Início</a> <span aria-hidden="true">/</span>
+            <span aria-current="page">Pagamento</span>
+        </nav>
+        <span class="ak-selo"><i class="bi bi-credit-card" aria-hidden="true"></i> Pagamento</span>
+        <h1>Formas de <span>pagamento</span></h1>
+        <p>Pix, cartão, transferência, boleto ou dinheiro. O pagamento é combinado com a equipe depois da confirmação do pedido.</p>
+    </div>
+</section>
+
+<section class="ak-secao ak-secao--compacta">
+    <div class="container" style="max-width: 860px">
+        <div class="ak-grade ak-grade--3">
+            <div class="ak-card-categoria"><span class="ak-categoria-icone"><i class="bi bi-qr-code" aria-hidden="true"></i></span><span><strong>Pix</strong><small>Na hora</small></span></div>
+            <div class="ak-card-categoria"><span class="ak-categoria-icone"><i class="bi bi-credit-card" aria-hidden="true"></i></span><span><strong>Cartão</strong><small>Crédito ou débito</small></span></div>
+            <div class="ak-card-categoria"><span class="ak-categoria-icone"><i class="bi bi-bank" aria-hidden="true"></i></span><span><strong>Transferência</strong><small>TED / DOC</small></span></div>
+            <div class="ak-card-categoria"><span class="ak-categoria-icone"><i class="bi bi-upc" aria-hidden="true"></i></span><span><strong>Boleto</strong><small>Para empresas</small></span></div>
+        </div>
+        <div class="d-flex flex-wrap gap-2 mt-4">
+            <a href="{% url 'orders' %}" class="btn btn-danger">Meus pedidos</a>
+            <a href="{{ whats }}" target="_blank" rel="noopener" class="btn btn-outline-dark"><i class="bi bi-whatsapp me-1" aria-hidden="true"></i> Combinar pagamento</a>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

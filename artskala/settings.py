@@ -154,6 +154,7 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "core.context_processors.carrinho_contexto",
                 "core.context_processors.enderecos_site",
+                "core.context_processors.menu_site",
             ],
         },
     },

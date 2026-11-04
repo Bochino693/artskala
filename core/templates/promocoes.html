@@ -1,1 +1,59 @@
-{% extends 'base.html' %}{% block title %}Promoções · Artskala{% endblock %}{% block content %}<main class="container py-5"><h1>Promoções</h1><p>Condições por tempo limitado para os seus projetos.</p><div class="row g-4">{% for oferta in ofertas %}<article class="col-md-4"><div class="border rounded-4 p-4 h-100"><small>{{ oferta.percentual|floatformat:0 }}% de desconto</small><h2>{{ oferta.titulo }}</h2><p>{{ oferta.produto.nome_produto }}</p><p><del>R$ {{ oferta.produto.preco|floatformat:2 }}</del> <strong>R$ {{ oferta.produto.preco_atual|floatformat:2 }}</strong></p><p>Até {{ oferta.fim|date:'d/m/Y' }}</p><a class="btn btn-danger" href="{% url 'product_detail' oferta.produto.pk %}">Ver produto</a></div></article>{% empty %}<p>Não há promoções ativas no momento.</p>{% endfor %}</div></main>{% endblock %}
+{% extends 'base.html' %}
+
+{% block title %}Promoções | ArtSkala{% endblock %}
+
+{% block content %}
+
+<section class="ak-pagina-topo">
+    <div class="container">
+        <nav class="ak-trilha" aria-label="Você está em">
+            <a href="{% url 'home' %}">Início</a> <span aria-hidden="true">/</span>
+            <span aria-current="page">Promoções</span>
+        </nav>
+        <span class="ak-selo"><span class="ak-ponto" aria-hidden="true"></span> Por tempo limitado</span>
+        <h1>Promoções <span>ArtSkala</span></h1>
+        <p>Condições especiais para os seus projetos. O desconto já aparece no carrinho.</p>
+    </div>
+</section>
+
+<section class="ak-secao ak-secao--compacta">
+    <div class="container">
+        {% if ofertas %}
+            <div class="ak-grade">
+                {% for oferta in ofertas %}
+                    {% with produto=oferta.produto foto=oferta.produto.imagens.all.0 %}
+                    <article class="ak-card-produto" data-revelar>
+                        <div class="ak-card-foto">
+                            {% if foto and foto.imagem %}<img src="{{ foto.imagem.url }}" alt="{{ produto.nome_produto }}" loading="lazy">{% else %}<div class="ak-sem-foto"><i class="bi bi-tag" aria-hidden="true"></i>{{ oferta.titulo }}</div>{% endif %}
+                            <span class="ak-card-etiqueta">Até {{ oferta.fim|date:"d/m" }}</span>
+                            <span class="ak-card-oferta">-{{ oferta.percentual|floatformat:0 }}%</span>
+                        </div>
+                        <div class="ak-card-corpo">
+                            <small class="text-danger fw-bold text-uppercase" style="font-size:.72rem;letter-spacing:.06em">{{ oferta.titulo }}</small>
+                            <h3><a href="{% url 'product_detail' produto.pk %}">{{ produto.nome_produto }}</a></h3>
+                            <div class="ak-card-rodape">
+                                <div class="ak-preco">
+                                    <del class="preco-brl" data-preco="{{ produto.preco|stringformat:'s' }}">R$ {{ produto.preco|floatformat:2 }}</del>
+                                    <strong class="preco-brl" data-preco="{{ produto.preco_atual|stringformat:'s' }}">R$ {{ produto.preco_atual|floatformat:2 }}</strong>
+                                </div>
+                                <span class="ak-card-ver" aria-hidden="true"><i class="bi bi-arrow-right"></i></span>
+                            </div>
+                        </div>
+                    </article>
+                    {% endwith %}
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="ak-vazio">
+                <i class="bi bi-tag" aria-hidden="true"></i>
+                <h3>Nenhuma promoção ativa agora</h3>
+                <p>Siga o <a href="https://www.instagram.com/artskalaa/" target="_blank" rel="noopener">@artskalaa</a> para saber das próximas ou peça um orçamento.</p>
+                <a href="{% url 'products' %}" class="btn btn-danger mt-2">Ver catálogo</a>
+            </div>
+        {% endif %}
+    </div>
+</section>
+
+{% include 'partials/chamada.html' %}
+
+{% endblock %}
