@@ -36,7 +36,7 @@ from .views import (
 )
 
 from .ofertas import promocoes
-from .views_instagram import sincronizar_instagram
+from .views_instagram import GestaoInstagramView, sincronizar_instagram
 
 urlpatterns = [
     path("promocoes/", promocoes, name="promocoes"),
@@ -78,6 +78,7 @@ urlpatterns = [
 
     path("gestao/", GestaoDashboardView.as_view(), name="gestao_dashboard"),
     path("gestao/pedidos/", GestaoPedidosView.as_view(), name="gestao_pedidos"),
+    path("gestao/instagram/", GestaoInstagramView.as_view(), name="gestao_instagram"),
     path("gestao/relatorio/", RelatorioOrcamentosView.as_view(), name="gestao_relatorio"),
 
     # Produtos: sem pk = lista + formulário de novo produto (GET) / criação (POST)

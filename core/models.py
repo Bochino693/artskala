@@ -612,10 +612,16 @@ class VideoProjeto(Prime):
         return self.titulo
 
 
-class PostInstagram(Prime):
-    """Publicação do @artskalaa trazida pela API oficial do Instagram."""
+def _id_post_manual():
+    import uuid
+    return "manual-" + uuid.uuid4().hex[:12]
 
-    instagram_id = models.CharField(max_length=64, unique=True)
+
+class PostInstagram(Prime):
+    """Publicação do @artskalaa: trazida pela API oficial do Instagram ou
+    cadastrada à mão na gestão (instagram_id "manual-...")."""
+
+    instagram_id = models.CharField(max_length=64, unique=True, default=_id_post_manual)
     tipo = models.CharField(max_length=20, blank=True, default="IMAGE")
     legenda = models.TextField(blank=True, default="")
     link = models.URLField(max_length=300, help_text="Endereço do post no Instagram.")
