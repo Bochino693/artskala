@@ -310,6 +310,13 @@
     .ak-diferenciais { margin-top: -24px; }
 }
 
+/* tablet em pé: vitrine mais baixa para o topo caber na tela */
+@media (min-width: 576px) and (max-width: 991.98px) {
+    .ak-vitrine { max-width: 640px; width: 100%; margin: 0 auto; }
+    .ak-vitrine-foto { aspect-ratio: 16 / 9; }
+    .ak-insta-mosaico { grid-template-columns: repeat(6, 1fr); }
+}
+
 @media (max-width: 575.98px) {
     .ak-hero h1 { font-size: 2.55rem; }
     .ak-hero h1 span { white-space: normal; }

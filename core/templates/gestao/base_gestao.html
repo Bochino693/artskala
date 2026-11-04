@@ -23,8 +23,8 @@
             --papel: #ece8dc;
             --papel-fraco: #aaa79a;
 
-            --ouro: #d0a92d;
-            --ouro-2: #f0cf63;
+            --ouro: #ff5a5f;   /* vermelho da marca, claro para o fundo escuro */
+            --ouro-2: #ec3237;
             --verde: #4e8a63;
             --azul: #3e7c74;
             --vermelho: #b5484d;
@@ -51,7 +51,7 @@
             min-height: 100vh;
             overflow-x: hidden;
             background:
-                radial-gradient(circle at top left, rgba(208,169,45,.12), transparent 34%),
+                radial-gradient(circle at top left, rgba(236,50,55,.12), transparent 34%),
                 radial-gradient(circle at bottom right, rgba(62,124,116,.16), transparent 32%),
                 var(--tinta);
             color: var(--papel);
@@ -108,7 +108,7 @@
         }
 
         .marca-sub {
-            font-size: 11px;
+            font-size: 12px;
             text-transform: uppercase;
             letter-spacing: .16em;
             color: var(--papel-fraco);
@@ -116,7 +116,7 @@
         }
 
         .nav-secao {
-            font-size: 10px;
+            font-size: 12px;
             text-transform: uppercase;
             letter-spacing: .16em;
             color: var(--papel-fraco);
@@ -143,8 +143,8 @@
 
         .nav-item.ativo {
             color: var(--papel);
-            background: rgba(208,169,45,.12);
-            border-color: rgba(208,169,45,.28);
+            background: rgba(236,50,55,.12);
+            border-color: rgba(236,50,55,.28);
         }
 
         .nav-icone {
@@ -187,7 +187,7 @@
         }
 
         .eyebrow {
-            font-size: 11px;
+            font-size: 12px;
             text-transform: uppercase;
             letter-spacing: .16em;
             color: var(--ouro);
@@ -256,7 +256,7 @@
             width: 76px;
             height: 76px;
             border-radius: 50%;
-            background: rgba(208,169,45,.11);
+            background: rgba(236,50,55,.11);
         }
 
         .cartao-stat.azul::after {
@@ -274,7 +274,7 @@
         .cartao-stat .rotulo {
             position: relative;
             z-index: 1;
-            font-size: 11px;
+            font-size: 12px;
             text-transform: uppercase;
             letter-spacing: .11em;
             color: var(--papel-fraco);
@@ -373,7 +373,7 @@
 
         table.ledger th {
             text-align: left;
-            font-size: 11px;
+            font-size: 12px;
             text-transform: uppercase;
             letter-spacing: .08em;
             color: var(--papel-fraco);
@@ -505,7 +505,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            font-size: 11px;
+            font-size: 12px;
             font-weight: 900;
             text-transform: uppercase;
             letter-spacing: .07em;
@@ -581,8 +581,8 @@
         input:focus,
         select:focus,
         textarea:focus {
-            border-color: rgba(208,169,45,.55);
-            box-shadow: 0 0 0 3px rgba(208,169,45,.12);
+            border-color: rgba(236,50,55,.55);
+            box-shadow: 0 0 0 3px rgba(236,50,55,.12);
         }
 
         input:disabled {
@@ -684,8 +684,8 @@
         }
 
         .mobile-card:hover {
-            border-color: rgba(208,169,45,.35);
-            background: rgba(208,169,45,.045);
+            border-color: rgba(236,50,55,.35);
+            background: rgba(236,50,55,.045);
         }
 
         .mobile-card-topo {

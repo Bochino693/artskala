@@ -222,3 +222,51 @@ class SiteNovoTests(TestCase):
     def test_paginas_publicas_novas(self):
         for url in ['/', '/products/', '/categories/', '/categories/%s/' % self.categoria.pk, '/projects/', '/promocoes/', '/payment/']:
             self.assertEqual(self.client.get(url).status_code, 200, url)
+
+
+class AreaInternaTests(TestCase):
+    """Gestão em interno.artskala.com.br (o endereço antigo segue aceito)."""
+
+    def setUp(self):
+        self.gestor = get_user_model().objects.create_superuser('equipe', 'equipe@example.com', 'senha-forte-123')
+
+    def test_dominio_interno_novo(self):
+        self.assertContains(self.client.get('/login/', HTTP_HOST='interno.artskala.com.br'), 'Acesso da equipe')
+        self.client.force_login(self.gestor)
+        resposta = self.client.get('/', HTTP_HOST='interno.artskala.com.br')
+        self.assertEqual(resposta.status_code, 200)
+        self.assertIn('no-store', resposta['Cache-Control'])
+        self.assertEqual(self.client.get('/projetos/', HTTP_HOST='interno.artskala.com.br').status_code, 200)
+
+    def test_gestao_do_site_vai_para_o_interno(self):
+        from django.test import override_settings
+        with override_settings(INTERNAL_SITE_ENABLED=True):
+            resposta = self.client.get('/gestao/projetos/')
+            self.assertEqual(resposta.status_code, 307)
+            self.assertEqual(resposta['Location'], 'https://interno.artskala.com.br/projetos/')
+            self.client.force_login(self.gestor)
+            self.assertContains(self.client.get('/'), 'https://interno.artskala.com.br/')
+        with override_settings(INTERNAL_SITE_ENABLED=False):
+            self.assertContains(self.client.get('/'), 'href="/gestao/"')
+
+    def test_cliente_comum_nao_entra_no_interno(self):
+        cliente = get_user_model().objects.create_user('cliente', password='senha-forte-123')
+        self.client.force_login(cliente)
+        self.assertEqual(self.client.get('/', HTTP_HOST='interno.artskala.com.br').status_code, 403)
+
+
+class MigracaoAutomaticaTests(TestCase):
+    def test_sem_pendencias_nao_faz_nada(self):
+        from .auto_migracao import migrar_pendentes
+        self.assertEqual(migrar_pendentes(forcar=True), [])
+        self.assertEqual(migrar_pendentes(), [])   # desligado fora da Vercel
+
+    def test_aplica_o_que_falta(self):
+        from unittest import mock
+        from . import auto_migracao
+        falsa = mock.Mock(app_label='core', name='x')
+        falsa.name = '0099_teste'
+        with mock.patch.object(auto_migracao, 'pendentes', return_value=[(falsa, False)]), \
+                mock.patch('django.core.management.call_command') as migrate:
+            self.assertEqual(auto_migracao.migrar_pendentes(forcar=True), ['core.0099_teste'])
+        migrate.assert_called_once_with('migrate', interactive=False, verbosity=1)

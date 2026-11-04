@@ -10,7 +10,12 @@ def enderecos_site(request):
     return {
         "site_url": settings.SITE_URL,
         "google_login_enabled": settings.GOOGLE_LOGIN_ENABLED,
-        "gestao_url": ("https://" + settings.INTERNAL_HOST + "/"),
+        # Com o subdomínio interno desligado, a gestão continua em /gestao/.
+        "gestao_url": (
+            "https://" + settings.INTERNAL_HOST + "/"
+            if settings.INTERNAL_SITE_ENABLED
+            else reverse("gestao_dashboard")
+        ),
     }
 
 

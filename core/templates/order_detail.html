@@ -23,19 +23,19 @@
             <div class="col-lg-8">
                 <div class="ak-caixa ak-caixa-corpo">
                     <h2 class="h5 fw-black mb-3">Itens</h2>
-                    <table class="ak-linhas">
-                        <thead><tr><th>Produto</th><th class="text-center">Qtd.</th><th class="text-end">Unitário</th><th class="text-end">Subtotal</th></tr></thead>
+                    <div class="ak-tabela-rolagem"><table class="ak-linhas">
+                        <thead><tr><th>Produto</th><th class="text-center">Qtd.</th><th class="text-end ak-so-largo">Unitário</th><th class="text-end">Subtotal</th></tr></thead>
                         <tbody>
                         {% for item in itens %}
                             <tr>
                                 <td><strong>{{ item.produto.nome_produto }}</strong></td>
                                 <td class="text-center">{{ item.quantidade }}</td>
-                                <td class="text-end"><span class="preco-brl" data-preco="{{ item.preco_unitario|stringformat:'s' }}">R$ {{ item.preco_unitario|floatformat:2 }}</span></td>
+                                <td class="text-end ak-so-largo"><span class="preco-brl" data-preco="{{ item.preco_unitario|stringformat:'s' }}">R$ {{ item.preco_unitario|floatformat:2 }}</span></td>
                                 <td class="text-end fw-bold"><span class="preco-brl" data-preco="{{ item.subtotal|stringformat:'s' }}">R$ {{ item.subtotal|floatformat:2 }}</span></td>
                             </tr>
                         {% endfor %}
                         </tbody>
-                    </table>
+                    </table></div>
                 </div>
                 {% if pedido.endereco %}
                     <div class="ak-caixa ak-caixa-corpo mt-4">

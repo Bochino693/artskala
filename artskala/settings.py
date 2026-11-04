@@ -366,12 +366,39 @@ else:
 # ============================================================
 
 LOGIN_URL = "login"
-SITE_URL = os.environ.get("SITE_URL", "https://www.artskala.com").rstrip("/")
-INTERNAL_HOST = "innterno.artskala.com"
-ALLOWED_HOSTS += [INTERNAL_HOST, "artskala.com", "www.artskala.com"]
-CSRF_TRUSTED_ORIGINS += ["https://" + INTERNAL_HOST, "https://artskala.com", "https://www.artskala.com"]
-# Ative somente depois de cadastrar o domínio na hospedagem e no DNS.
+
+# Área interna (gestão) em subdomínio próprio. INTERNAL_HOST pode ser trocado
+# pela variável de ambiente; o endereço antigo (innterno.artskala.com) segue
+# aceito para quem ainda tiver o link salvo.
+INTERNAL_HOST = os.environ.get("INTERNAL_HOST", "interno.artskala.com.br").strip().lower()
+INTERNAL_HOSTS = {INTERNAL_HOST, "interno.artskala.com.br", "innterno.artskala.com"}
+
+# Site público: por padrão o domínio do interno sem o "interno."
+_dominio_site = INTERNAL_HOST.split(".", 1)[1] if INTERNAL_HOST.startswith("interno.") else "artskala.com.br"
+SITE_URL = os.environ.get("SITE_URL", f"https://{_dominio_site}").rstrip("/")
+
+for _host in sorted(INTERNAL_HOSTS) + ["artskala.com", "www.artskala.com", _dominio_site, "www." + _dominio_site]:
+    add_unique(ALLOWED_HOSTS, _host)
+    add_unique(CSRF_TRUSTED_ORIGINS, "https://" + _host)
+
+# /gestao/ no site público leva para o subdomínio interno. Desligue
+# (INTERNAL_SITE_ENABLED=false) enquanto o DNS do interno não estiver pronto.
 INTERNAL_SITE_ENABLED = env_bool("INTERNAL_SITE_ENABLED", not DEBUG)
+
+# Erros 500 e avisos vão para o log da Vercel (Deployments > Logs). Sem
+# isto o Django em produção não mostra o motivo de um erro em lugar nenhum.
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {"console": {"class": "logging.StreamHandler"}},
+    "root": {"handlers": ["console"], "level": "WARNING"},
+    "loggers": {
+        "django.request": {"handlers": ["console"], "level": "ERROR", "propagate": False},
+    },
+}
+
+# Aplica migrações pendentes quando o site sobe (core/auto_migracao.py).
+MIGRAR_AO_INICIAR = env_bool("MIGRAR_AO_INICIAR", EXIGIR_VARIAVEIS and bool(DATABASE_URL))
 LOGIN_REDIRECT_URL = "home"
 LOGOUT_REDIRECT_URL = "home"
 
