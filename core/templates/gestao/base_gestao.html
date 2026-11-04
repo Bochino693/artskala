@@ -866,9 +866,11 @@
 
     {% block extra_head %}{% endblock %}
     <link rel="stylesheet" href="{% static 'gestao/modern.css' %}">
+    <link rel="stylesheet" href="{% static 'gestao/sistema.css' %}?v=20261106">
+    <script src="{% static 'gestao/sistema.js' %}?v=20261106"></script>
 </head>
 
-<body class="art-gestao">
+<body class="art-gestao {% block body_class %}{% endblock %}">
     <div class="topo-mobile">
         <div class="topo-mobile-linha">
             <div>
@@ -877,6 +879,9 @@
             </div>
 
             <div class="topo-mobile-acoes">
+                <button type="button" class="botao-busca" data-abrir-busca aria-label="Busca rápida">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+                </button>
                 <a href="{{ loja_url }}" class="btn btn-secundario" style="padding:8px 12px; min-height:36px;">
                     Loja
                 </a>
@@ -892,29 +897,37 @@
                 ◆ Dashboard
             </a>
 
-            <a href="{% url 'gestao_produtos' %}" class="nav-item {% if secao_ativa == 'produtos' %}ativo{% endif %}">
+            {% if pode.produtos %}<a href="{% url 'gestao_produtos' %}" class="nav-item {% if secao_ativa == 'produtos' %}ativo{% endif %}">
                 ◈ Produtos
-            </a>
+            </a>{% endif %}
 
-            <a href="{% url 'gestao_projetos' %}" class="nav-item {% if secao_ativa == 'projetos' %}ativo{% endif %}">
+            {% if pode.projetos %}<a href="{% url 'gestao_projetos' %}" class="nav-item {% if secao_ativa == 'projetos' %}ativo{% endif %}">
                 ▧ Projetos
-            </a>
+            </a>{% endif %}
 
-            <a href="{% url 'orcamentos' %}" class="nav-item {% if secao_ativa == 'orcamentos' %}ativo{% endif %}">
+            {% if pode.orcamentos %}<a href="{% url 'orcamentos' %}" class="nav-item {% if secao_ativa == 'orcamentos' %}ativo{% endif %}">
                 ▤ Orçamentos
-            </a>
+            </a>{% endif %}
 
-            <a href="{% url 'gestao_pedidos' %}" class="nav-item {% if secao_ativa == 'pedidos' %}ativo{% endif %}">
+            {% if pode.pedidos %}<a href="{% url 'gestao_pedidos' %}" class="nav-item {% if secao_ativa == 'pedidos' %}ativo{% endif %}">
                 ▣ Pedidos
-            </a>
+            </a>{% endif %}
 
-            <a href="{% url 'gestao_relatorio' %}" class="nav-item {% if secao_ativa == 'relatorio' %}ativo{% endif %}">
+            {% if pode.etiquetas %}<a href="{% url 'gestao_etiquetas' %}" class="nav-item {% if secao_ativa == 'etiquetas' %}ativo{% endif %}">
+                ▦ Etiquetas
+            </a>{% endif %}
+
+            {% if pode.relatorio %}<a href="{% url 'gestao_relatorio' %}" class="nav-item {% if secao_ativa == 'relatorio' %}ativo{% endif %}">
                 Σ Relatórios
-            </a>
+            </a>{% endif %}
 
-            <a href="{% url 'gestao_instagram' %}" class="nav-item {% if secao_ativa == 'instagram' %}ativo{% endif %}">
+            {% if pode.instagram %}<a href="{% url 'gestao_instagram' %}" class="nav-item {% if secao_ativa == 'instagram' %}ativo{% endif %}">
                 ◎ Instagram
-            </a>
+            </a>{% endif %}
+
+            {% if pode.equipe %}<a href="{% url 'gestao_equipe' %}" class="nav-item {% if secao_ativa == 'equipe' %}ativo{% endif %}">
+                ◉ Equipe
+            </a>{% endif %}
 
             <a href="{% url 'gestao_perfil' %}" class="nav-item {% if secao_ativa == 'gestao_perfil' %}ativo{% endif %}">
                 ● Perfil
@@ -929,6 +942,11 @@
                 <div class="marca-sub">Área de gestão</div>
             </div>
 
+            <button type="button" class="botao-busca" data-abrir-busca>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+                Buscar ou bipar código <kbd>Ctrl K</kbd>
+            </button>
+
             <div class="nav-secao">Visão geral</div>
 
             <a href="{% url 'gestao_dashboard' %}" class="nav-item {% if secao_ativa == 'dashboard' %}ativo{% endif %}">
@@ -938,39 +956,49 @@
 
             <div class="nav-secao">Catálogo</div>
 
-            <a href="{% url 'gestao_produtos' %}" class="nav-item {% if secao_ativa == 'produtos' %}ativo{% endif %}">
+            {% if pode.produtos %}<a href="{% url 'gestao_produtos' %}" class="nav-item {% if secao_ativa == 'produtos' %}ativo{% endif %}">
                 <span class="nav-icone">◈</span>
                 Produtos
-            </a>
+            </a>{% endif %}
 
-            <a href="{% url 'gestao_projetos' %}" class="nav-item {% if secao_ativa == 'projetos' %}ativo{% endif %}">
+            {% if pode.projetos %}<a href="{% url 'gestao_projetos' %}" class="nav-item {% if secao_ativa == 'projetos' %}ativo{% endif %}">
                 <span class="nav-icone">▧</span>
                 Projetos
-            </a>
+            </a>{% endif %}
 
             <div class="nav-secao">Comercial</div>
 
-            <a href="{% url 'orcamentos' %}" class="nav-item {% if secao_ativa == 'orcamentos' %}ativo{% endif %}">
+            {% if pode.orcamentos %}<a href="{% url 'orcamentos' %}" class="nav-item {% if secao_ativa == 'orcamentos' %}ativo{% endif %}">
                 <span class="nav-icone">▤</span>
                 Orçamentos
-            </a>
+            </a>{% endif %}
 
-            <a href="{% url 'gestao_pedidos' %}" class="nav-item {% if secao_ativa == 'pedidos' %}ativo{% endif %}">
+            {% if pode.pedidos %}<a href="{% url 'gestao_pedidos' %}" class="nav-item {% if secao_ativa == 'pedidos' %}ativo{% endif %}">
                 <span class="nav-icone">▣</span>
                 Pedidos do site
-            </a>
+            </a>{% endif %}
 
-            <a href="{% url 'gestao_relatorio' %}" class="nav-item {% if secao_ativa == 'relatorio' %}ativo{% endif %}">
+            {% if pode.etiquetas %}<a href="{% url 'gestao_etiquetas' %}" class="nav-item {% if secao_ativa == 'etiquetas' %}ativo{% endif %}">
+                <span class="nav-icone">▦</span>
+                Etiquetas
+            </a>{% endif %}
+
+            {% if pode.relatorio %}<a href="{% url 'gestao_relatorio' %}" class="nav-item {% if secao_ativa == 'relatorio' %}ativo{% endif %}">
                 <span class="nav-icone">Σ</span>
                 Relatórios
-            </a>
+            </a>{% endif %}
 
-            <a href="{% url 'gestao_instagram' %}" class="nav-item {% if secao_ativa == 'instagram' %}ativo{% endif %}">
+            {% if pode.instagram %}<a href="{% url 'gestao_instagram' %}" class="nav-item {% if secao_ativa == 'instagram' %}ativo{% endif %}">
                 <span class="nav-icone">◎</span>
                 Instagram
-            </a>
+            </a>{% endif %}
 
             <div class="nav-secao">Conta</div>
+
+            {% if pode.equipe %}<a href="{% url 'gestao_equipe' %}" class="nav-item {% if secao_ativa == 'equipe' %}ativo{% endif %}">
+                <span class="nav-icone">◉</span>
+                Equipe e clientes
+            </a>{% endif %}
 
             <a href="{% url 'gestao_perfil' %}" class="nav-item {% if secao_ativa == 'gestao_perfil' %}ativo{% endif %}">
                 <span class="nav-icone">●</span>
@@ -978,7 +1006,7 @@
             </a>
 
             <div class="sidebar-rodape">
-                {{ request.user.username }}<br>
+                <div class="usuario-cartao"><span class="avatar-inicial">{{ request.user.first_name|default:request.user.username|slice:":1"|upper }}</span><span><strong>{{ request.user.get_full_name|default:request.user.username }}</strong><small>{{ funcao_equipe|default:"Equipe" }}</small></span></div>
                 <a href="{{ loja_url }}">← Voltar à loja</a>
                 <form method="post" action="{% url 'interno_logout' %}" class="form-sair">
                     {% csrf_token %}
@@ -988,7 +1016,7 @@
         </aside>
 
         <main class="conteudo">
-            <div class="acoes-linha" style="margin-bottom:16px"><a href="/system/core/promocao/">Promoções</a><a href="/system/core/cupom/">Cupons</a><a href="/system/core/videoprojeto/">Vídeos de projetos</a></div><div class="ak-toolbar"><div><small>ARTSKALA · GESTÃO</small><strong>Seu negócio, em um só lugar</strong></div><a class="btn btn-secundario" href="{{ loja_url }}">Abrir site ↗</a></div>
+            {% if pode.equipe %}<div class="acoes-linha links-admin" style="margin-bottom:16px"><a href="/system/core/promocao/">Promoções</a><a href="/system/core/cupom/">Cupons</a><a href="/system/core/videoprojeto/">Vídeos de projetos</a></div>{% endif %}<div class="ak-toolbar"><div><small>ARTSKALA · GESTÃO</small><strong>Seu negócio, em um só lugar</strong></div><div class="acoes-linha ak-atalhos"><a class="btn btn-primario" href="{% url 'orcamentos' %}?novo=1">+ Orçamento</a>{% if pode.produtos %}<a class="btn btn-secundario" href="{% url 'gestao_produtos' %}#form-produto">+ Produto</a>{% endif %}<a class="btn btn-secundario" href="{% url 'gestao_etiquetas' %}">Etiquetas</a><a class="btn btn-secundario" href="{{ loja_url }}">Abrir site ↗</a></div></div>
             {% if messages %}
                 <div class="mensagens">
                     {% for message in messages %}
@@ -1000,6 +1028,16 @@
             {% block conteudo %}{% endblock %}
         </main>
     </div>
+
+    <dialog class="busca-rapida" id="busca-rapida" data-url="{% url 'gestao_buscar' %}" aria-label="Busca rápida">
+        <div class="busca-rapida-topo">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <input type="text" placeholder="Produto, cliente, orçamento, pedido ou código da etiqueta…" aria-label="Buscar" autocomplete="off" spellcheck="false">
+            <kbd>Esc</kbd>
+        </div>
+        <ul role="listbox" data-resultados></ul>
+        <div class="busca-rodape"><span><kbd>↑</kbd><kbd>↓</kbd>escolher</span><span><kbd>Enter</kbd>abrir</span><span>Leitor de código: bipe a etiqueta e ele abre direto</span></div>
+    </dialog>
 
     {% block extra_js %}{% endblock %}
 </body>

@@ -1,4 +1,5 @@
 {% extends "gestao/base_gestao.html" %}
+{% load artskala %}
 {% block titulo %}Relatório financeiro{% endblock %}
 
 {% block conteudo %}
@@ -31,25 +32,25 @@
 <div class="grade-cartoes">
     <div class="cartao-stat">
         <div class="rotulo">Valor bruto</div>
-        <div class="valor">R$ {{ soma_bruto|floatformat:2 }}</div>
+        <div class="valor">{{ soma_bruto|brl }}</div>
         <div class="apoio">Antes dos descontos</div>
     </div>
 
     <div class="cartao-stat azul">
         <div class="rotulo">Total líquido</div>
-        <div class="valor">R$ {{ soma_total|floatformat:2 }}</div>
+        <div class="valor">{{ soma_total|brl }}</div>
         <div class="apoio">Depois dos descontos</div>
     </div>
 
     <div class="cartao-stat vermelho">
         <div class="rotulo">Custo estimado</div>
-        <div class="valor">R$ {{ soma_custo|floatformat:2 }}</div>
+        <div class="valor">{{ soma_custo|brl }}</div>
         <div class="apoio">Custos cadastrados</div>
     </div>
 
     <div class="cartao-stat verde">
         <div class="rotulo">Lucro estimado</div>
-        <div class="valor">R$ {{ soma_lucro|floatformat:2 }}</div>
+        <div class="valor">{{ soma_lucro|brl }}</div>
         <div class="apoio">Resultado previsto</div>
     </div>
 </div>
@@ -66,12 +67,12 @@
         <div class="resumo-lista">
             <div class="resumo-item">
                 <span>Descontos</span>
-                <strong>R$ {{ soma_desconto|floatformat:2 }}</strong>
+                <strong>{{ soma_desconto|brl }}</strong>
             </div>
 
             <div class="resumo-item">
                 <span>Ticket médio</span>
-                <strong>R$ {{ ticket_medio|floatformat:2 }}</strong>
+                <strong>{{ ticket_medio|brl }}</strong>
             </div>
 
             {% for grupo in por_status %}
@@ -115,11 +116,11 @@
                             {{ linha.orcamento.get_status_display }}
                         </span>
                     </td>
-                    <td class="num">R$ {{ linha.bruto|floatformat:2 }}</td>
-                    <td class="num">R$ {{ linha.desconto|floatformat:2 }}</td>
-                    <td class="num">R$ {{ linha.custo|floatformat:2 }}</td>
-                    <td class="num">R$ {{ linha.lucro|floatformat:2 }}</td>
-                    <td class="num">R$ {{ linha.total|floatformat:2 }}</td>
+                    <td class="num">{{ linha.bruto|brl }}</td>
+                    <td class="num">{{ linha.desconto|brl }}</td>
+                    <td class="num">{{ linha.custo|brl }}</td>
+                    <td class="num">{{ linha.lucro|brl }}</td>
+                    <td class="num">{{ linha.total|brl }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -133,7 +134,7 @@
                 <div>
                     <div class="mobile-card-titulo">{{ linha.orcamento.titulo }}</div>
                     <div class="mobile-card-meta">
-                        Bruto: R$ {{ linha.bruto|floatformat:2 }}
+                        Bruto: {{ linha.bruto|brl }}
                     </div>
                 </div>
 
@@ -145,19 +146,19 @@
             <div class="resumo-lista">
                 <div class="resumo-item">
                     <span>Desconto</span>
-                    <strong>R$ {{ linha.desconto|floatformat:2 }}</strong>
+                    <strong>{{ linha.desconto|brl }}</strong>
                 </div>
                 <div class="resumo-item">
                     <span>Custo</span>
-                    <strong>R$ {{ linha.custo|floatformat:2 }}</strong>
+                    <strong>{{ linha.custo|brl }}</strong>
                 </div>
                 <div class="resumo-item">
                     <span>Lucro</span>
-                    <strong>R$ {{ linha.lucro|floatformat:2 }}</strong>
+                    <strong>{{ linha.lucro|brl }}</strong>
                 </div>
                 <div class="resumo-item">
                     <span>Total</span>
-                    <strong>R$ {{ linha.total|floatformat:2 }}</strong>
+                    <strong>{{ linha.total|brl }}</strong>
                 </div>
             </div>
         </a>

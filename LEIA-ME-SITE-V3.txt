@@ -47,7 +47,7 @@ certo e gratuito é a exportação oficial da própria conta:
      --tipo produto --categoria "Fachadas"   cria produtos em vez de projetos
 
 VERIFICAÇÃO
-python manage.py test core  -> 44 testes (importador, Instagram, vitrine, área interna, páginas).
+python manage.py test core  -> 52 testes (importador, Instagram, vitrine, área interna, gestão, páginas).
 Conferido no navegador em 1440 px e 390 px (celular).
 
 ÁREA INTERNA — artskala.com.br/interno/ (sem subdomínio)
@@ -134,3 +134,43 @@ Dom Villy, Saruê Ranch, Leone Faixas, Correios e a placa da sede ArtSkala.
 Ficaram de fora: fotos com o efeito do mouse por cima (geladeira envelopada,
 fachada, recepção), a fachada com telefones cortados e os quadros cortados
 na borda do print. Mande prints dessas sem o mouse em cima que eu incluo.
+
+GESTÃO NOVA (artskala.com.br/interno/)
+- Painel: cartões do mês (receita, lucro, orçamentos em aberto, aprovação,
+  ticket médio, pedidos a despachar, clientes) e gráficos: receita × custo ×
+  lucro por mês (6/12/24 meses), funil de orçamentos, receita por categoria,
+  campeões de venda e orçamentos × novos clientes. Passe o mouse para ver os
+  valores. Lista "Precisa de você": pedidos pagos sem envio, entregas da
+  semana ou atrasadas, orçamentos vencendo, produtos da loja sem estoque.
+- Campos com máscara: dinheiro como maquininha (1 -> 0,01 · 10 -> 0,10 ·
+  15000 -> 150,00), celular (11) 99999-9999, CPF/CNPJ (confere os dígitos),
+  CEP, porcentagem e quantidade com − e +. Ctrl+S salva a tela; ao sair sem
+  salvar, o navegador avisa.
+- Valores em R$ com milhar em todas as telas e na proposta impressa.
+- Orçamento: CEP preenche rua, bairro, cidade e UF; "Procurar pela rua"
+  acha o CEP pelo nome; a distância de carro até a ArtSkala (km e minutos)
+  é calculada e salva, com link da rota no Google Maps. "Valor por km" ×
+  ida e volta vira um item de deslocamento. Botão "Calcular m²" em cada item
+  (largura × altura × preço do m²). Campos novos: CPF/CNPJ, entrega
+  prevista, prazo, forma de pagamento e custo extra.
+  (Para fixar o ponto de partida: ORIGEM_LAT e ORIGEM_LNG na Vercel; sem
+  elas o navegador acha a ArtSkala pelo endereço ENDERECO_LOJA.)
+- Pedidos do site: agora aparecem os pedidos de TODOS os clientes (antes só
+  os do próprio usuário). Status muda na lista ou no pedido; tela do pedido
+  com itens, lucro, cliente, WhatsApp, endereço e rota.
+- Etiquetas (menu Etiquetas): produto/preço, pedido/envio (com volumes e
+  remetente), ordem de produção, projeto e texto livre. Folhas A4 (65, 33,
+  21, 16, 14, 10 e 4 por folha), rolos térmicos (100×150, 100×50, 60×40,
+  50×30, 40×25) ou medidas próprias; "começar na etiqueta nº" para folha
+  já usada e ajuste fino. QR code abre o item; o código (PRD-000012,
+  PED-…, ORC-…, PRJ-…) funciona na busca rápida e no leitor. Na impressão:
+  escala 100% e margens "nenhuma".
+- Busca rápida: Ctrl+K (ou /) em qualquer tela: produto, cliente, orçamento,
+  pedido ou o código da etiqueta (leitor de código abre direto).
+- Produto: calculadora de preço (lucro, margem, markup e preço sugerido
+  pela margem desejada) e botão "Imprimir etiqueta". Corrigido o seletor de
+  categoria que mostrava "Sem categoria" em todas as opções.
+- Equipe e clientes: cadastre quem trabalha com você, cada um com usuário
+  e senha. Funções: Gestão (tudo), Vendas (orçamentos, pedidos, produtos,
+  etiquetas) e Produção (orçamentos, projetos, etiquetas). Desativar tira o
+  acesso na hora. Aba Clientes: quem comprou, quanto e o WhatsApp.

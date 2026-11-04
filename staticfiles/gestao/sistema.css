@@ -1,0 +1,230 @@
+/* ArtSkala · Gestão — campos com máscara, busca rápida, avisos e etiquetas. */
+
+/* ------------------------------------------------ campos com R$, % e m */
+.campo-afixo { position: relative; display: block; width: 100%; }
+.campo-afixo > input { width: 100%; padding-left: 42px; text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+.campo-afixo > .afixo {
+    position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+    color: #667389; font-size: 13px; font-weight: 800; pointer-events: none; letter-spacing: .02em;
+}
+.campo-afixo--pct > input, .campo-afixo--medida > input { padding-left: 12px; padding-right: 34px; }
+.campo-afixo--pct > .afixo, .campo-afixo--medida > .afixo { left: auto; right: 12px; }
+.campo-afixo > input:focus + .afixo { color: #c9233c; }
+td .campo-afixo > input { min-width: 112px; }
+
+.campo-passos { display: flex; align-items: stretch; width: 100%; min-width: 118px; }
+.campo-passos > input { flex: 1; min-width: 44px; text-align: center; border-radius: 0 !important; font-weight: 700; font-variant-numeric: tabular-nums; }
+.campo-passos > .passo {
+    flex: 0 0 38px; border: 1px solid #cbd3e0; background: #f6f7fb; color: #34425a;
+    font-size: 18px; font-weight: 700; line-height: 1; cursor: pointer;
+}
+.campo-passos > .passo:first-child { border-radius: 9px 0 0 9px; border-right: 0; }
+.campo-passos > .passo:last-child { border-radius: 0 9px 9px 0; border-left: 0; }
+.campo-passos > .passo:hover { background: #fff0f2; color: #b21f35; }
+.campo-passos > .passo:active { transform: scale(.96); }
+
+.dica-campo { display: block; margin-top: 5px; font-size: 12px; color: #667389; }
+input[aria-invalid="true"] { border-color: #c9233c !important; background: #fff7f8 !important; }
+input[aria-invalid="true"] ~ .dica-campo, .campo:has(input[aria-invalid="true"]) .dica-campo { color: #b21f35; font-weight: 600; }
+
+/* ------------------------------------------------------ avisos */
+.mensagem { transition: opacity .4s ease, transform .4s ease; }
+.mensagem.saindo { opacity: 0; transform: translateY(-6px); pointer-events: none; }
+
+/* ------------------------------------------------- busca rápida */
+.botao-busca {
+    display: flex; align-items: center; gap: 10px; width: 100%; margin: 0 0 16px;
+    padding: 10px 12px; border: 1px solid var(--linha); border-radius: 10px;
+    background: #f6f7fb; color: #667389; font-size: 13.5px; cursor: pointer; text-align: left;
+}
+.botao-busca:hover { border-color: #e7b9c1; color: #b21f35; }
+.botao-busca kbd, .busca-rapida kbd {
+    margin-left: auto; padding: 2px 6px; border: 1px solid #cbd3e0; border-bottom-width: 2px;
+    border-radius: 6px; background: #fff; font: 600 11px/1.4 Inter, system-ui, sans-serif; color: #667389;
+}
+.topo-mobile .botao-busca { width: auto; margin: 0; padding: 8px 10px; }
+.topo-mobile .botao-busca kbd { display: none; }
+
+.busca-rapida {
+    width: min(640px, calc(100vw - 24px)); max-height: min(72vh, 620px); padding: 0;
+    border: 1px solid var(--linha); border-radius: 18px; background: #fff; color: #202b3e;
+    box-shadow: 0 30px 80px rgba(20, 28, 45, .28); overflow: hidden;
+}
+.busca-rapida[open] { display: flex; flex-direction: column; }
+.busca-rapida::backdrop { background: rgba(17, 22, 34, .45); backdrop-filter: blur(2px); }
+.busca-rapida-topo { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--linha); }
+.busca-rapida-topo svg { flex: 0 0 auto; color: #c9233c; }
+.busca-rapida-topo input { flex: 1; border: 0 !important; outline: 0; min-height: 40px; font-size: 16px; box-shadow: none !important; padding: 0 !important; }
+.busca-rapida ul { list-style: none; margin: 0; padding: 8px; overflow-y: auto; }
+.busca-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 12px; color: inherit; }
+.busca-item.ativo, .busca-item:hover { background: #fff0f2; }
+.busca-tipo {
+    flex: 0 0 74px; padding: 3px 0; border-radius: 999px; background: #f0f2f7; color: #4b5870;
+    font-size: 11px; font-weight: 800; text-align: center; text-transform: uppercase; letter-spacing: .04em;
+}
+.busca-item.ativo .busca-tipo { background: #c9233c; color: #fff; }
+.busca-texto { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.busca-texto strong { font-size: 14.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.busca-texto small { color: #667389; font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.busca-item code { font: 600 12px/1 "IBM Plex Mono", monospace; color: #667389; }
+.busca-vazio { padding: 18px 12px; color: #667389; font-size: 14px; }
+.busca-rodape { display: flex; gap: 14px; flex-wrap: wrap; padding: 10px 16px; border-top: 1px solid var(--linha); color: #667389; font-size: 12px; background: #fafbfd; }
+.busca-rodape kbd { margin: 0 4px 0 0; }
+
+/* -------------------------------------------- calculadoras na gestão */
+.calculadora {
+    margin: 4px 0 18px; padding: 14px 16px; border: 1px dashed #e7b9c1; border-radius: 14px; background: #fffafb;
+}
+.calculadora-titulo { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 10px; font-size: 13px; font-weight: 800; color: #b21f35; text-transform: uppercase; letter-spacing: .05em; }
+.calculadora-linha { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.calculadora-numero { display: flex; flex-direction: column; padding: 10px 12px; border-radius: 10px; background: #fff; border: 1px solid #f0dde1; }
+.calculadora-numero small { color: #667389; font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.calculadora-numero strong { font: 700 17px/1.3 "IBM Plex Mono", monospace; color: #202b3e; }
+.calculadora-numero.bom strong { color: #167c5b; }
+.calculadora-numero.ruim strong { color: #c9233c; }
+.calculadora .linha-campos { margin-top: 10px; }
+.btn-mini { padding: 6px 12px !important; min-height: 32px !important; font-size: 13px !important; }
+.m2-pop {
+    position: absolute; z-index: 30; width: 280px; padding: 14px; border: 1px solid var(--linha); border-radius: 14px;
+    background: #fff; box-shadow: 0 20px 50px rgba(20, 28, 45, .18);
+}
+.m2-pop .linha-campos { grid-template-columns: 1fr 1fr !important; gap: 8px; }
+.m2-pop .campo { margin-bottom: 8px; }
+.m2-pop .campo:last-child { grid-column: 1 / -1 !important; }
+.m2-total { margin: 4px 0 10px; font: 700 15px "IBM Plex Mono", monospace; }
+.btn-m2 { padding: 5px 9px !important; min-height: 30px !important; font-size: 12px !important; margin-top: 6px; }
+
+@media (max-width: 860px) {
+    .calculadora-linha { grid-template-columns: 1fr 1fr; }
+}
+@media print {
+    .busca-rapida, .botao-busca { display: none !important; }
+}
+
+/* ------------------------------------------------ pedidos e detalhes */
+.codigo-mini { font: 600 11px/1.4 "IBM Plex Mono", monospace; color: #667389; }
+.texto-fraco { color: #667389; }
+.selo-select {
+    min-height: 32px !important; padding: 4px 30px 4px 12px !important; border-radius: 999px !important;
+    font-size: 12px !important; font-weight: 800; text-transform: uppercase; letter-spacing: .04em;
+    border: 1px solid currentColor !important; background-color: #fff; cursor: pointer;
+}
+.selo-select.PEDIDO_PENDENTE { color: #8a6d1d; background-color: #fff8e6; }
+.selo-select.PEDIDO_PAGO { color: #167c5b; background-color: #eaf7f1; }
+.selo-select.PEDIDO_ENVIADO { color: #286caf; background-color: #ebf3fc; }
+.selo-select.PEDIDO_ENTREGUE { color: #0f6a4d; background-color: #e3f4ec; }
+.selo-select.PEDIDO_CANCELADO { color: #b21f35; background-color: #fdeef0; }
+.selo-select:disabled { opacity: .6; }
+.lista-dados { display: grid; grid-template-columns: 110px 1fr; gap: 8px 14px; margin: 0 0 14px; font-size: 14px; }
+.lista-dados dt { color: #667389; font-weight: 700; font-size: 12.5px; text-transform: uppercase; letter-spacing: .04em; padding-top: 2px; }
+.lista-dados dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+.resumo-valores { display: flex; flex-direction: column; gap: 6px; max-width: 360px; margin: 16px 0 0 auto; font-size: 14px; }
+.resumo-valores div { display: flex; justify-content: space-between; gap: 16px; }
+.resumo-valores strong { font-variant-numeric: tabular-nums; }
+.resumo-valores .total { padding-top: 8px; border-top: 1px solid var(--linha); font-size: 17px; }
+
+/* --------------------- cartões de número (padrão Lazer & Sport) */
+.art-gestao .cartao-stat {
+    --metric: #c9233c; --metric-bg: rgba(201, 35, 60, .08);
+    position: relative; overflow: hidden; min-height: 108px; padding: 16px 18px 16px 20px; border-radius: 20px;
+}
+.art-gestao .cartao-stat::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 4px; background: var(--metric); }
+.art-gestao .cartao-stat::after {
+    content: ""; position: absolute; width: 122px; height: 122px; right: -46px; top: -50px;
+    border-radius: 50%; background: var(--metric-bg); pointer-events: none;
+}
+.art-gestao .cartao-stat.azul { --metric: #286caf; --metric-bg: rgba(40, 108, 175, .09); }
+.art-gestao .cartao-stat.verde { --metric: #167c5b; --metric-bg: rgba(22, 124, 91, .09); }
+.art-gestao .cartao-stat.vermelho { --metric: #c9233c; --metric-bg: rgba(201, 35, 60, .09); }
+.art-gestao .cartao-stat.ambar { --metric: #b7791f; --metric-bg: rgba(183, 121, 31, .1); }
+.art-gestao .cartao-stat.violeta { --metric: #6b4fc9; --metric-bg: rgba(107, 79, 201, .09); }
+.art-gestao .cartao-stat .rotulo { position: relative; z-index: 1; font-size: 11px; font-weight: 900; letter-spacing: .09em; text-transform: uppercase; color: #667389; }
+.art-gestao .cartao-stat .valor { position: relative; z-index: 1; margin-top: 8px; font-size: clamp(20px, 2.1vw, 27px); font-weight: 900; letter-spacing: -.03em; line-height: 1.1; font-variant-numeric: tabular-nums; color: #202b3e; }
+.art-gestao .cartao-stat .apoio { position: relative; z-index: 1; margin-top: 6px; font-size: 12.5px; color: #667389; }
+.delta { display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 800; }
+.delta.sobe { color: #167c5b; background: #e6f5ee; }
+.delta.desce { color: #b21f35; background: #fdeef0; }
+.delta.igual { color: #667389; background: #f0f2f7; }
+.art-gestao .ledger thead th { font-weight: 900; letter-spacing: .075em; text-transform: uppercase; white-space: nowrap; }
+.art-gestao .ledger td.num, .art-gestao .ledger th.num { font-variant-numeric: tabular-nums; }
+
+/* ------------------------------------------- endereço e distância */
+.art-gestao .endereco-linha { display: grid; grid-template-columns: minmax(130px, 1fr) 1.4fr 1.4fr minmax(90px, .6fr); gap: 12px; }
+.busca-ruas { margin: 6px 0 10px; }
+.ruas { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 6px; max-height: 280px; overflow: auto; }
+.ruas button {
+    width: 100%; display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; padding: 10px 12px; text-align: left;
+    border: 1px solid var(--linha); border-radius: 10px; background: #fff; cursor: pointer;
+}
+.ruas button:hover { border-color: #e7b9c1; background: #fff6f7; }
+.ruas button span { grid-column: 1; color: #667389; font-size: 12.5px; }
+.ruas button code { grid-row: 1 / span 2; grid-column: 2; align-self: center; font: 700 13px "IBM Plex Mono", monospace; color: #b21f35; }
+.distancia { margin: 8px 0 12px; }
+.distancia-numero { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 12px; padding: 14px 16px; border-radius: 14px; background: linear-gradient(135deg, #fff1f2, #fff); border: 1px solid #f3cdd4; }
+.distancia-numero strong { font: 900 28px/1 Inter, system-ui, sans-serif; letter-spacing: -.03em; color: #b21f35; }
+.distancia-numero span { color: #4b5870; font-size: 14px; }
+.distancia-vazia { padding: 12px 14px; border-radius: 12px; background: #f6f7fb; color: #667389; font-size: 14px; }
+.deslocamento { display: grid; grid-template-columns: minmax(150px, 1fr) minmax(150px, 1fr) minmax(140px, 1fr) auto; gap: 12px; align-items: end; }
+.deslocamento .campo { margin-bottom: 0; }
+.deslocamento-total { display: flex; flex-direction: column; padding: 8px 0; }
+.deslocamento-total small { color: #667389; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
+.deslocamento-total strong { font: 800 18px "IBM Plex Mono", monospace; }
+@media (max-width: 860px) {
+    .art-gestao .endereco-linha, .deslocamento { grid-template-columns: 1fr 1fr; }
+}
+.calculadora-titulo .campo-afixo { width: 100px; }
+
+/* --------------------------------------------- equipe e clientes */
+.avatar-inicial {
+    flex: 0 0 auto; display: grid; place-items: center; width: 38px; height: 38px; border-radius: 12px;
+    background: linear-gradient(135deg, #e2384f, #a91830); color: #fff; font-weight: 900; font-size: 15px;
+}
+.avatar-inicial.cliente { background: linear-gradient(135deg, #3d84c8, #1f5a94); }
+.usuario-cartao { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.usuario-cartao span:last-child { display: flex; flex-direction: column; min-width: 0; }
+.usuario-cartao strong { color: #202b3e; font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.usuario-cartao small { color: #667389; font-size: 12px; }
+.pessoa { display: flex; align-items: center; gap: 12px; }
+.pessoa span:last-child { display: flex; flex-direction: column; min-width: 0; }
+.pessoa small { color: #667389; font-size: 12.5px; }
+tr.inativo td { opacity: .55; }
+.funcao-selo { display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 999px; font-size: 12.5px; font-weight: 800; }
+.funcao-gestao { background: #fdeef0; color: #a91830; }
+.funcao-vendas { background: #ebf3fc; color: #1f5a94; }
+.funcao-producao { background: #f0ecfb; color: #553bb0; }
+.modal-pessoa { width: min(560px, calc(100vw - 24px)); padding: 22px; border: 1px solid var(--linha); border-radius: 20px; box-shadow: 0 30px 80px rgba(20, 28, 45, .28); }
+.modal-pessoa::backdrop { background: rgba(17, 22, 34, .45); }
+.modal-cabeca { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+.modal-cabeca h2 { margin: 0; font-size: 20px; }
+.modal-fechar { border: 0; background: #f0f2f7; width: 34px; height: 34px; border-radius: 10px; font-size: 20px; cursor: pointer; }
+.funcoes-opcoes { display: grid; gap: 8px; margin: 6px 0 12px; padding: 0; border: 0; }
+.funcoes-opcoes legend { font-weight: 700; font-size: 13px; margin-bottom: 6px; }
+.funcao-opcao { display: flex; gap: 10px; align-items: flex-start; padding: 11px 12px; border: 1px solid var(--linha); border-radius: 12px; cursor: pointer; }
+.funcao-opcao:has(input:checked) { border-color: #c9233c; background: #fff6f7; box-shadow: inset 3px 0 #c9233c; }
+.funcao-opcao input { width: 18px; height: 18px; min-height: 0; margin-top: 2px; accent-color: #c9233c; }
+.funcao-opcao span { display: flex; flex-direction: column; }
+.funcao-opcao small { color: #667389; font-size: 12.5px; }
+.check-linha { display: flex; gap: 8px; align-items: center; font-weight: 600; }
+.check-linha input { width: 18px; height: 18px; min-height: 0; accent-color: #c9233c; }
+
+/* tabelas viram cartões no celular (rótulo de cada coluna antes do valor) */
+@media (max-width: 760px) {
+    .tabela-cartoes thead { display: none; }
+    .tabela-cartoes, .tabela-cartoes tbody, .tabela-cartoes tr, .tabela-cartoes td { display: block; width: 100%; }
+    .tabela-cartoes tr { margin: 0 0 12px; padding: 12px; border: 1px solid var(--linha); border-radius: 14px; background: #fff; }
+    .tabela-cartoes td { padding: 5px 0 !important; border: 0 !important; text-align: left !important; }
+    .tabela-cartoes td[data-rotulo]::before { content: attr(data-rotulo); display: block; color: #667389; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; }
+    .tabela-cartoes td:first-child::before { display: none; }
+}
+
+/* atalhos do topo: compactos no celular */
+@media (max-width: 860px) {
+    .ak-atalhos { display: grid !important; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; }
+    .ak-atalhos .btn { width: 100% !important; min-height: 38px !important; padding: 8px 10px !important; font-size: 13px !important; }
+}
+
+/* abas em pílula (painel: período; equipe: equipe/clientes) */
+.segmentos { display: inline-flex; padding: 3px; border: 1px solid var(--linha); border-radius: 999px; background: #fff; }
+.segmentos a { padding: 7px 13px; border-radius: 999px; font-size: 13px; font-weight: 700; color: #4b5870; }
+.segmentos a.ativo { background: #c9233c; color: #fff; }
+.acoes-linha form { display: inline-flex; margin: 0; }

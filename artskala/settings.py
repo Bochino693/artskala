@@ -167,6 +167,7 @@ TEMPLATES = [
                 "core.context_processors.carrinho_contexto",
                 "core.context_processors.enderecos_site",
                 "core.context_processors.menu_site",
+                "core.context_processors.gestao_acesso",
             ],
         },
     },
@@ -369,6 +370,12 @@ LOGIN_URL = "login"
 
 # E-mail oficial de atendimento (rodapé, home e contato).
 EMAIL_CONTATO = os.environ.get("EMAIL_CONTATO", "artskala@gmail.com").strip()
+
+# Endereço da ArtSkala: ponto de partida da distância calculada nos orçamentos.
+# ORIGEM_LAT/ORIGEM_LNG são opcionais (sem elas o navegador acha o ponto pelo endereço).
+ENDERECO_LOJA = os.environ.get("ENDERECO_LOJA", "Rua Eduardo Zumkeller, 170, São Paulo - SP").strip()
+ORIGEM_LAT = os.environ.get("ORIGEM_LAT", "").strip()
+ORIGEM_LNG = os.environ.get("ORIGEM_LNG", "").strip()
 
 # Área interna (gestão): fica em /interno/ no próprio site, sem depender de
 # subdomínio. Se um dia o DNS de INTERNAL_HOST for apontado para a Vercel, ele

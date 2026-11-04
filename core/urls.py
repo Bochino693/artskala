@@ -26,7 +26,6 @@ from .views import (
     RelatorioOrcamentosView,
     OrcamentoView,
     GestaoDashboardView,
-    GestaoPedidosView,
     GestaoPerfilView,
     GestaoProdutosView,
     GestaoProjetosView,
@@ -38,6 +37,14 @@ from .views import (
 from .ofertas import promocoes
 from .views_instagram import GestaoInstagramView, sincronizar_instagram
 from .views_interno import LoginEquipeView, SairEquipeView
+from .views_gestao import (
+    BuscaRapidaView,
+    EquipeView,
+    EtiquetasView,
+    GestaoPedidoDetalheView,
+    GestaoPedidosView,
+    QrCodeView,
+)
 
 urlpatterns = [
     path("promocoes/", promocoes, name="promocoes"),
@@ -89,6 +96,11 @@ ROTAS_INTERNAS = [
     ("login/", LoginEquipeView.as_view(), "interno_login"),
     ("sair/", SairEquipeView.as_view(), "interno_logout"),
     ("pedidos/", GestaoPedidosView.as_view(), "gestao_pedidos"),
+    ("pedidos/<int:pk>/", GestaoPedidoDetalheView.as_view(), "gestao_pedido_detalhe"),
+    ("buscar/", BuscaRapidaView.as_view(), "gestao_buscar"),
+    ("etiquetas/", EtiquetasView.as_view(), "gestao_etiquetas"),
+    ("etiquetas/qr.svg", QrCodeView.as_view(), "gestao_qrcode"),
+    ("equipe/", EquipeView.as_view(), "gestao_equipe"),
     ("instagram/", GestaoInstagramView.as_view(), "gestao_instagram"),
     ("relatorio/", RelatorioOrcamentosView.as_view(), "gestao_relatorio"),
     # Produtos: sem pk = lista + formulário de novo produto (GET) / criação (POST)

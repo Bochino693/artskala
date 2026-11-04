@@ -62,6 +62,7 @@ def _numero(valor):
 
 
 class GestaoInstagramView(SuperuserGestaoRequiredMixin, View):
+    secao_gestao = "instagram"
     """Conectar o Instagram (colar o token), buscar posts na hora e cuidar do
     bloco "Acompanhe no Instagram" da home, sem precisar mexer na Vercel."""
 

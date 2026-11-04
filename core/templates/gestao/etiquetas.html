@@ -1,0 +1,104 @@
+{% extends "gestao/base_gestao.html" %}
+{% load static %}
+{% block titulo %}Etiquetas{% endblock %}
+{% block body_class %}pagina-etiquetas{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'gestao/etiquetas.css' %}?v=20261106">{% endblock %}
+
+{% block conteudo %}
+<div class="cabecalho-pagina etq-cabecalho">
+    <div>
+        <div class="eyebrow">Ferramentas</div>
+        <h1 class="titulo-pagina">Etiquetas</h1>
+        <div class="subtitulo-pagina">Preço de produto, envio de pedido, ordem de produção, projeto ou texto livre. Escolha os itens, o tipo de folha e imprima. O QR code abre o item no celular e o código funciona no leitor da busca rápida.</div>
+    </div>
+</div>
+
+<div class="etq-tela" data-etiquetas>
+    <aside class="etq-controles painel">
+        <div class="etq-bloco">
+            <div class="etq-rotulo">1 · O que imprimir</div>
+            <div class="etq-tipos" role="tablist">
+                {% for chave, nome in tipos %}
+                    <button type="button" role="tab" class="etq-tipo{% if chave == tipo %} ativo{% endif %}" data-tipo="{{ chave }}" aria-selected="{% if chave == tipo %}true{% else %}false{% endif %}">{{ nome }}</button>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="etq-bloco" data-bloco-itens>
+            <div class="etq-rotulo etq-rotulo-linha">
+                <span>2 · Itens</span>
+                <span class="etq-acoes-mini">
+                    <button type="button" class="etq-link" data-marcar="todos">Marcar visíveis</button>
+                    <button type="button" class="etq-link" data-marcar="nenhum">Limpar</button>
+                </span>
+            </div>
+            <input type="search" class="etq-busca" placeholder="Filtrar por nome, cliente ou código…" aria-label="Filtrar itens" data-filtro>
+            <ul class="etq-lista" data-lista></ul>
+        </div>
+
+        <div class="etq-bloco" data-bloco-livre hidden>
+            <div class="etq-rotulo">2 · Texto das etiquetas</div>
+            <textarea rows="6" data-livre-texto placeholder="FRÁGIL&#10;Manusear com cuidado&#10;&#10;ArtSkala Comunicação Visual&#10;(11) 2235-3589">FRÁGIL
+Manusear com cuidado</textarea>
+            <small class="dica-campo">Uma etiqueta por bloco: deixe uma linha em branco entre elas. A 1ª linha sai em destaque.</small>
+            <div class="linha-campos" style="margin-top:10px">
+                <div class="campo"><label for="livre-copias">Cópias de cada</label><input type="number" id="livre-copias" min="1" value="1" data-livre-copias data-campo="inteiro"></div>
+                <div class="campo"><label for="livre-qr">QR code (link, opcional)</label><input type="text" id="livre-qr" data-livre-qr placeholder="https://www.instagram.com/artskalaa/"></div>
+            </div>
+        </div>
+
+        <div class="etq-bloco">
+            <div class="etq-rotulo">3 · Folha ou rolo</div>
+            <select data-modelo aria-label="Modelo de etiqueta"></select>
+            <div class="etq-personalizado" data-personalizado hidden>
+                <div class="etq-grade-campos">
+                    <label>Largura (mm)<input type="text" inputmode="decimal" data-medida="w"></label>
+                    <label>Altura (mm)<input type="text" inputmode="decimal" data-medida="h"></label>
+                    <label>Colunas<input type="text" inputmode="numeric" data-medida="colunas"></label>
+                    <label>Linhas<input type="text" inputmode="numeric" data-medida="linhas"></label>
+                    <label>Espaço entre colunas<input type="text" inputmode="decimal" data-medida="gx"></label>
+                    <label>Espaço entre linhas<input type="text" inputmode="decimal" data-medida="gy"></label>
+                    <label>Papel
+                        <select data-medida="papel">
+                            <option value="a4">A4 (210 × 297)</option>
+                            <option value="carta">Carta (216 × 279)</option>
+                            <option value="rolo">Rolo (tamanho da etiqueta)</option>
+                        </select>
+                    </label>
+                </div>
+            </div>
+            <div class="etq-grade-campos etq-opcoes">
+                <label>Começar na etiqueta nº<input type="text" inputmode="numeric" value="1" data-inicio></label>
+                <label>Ajuste fino → (mm)<input type="text" inputmode="decimal" value="0" data-ajuste="x"></label>
+                <label>Ajuste fino ↓ (mm)<input type="text" inputmode="decimal" value="0" data-ajuste="y"></label>
+            </div>
+            <div class="etq-checks">
+                <label><input type="checkbox" data-opcao="qr" checked> QR code</label>
+                <label><input type="checkbox" data-opcao="marca" checked> Nome ArtSkala</label>
+                <label><input type="checkbox" data-opcao="corte"> Linhas de corte</label>
+                <label data-so-tipo="produto"><input type="checkbox" data-opcao="preco" checked> Preço</label>
+                <label data-so-tipo="pedido"><input type="checkbox" data-opcao="remetente" checked> Remetente</label>
+            </div>
+        </div>
+
+        <div class="etq-imprimir">
+            <div class="etq-resumo" data-resumo>Nenhuma etiqueta.</div>
+            <button type="button" class="btn btn-primario" data-imprimir disabled>Imprimir etiquetas</button>
+            <small class="dica-campo">Na janela de impressão: <b>escala 100%</b> (ou "tamanho real") e <b>margens: nenhuma</b>. Para rolos, escolha a impressora térmica e o papel do mesmo tamanho.</small>
+        </div>
+    </aside>
+
+    <section class="etq-previa" aria-label="Prévia da impressão">
+        <div class="etq-previa-topo">
+            <strong>Prévia</strong>
+            <span data-previa-info></span>
+        </div>
+        <div class="etq-folhas" data-folhas></div>
+    </section>
+</div>
+
+{{ dados_etiquetas|json_script:"dados-etiquetas" }}
+<style id="etq-pagina-print"></style>
+{% endblock %}
+
+{% block extra_js %}<script src="{% static 'gestao/etiquetas.js' %}?v=20261106"></script>{% endblock %}

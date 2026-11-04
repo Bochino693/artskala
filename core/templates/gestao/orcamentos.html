@@ -1,4 +1,5 @@
 {% extends "gestao/base_gestao.html" %}
+{% load static artskala %}
 {% load l10n %}
 {% block titulo %}{% if orcamento %}{{ orcamento.titulo }}{% else %}Orçamentos{% endif %}{% endblock %}
 
@@ -41,13 +42,60 @@
         <div class="linha-campos">
             <div class="campo"><label for="cliente_nome">Cliente</label><input type="text" id="cliente_nome" name="cliente_nome" value="{{ orcamento.cliente_nome|default:'' }}" placeholder="Nome do cliente"></div>
             <div class="campo"><label for="cliente_email">E-mail</label><input type="email" id="cliente_email" name="cliente_email" value="{{ orcamento.cliente_email|default:'' }}"></div>
-            <div class="campo"><label for="cliente_telefone">Telefone</label><input type="text" id="cliente_telefone" name="cliente_telefone" value="{{ orcamento.cliente_telefone|default:'' }}"></div>
+            <div class="campo"><label for="cliente_telefone">Celular / telefone</label><input type="text" id="cliente_telefone" name="cliente_telefone" value="{{ orcamento.cliente_telefone|default:'' }}" placeholder="(11) 99999-9999"></div>
+            <div class="campo"><label for="cliente_documento">CPF ou CNPJ</label><input type="text" id="cliente_documento" name="cliente_documento" value="{{ orcamento.cliente_documento|default:'' }}" placeholder="000.000.000-00"></div>
         </div>
         <div class="linha-campos">
             <div class="campo"><label for="data_validade">Válido até</label><input type="date" id="data_validade" name="data_validade" value="{{ orcamento.data_validade|date:'Y-m-d'|default:'' }}"></div>
-            <div class="campo"><label for="desconto_percentual">Desconto (%)</label><input type="number" step="0.01" min="0" max="100" id="desconto_percentual" name="desconto_percentual" value="{{ orcamento.desconto_percentual|default:'0'|unlocalize }}"></div>
+            <div class="campo"><label for="data_prevista_entrega">Entrega / instalação prevista</label><input type="date" id="data_prevista_entrega" name="data_prevista_entrega" value="{{ orcamento.data_prevista_entrega|date:'Y-m-d'|default:'' }}"></div>
+            <div class="campo"><label for="prazo_execucao">Prazo de execução</label><input type="text" id="prazo_execucao" name="prazo_execucao" maxlength="120" value="{{ orcamento.prazo_execucao|default:'' }}" placeholder="Ex: 10 dias úteis"></div>
+        </div>
+        <div class="linha-campos">
+            <div class="campo"><label for="forma_pagamento">Forma de pagamento</label><select id="forma_pagamento" name="forma_pagamento">{% for chave, rotulo in formas_pagamento %}<option value="{{ chave }}" {% if orcamento.forma_pagamento == chave or not orcamento and chave == 'A_COMBINAR' %}selected{% endif %}>{{ rotulo }}</option>{% endfor %}</select></div>
+            <div class="campo"><label for="desconto_percentual">Desconto</label><input type="text" id="desconto_percentual" name="desconto_percentual" data-campo="pct" value="{{ orcamento.desconto_percentual|default:'0'|unlocalize }}"></div>
+            <div class="campo"><label for="custo_extra">Custo extra (frete, material, terceiros)</label><input type="text" id="custo_extra" name="custo_extra" value="{{ orcamento.custo_extra|default:'0'|unlocalize }}"></div>
         </div>
         <div class="campo"><label for="observacoes">Observações</label><textarea id="observacoes" name="observacoes" rows="3" placeholder="Prazo, garantia, forma de pagamento, condições comerciais...">{{ orcamento.observacoes|default:'' }}</textarea></div>
+    </div>
+
+    <div class="painel" style="margin-bottom:20px;" data-endereco data-origem-endereco="{{ origem.endereco }}" data-origem-lat="{{ origem.lat }}" data-origem-lng="{{ origem.lng }}">
+        <div class="cabecalho-pagina" style="margin-bottom:12px;">
+            <div><h2 class="painel-titulo" style="margin-bottom:4px;">Local da instalação / entrega</h2><div class="subtitulo-pagina" style="margin-top:0;">Digite o CEP (o endereço vem sozinho) ou procure pelo nome da rua. A distância até a ArtSkala é calculada de carro.</div></div>
+        </div>
+        <div class="linha-campos endereco-linha">
+            <div class="campo"><label for="cep">CEP</label><input type="text" id="cep" name="cep" value="{{ orcamento.cep|default:'' }}" placeholder="00000-000" data-sem-autopreencher></div>
+            <div class="campo" style="grid-column: span 2;"><label for="endereco">Rua / avenida</label><input type="text" id="endereco" name="endereco" maxlength="200" value="{{ orcamento.endereco|default:'' }}" placeholder="Nome da rua (ou procure abaixo)"></div>
+            <div class="campo"><label for="numero">Número</label><input type="text" id="numero" name="numero" maxlength="20" value="{{ orcamento.numero|default:'' }}"></div>
+        </div>
+        <div class="linha-campos endereco-linha">
+            <div class="campo"><label for="complemento">Complemento</label><input type="text" id="complemento" name="complemento" maxlength="80" value="{{ orcamento.complemento|default:'' }}" placeholder="Loja, sala, galpão…"></div>
+            <div class="campo"><label for="bairro">Bairro</label><input type="text" id="bairro" name="bairro" maxlength="80" value="{{ orcamento.bairro|default:'' }}"></div>
+            <div class="campo"><label for="cidade">Cidade</label><input type="text" id="cidade" name="cidade" maxlength="80" value="{{ orcamento.cidade|default:'São Paulo' }}"></div>
+            <div class="campo"><label for="uf">UF</label><input type="text" id="uf" name="uf" maxlength="2" value="{{ orcamento.uf|default:'SP' }}"></div>
+        </div>
+        <div class="acoes-linha" style="margin:2px 0 6px;">
+            <button type="button" class="btn btn-secundario btn-mini" data-procurar-rua>Não sabe o CEP? Procurar pela rua</button>
+            <button type="button" class="btn btn-secundario btn-mini" data-calcular-distancia>Calcular distância</button>
+            <a class="btn btn-secundario btn-mini" data-link-rota target="_blank" rel="noopener" hidden>Abrir rota no Google Maps ↗</a>
+        </div>
+        <div class="busca-ruas" data-resultado-ruas hidden></div>
+        <div class="distancia" data-distancia>
+            {% if orcamento.distancia_km %}
+                <div class="distancia-numero"><strong>{{ orcamento.distancia_km|numero_br:1 }} km</strong><span>de carro até a ArtSkala{% if orcamento.tempo_deslocamento_min %} · ~{{ orcamento.tempo_deslocamento_min }} min{% endif %}</span></div>
+            {% else %}
+                <div class="distancia-vazia">Preencha o endereço para ver a distância.</div>
+            {% endif %}
+        </div>
+        <div class="deslocamento" data-deslocamento>
+            <div class="campo"><label for="valor_km">Valor por km rodado</label><input type="text" id="valor_km" data-campo="dinheiro" data-valor-km value="2.50"></div>
+            <div class="campo"><label for="viagens">Viagens (ida e volta)</label><input type="text" id="viagens" data-campo="inteiro" min="1" value="1" data-viagens></div>
+            <div class="deslocamento-total"><small>Deslocamento</small><strong data-total-deslocamento>R$ 0,00</strong></div>
+            <button type="button" class="btn btn-secundario btn-mini" data-add-deslocamento disabled>+ Pôr no orçamento como item</button>
+        </div>
+        <input type="hidden" name="latitude" value="{{ orcamento.latitude|default:''|unlocalize }}" data-lat>
+        <input type="hidden" name="longitude" value="{{ orcamento.longitude|default:''|unlocalize }}" data-lng>
+        <input type="hidden" name="distancia_km" value="{{ orcamento.distancia_km|default:''|unlocalize }}" data-km>
+        <input type="hidden" name="tempo_deslocamento_min" value="{{ orcamento.tempo_deslocamento_min|default:'' }}" data-min>
     </div>
 
     <div class="painel" style="margin-bottom:20px;">
@@ -112,7 +160,7 @@
                     <td>{{ item.get_tipo_display }}</td>
                     <td><span class="selo {% if item.esta_expirado %}EXPIRADO{% else %}{{ item.status }}{% endif %}">{% if item.esta_expirado %}Expirado{% else %}{{ item.get_status_display }}{% endif %}</span></td>
                     <td>{{ item.data_validade|date:"d/m/Y"|default:"—" }}</td>
-                    <td class="num">R$ {{ item.valor_total|floatformat:2 }}</td>
+                    <td class="num">{{ item.valor_total|brl }}</td>
                 </tr>
             {% endfor %}
             </tbody>
@@ -122,7 +170,7 @@
         {% for item in orcamentos %}
         <a href="{% url 'orcamento_detalhe' item.pk %}" class="mobile-card" style="display:block;">
             <div class="mobile-card-topo"><div><div class="mobile-card-titulo">{{ item.titulo }}</div><div class="mobile-card-meta">{{ item.cliente_nome|default:"Sem cliente" }} · {{ item.get_tipo_display }}</div></div><span class="selo {% if item.esta_expirado %}EXPIRADO{% else %}{{ item.status }}{% endif %}">{% if item.esta_expirado %}Expirado{% else %}{{ item.get_status_display }}{% endif %}</span></div>
-            <div class="num">R$ {{ item.valor_total|floatformat:2 }}</div>
+            <div class="num">{{ item.valor_total|brl }}</div>
         </a>
         {% endfor %}
     </div>
@@ -154,6 +202,7 @@
                 {% for projeto in projetos %}<option value="{{ projeto.id }}">{{ projeto.titulo }}</option>{% endfor %}
             </select>
             <input type="text" class="campo-descricao" name="item_descricao[]" placeholder="Descreva o item">
+            <button type="button" class="btn btn-secundario btn-m2" title="Calcular pelo tamanho (m²)">Calcular m²</button>
             <input type="hidden" name="item_produto[]" class="campo-produto-hidden">
             <input type="hidden" name="item_projeto[]" class="campo-projeto-hidden">
         </td>
@@ -181,8 +230,9 @@
     const totalCustoEl = document.getElementById("total-custo");
     const totalLucroEl = document.getElementById("total-lucro");
 
-    function numero(valor) { return parseFloat(String(valor || "0").replace(",", ".")) || 0; }
-    function formatarMoeda(valor) { return "R$ " + valor.toFixed(2).replace(".", ","); }
+    function numero(valor) { return window.Gestao ? Gestao.lerNumero(valor) : (parseFloat(String(valor || "0").replace(",", ".")) || 0); }
+    function formatarMoeda(valor) { return window.Gestao ? Gestao.formatarBRL(valor) : "R$ " + valor.toFixed(2).replace(".", ","); }
+    function definir(input, valor) { if (window.Gestao && input.dataset.mascara === "ok") Gestao.definirValor(input, Number(valor) || 0); else input.value = valor; }
 
     function recalcularTotais() {
         let bruto = 0, custoTotal = 0;
@@ -228,13 +278,14 @@
         produtoSelect.addEventListener("change", () => {
             produtoHidden.value = produtoSelect.value;
             const opcao = produtoSelect.selectedOptions[0];
-            if (opcao && opcao.dataset.preco) valorInput.value = opcao.dataset.preco;
-            if (opcao && opcao.dataset.custo) custoInput.value = opcao.dataset.custo;
+            if (opcao && opcao.dataset.preco) definir(valorInput, opcao.dataset.preco);
+            if (opcao && opcao.dataset.custo) definir(custoInput, opcao.dataset.custo);
             recalcularTotais();
         });
         projetoSelect.addEventListener("change", () => { projetoHidden.value = projetoSelect.value; });
         linha.querySelectorAll("input, select").forEach((el) => el.addEventListener("input", recalcularTotais));
         linha.querySelector(".btn-remover-item").addEventListener("click", () => { linha.remove(); recalcularTotais(); });
+        linha.querySelector(".btn-m2").addEventListener("click", (e) => abrirM2(linha, e.currentTarget));
         atualizarVisibilidade();
     }
 
@@ -266,6 +317,41 @@
     }
 
     btnAdd.addEventListener("click", () => adicionarLinha());
+    window.adicionarItemOrcamento = (dados) => { adicionarLinha(dados); corpo.lastElementChild.scrollIntoView({ block: "center", inline: "nearest", behavior: "smooth" }); };
+
+    // Calculadora de m²: largura × altura × preço do m² vira o valor unitário.
+    let pop = null;
+    function abrirM2(linha, botao) {
+        if (pop) pop.remove();
+        pop = document.createElement("div");
+        pop.className = "m2-pop";
+        pop.innerHTML = `<div class="linha-campos">
+            <div class="campo"><label>Largura</label><input type="text" data-campo="medida" data-m2="l" value="1"></div>
+            <div class="campo"><label>Altura</label><input type="text" data-campo="medida" data-m2="a" value="1"></div>
+            <div class="campo"><label>Preço do m²</label><input type="text" data-campo="dinheiro" data-m2="p" value="0"></div></div>
+            <div class="m2-total" data-m2-total>1,00 m² · R$ 0,00</div>
+            <div class="acoes-linha"><button type="button" class="btn btn-primario btn-mini" data-m2-ok>Usar no item</button><button type="button" class="btn btn-secundario btn-mini" data-m2-fechar>Fechar</button></div>`;
+        document.body.appendChild(pop);
+        const r = botao.getBoundingClientRect();
+        pop.style.top = (window.scrollY + r.bottom + 6) + "px";
+        pop.style.left = Math.max(8, Math.min(window.scrollX + r.left, window.scrollX + document.documentElement.clientWidth - 296)) + "px";
+        if (window.Gestao) Gestao.aplicar(pop);
+        const ler = k => numero(pop.querySelector(`[data-m2="${k}"]`).value);
+        const fmt = n => n.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const conta = () => { const area = ler("l") * ler("a"); pop.querySelector("[data-m2-total]").textContent = `${fmt(area)} m² · ${formatarMoeda(area * ler("p"))}`; return area; };
+        pop.addEventListener("input", conta);
+        pop.querySelector("[data-m2-fechar]").addEventListener("click", () => { pop.remove(); pop = null; });
+        pop.querySelector("[data-m2-ok]").addEventListener("click", () => {
+            const area = conta();
+            definir(linha.querySelector(".campo-valor"), Math.round(area * ler("p") * 100) / 100);
+            const desc = linha.querySelector(".campo-descricao");
+            const medida = `(${fmt(ler("l"))} × ${fmt(ler("a"))} m = ${fmt(area)} m²)`;
+            desc.value = (desc.value.replace(/\s*\([\d.,]+ × [\d.,]+ m = [\d.,]+ m²\)$/, "") + " " + medida).trim().slice(0, 200);
+            recalcularTotais();
+            pop.remove(); pop = null;
+        });
+        setTimeout(() => pop && pop.querySelector("input").focus(), 0);
+    }
     descontoInput.addEventListener("input", recalcularTotais);
 
     const itensExistentes = JSON.parse(document.getElementById('itens-orcamento').textContent);
@@ -296,4 +382,5 @@
     }
 })();
 </script>
+<script src="{% static 'gestao/endereco.js' %}?v=20261106"></script>
 {% endblock %}

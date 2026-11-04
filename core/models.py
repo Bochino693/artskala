@@ -381,6 +381,21 @@ class Orcamento(Prime):
     cliente_nome = models.CharField(max_length=150, blank=True, default="")
     cliente_email = models.EmailField(blank=True, default="")
     cliente_telefone = models.CharField(max_length=20, blank=True, default="")
+    cliente_documento = models.CharField("CPF/CNPJ", max_length=18, blank=True, default="")
+
+    # Endereço da instalação/entrega e distância até a ArtSkala (preenchidos
+    # na tela do orçamento pelo CEP ou pelo nome da rua).
+    cep = models.CharField(max_length=9, blank=True, default="")
+    endereco = models.CharField("Rua", max_length=200, blank=True, default="")
+    numero = models.CharField("Número", max_length=20, blank=True, default="")
+    complemento = models.CharField(max_length=80, blank=True, default="")
+    bairro = models.CharField(max_length=80, blank=True, default="")
+    cidade = models.CharField(max_length=80, blank=True, default="")
+    uf = models.CharField("UF", max_length=2, blank=True, default="")
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    distancia_km = models.DecimalField("Distância (km)", max_digits=7, decimal_places=1, null=True, blank=True)
+    tempo_deslocamento_min = models.PositiveIntegerField("Tempo de carro (min)", null=True, blank=True)
 
     data_validade = models.DateField(null=True, blank=True)
     data_prevista_entrega = models.DateField(null=True, blank=True)
@@ -447,6 +462,14 @@ class Orcamento(Prime):
 
     def total_itens(self):
         return self.itens.count()
+
+    def endereco_completo(self):
+        rua = ", ".join(p for p in (self.endereco, self.numero) if p)
+        if self.complemento:
+            rua = f"{rua} - {self.complemento}" if rua else self.complemento
+        cidade = " - ".join(p for p in (self.cidade, self.uf) if p)
+        partes = [rua, self.bairro, cidade, f"CEP {self.cep}" if self.cep else ""]
+        return " · ".join(p for p in partes if p)
 
     def esta_expirado(self):
         if not self.data_validade:

@@ -5,6 +5,7 @@ from .views import SuperuserGestaoRequiredMixin
 
 
 class PropostaImpressaoView(SuperuserGestaoRequiredMixin, View):
+    secao_gestao = "orcamentos"
     def get(self, request, pk):
         proposta = get_object_or_404(Orcamento.objects.prefetch_related("itens__produto", "itens__projeto"),
                                    pk=pk, usuario=request.user, ativo=True)

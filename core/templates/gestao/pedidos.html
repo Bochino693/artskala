@@ -1,4 +1,5 @@
 {% extends "gestao/base_gestao.html" %}
+{% load artskala %}
 {% block titulo %}Pedidos do site{% endblock %}
 
 {% block conteudo %}
@@ -7,32 +8,62 @@
         <div class="eyebrow">Loja</div>
         <h1 class="titulo-pagina">Pedidos do site</h1>
         <div class="subtitulo-pagina">
-            Acompanhe pedidos realizados fora dos orçamentos comerciais.
+            Todas as compras feitas pelos clientes na loja: mude o status na hora, fale com o cliente e imprima a etiqueta de envio.
         </div>
+    </div>
+    <div class="acoes-linha">
+        <a class="btn btn-secundario" href="{% url 'gestao_etiquetas' %}?tipo=pedido">Etiquetas de envio</a>
     </div>
 </div>
 
 <div class="grade-cartoes">
     <div class="cartao-stat">
         <div class="rotulo">Pedidos</div>
-        <div class="valor">{{ total_pedidos|default:pedidos.count }}</div>
-        <div class="apoio">Total encontrado</div>
+        <div class="valor">{{ total_pedidos }}</div>
+        <div class="apoio">Desde o início da loja</div>
     </div>
-
     <div class="cartao-stat azul">
         <div class="rotulo">Receita</div>
-        <div class="valor">R$ {{ total_valor|default:0|floatformat:2 }}</div>
-        <div class="apoio">Valor vendido no site</div>
+        <div class="valor">{{ total_valor|brl }}</div>
+        <div class="apoio">Sem os cancelados</div>
     </div>
-
     <div class="cartao-stat verde">
         <div class="rotulo">Lucro estimado</div>
-        <div class="valor">R$ {{ total_lucro|default:0|floatformat:2 }}</div>
-        <div class="apoio">Com base nos custos</div>
+        <div class="valor">{{ total_lucro|brl }}</div>
+        <div class="apoio">Receita − custo dos itens</div>
+    </div>
+    <div class="cartao-stat">
+        <div class="rotulo">Ticket médio</div>
+        <div class="valor">{{ ticket_medio|brl }}</div>
+        <div class="apoio">Por pedido</div>
     </div>
 </div>
 
+<div class="ak-pipeline">
+    {% for etapa in funil %}
+        <a href="?status={{ etapa.chave }}" {% if status_filtro == etapa.chave %}aria-current="true"{% endif %}>
+            {{ etapa.nome }}<strong>{{ etapa.total }}</strong>
+        </a>
+    {% endfor %}
+</div>
+
 <div class="painel">
+    <form method="get" class="acoes-linha" style="margin-bottom:18px; align-items:end;">
+        <div class="campo" style="flex:1; min-width:220px; margin-bottom:0;">
+            <label for="q">Buscar</label>
+            <input type="text" id="q" name="q" value="{{ busca }}" placeholder="Nº do pedido, PED-000012, cliente, e-mail ou endereço">
+        </div>
+        <div class="campo" style="min-width:180px; margin-bottom:0;">
+            <label for="status">Status</label>
+            <select id="status" name="status">
+                <option value="">Todos</option>
+                {% for chave, rotulo in status_choices %}<option value="{{ chave }}" {% if status_filtro == chave %}selected{% endif %}>{{ rotulo }}</option>{% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-secundario">Filtrar</button>
+        {% if busca or status_filtro %}<a class="btn btn-secundario" href="{% url 'gestao_pedidos' %}">Limpar</a>{% endif %}
+    </form>
+
     {% if pedidos %}
     <div class="tabela-responsiva tabela-desktop">
         <table class="ledger ledger-compacta">
@@ -40,30 +71,34 @@
                 <tr>
                     <th>Pedido</th>
                     <th>Data</th>
+                    <th>Cliente</th>
                     <th class="col-status">Status</th>
                     <th>Pagamento</th>
                     <th class="num col-num">Itens</th>
                     <th class="num col-num">Total</th>
+                    <th></th>
                 </tr>
             </thead>
-
             <tbody>
                 {% for pedido in pedidos %}
                 <tr>
-                    <td>
-                        <a href="{% url 'order_detail' pedido.pk %}">
-                            #{{ pedido.id }}
-                        </a>
-                    </td>
-                    <td>{{ pedido.criacao|date:"d/m/Y" }}</td>
+                    <td><a href="{% url 'gestao_pedido_detalhe' pedido.pk %}"><strong>#{{ pedido.id }}</strong></a><br><code class="codigo-mini">{{ pedido|codigo }}</code></td>
+                    <td>{{ pedido.criacao|date:"d/m/Y" }}<br><small class="texto-fraco">{{ pedido.criacao|date:"H:i" }}</small></td>
+                    <td>{{ pedido.usuario.get_full_name|default:pedido.usuario.username }}<br><small class="texto-fraco">{{ pedido.usuario.email }}</small></td>
                     <td class="col-status">
-                        <span class="selo PEDIDO_{{ pedido.status }}">
-                            {{ pedido.get_status_display }}
-                        </span>
+                        <select class="seletor-status-pedido selo-select PEDIDO_{{ pedido.status }}" data-url="{% url 'gestao_pedido_detalhe' pedido.pk %}" aria-label="Status do pedido #{{ pedido.id }}">
+                            {% for chave, rotulo in status_choices %}<option value="{{ chave }}" {% if pedido.status == chave %}selected{% endif %}>{{ rotulo }}</option>{% endfor %}
+                        </select>
                     </td>
                     <td>{{ pedido.get_metodo_pagamento_display|default:"—" }}</td>
-                    <td class="num col-num">{{ pedido.itens.count }}</td>
-                    <td class="num col-num">R$ {{ pedido.valor_total|floatformat:2 }}</td>
+                    <td class="num col-num">{{ pedido.itens.all|length }}</td>
+                    <td class="num col-num"><strong>{{ pedido.valor_total|brl }}</strong></td>
+                    <td class="col-num">
+                        <div class="acoes-linha">
+                            <a class="btn btn-secundario btn-mini" href="{% url 'gestao_pedido_detalhe' pedido.pk %}">Abrir</a>
+                            <a class="btn btn-secundario btn-mini" href="{% url 'gestao_etiquetas' %}?tipo=pedido&ids={{ pedido.pk }}" title="Etiqueta de envio">Etiqueta</a>
+                        </div>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -72,37 +107,49 @@
 
     <div class="mobile-card-list">
         {% for pedido in pedidos %}
-        <a class="mobile-card" href="{% url 'order_detail' pedido.pk %}" style="display:block;">
+        <a class="mobile-card" href="{% url 'gestao_pedido_detalhe' pedido.pk %}" style="display:block;">
             <div class="mobile-card-topo">
                 <div>
-                    <div class="mobile-card-titulo">Pedido #{{ pedido.id }}</div>
-                    <div class="mobile-card-meta">
-                        {{ pedido.criacao|date:"d/m/Y" }} ·
-                        {{ pedido.itens.count }} item{{ pedido.itens.count|pluralize }}
-                    </div>
+                    <div class="mobile-card-titulo">Pedido #{{ pedido.id }} · {{ pedido.usuario.get_full_name|default:pedido.usuario.username }}</div>
+                    <div class="mobile-card-meta">{{ pedido.criacao|date:"d/m/Y H:i" }} · {{ pedido.itens.all|length }} item{{ pedido.itens.all|length|pluralize:"s" }}</div>
                 </div>
-
-                <span class="selo PEDIDO_{{ pedido.status }}">
-                    {{ pedido.get_status_display }}
-                </span>
+                <span class="selo PEDIDO_{{ pedido.status }}">{{ pedido.get_status_display }}</span>
             </div>
-
-            <div class="mobile-card-meta">
-                Pagamento: {{ pedido.get_metodo_pagamento_display|default:"—" }}
-            </div>
-
             <div class="mobile-card-valor">
-                <span class="rotulo-mini">Total</span>
-                <span class="valor-mini">R$ {{ pedido.valor_total|floatformat:2 }}</span>
+                <span class="rotulo-mini">{{ pedido.get_metodo_pagamento_display|default:"—" }}</span>
+                <span class="valor-mini">{{ pedido.valor_total|brl }}</span>
             </div>
         </a>
         {% endfor %}
     </div>
     {% else %}
     <div class="vazio">
-        <div class="fonte-display">Nenhum pedido ainda</div>
-        Assim que uma compra for finalizada no site, ela aparecerá aqui.
+        <div class="fonte-display">{% if busca or status_filtro %}Nenhum pedido com esse filtro{% else %}Nenhum pedido ainda{% endif %}</div>
+        {% if busca or status_filtro %}Limpe a busca para ver todos.{% else %}Assim que uma compra for finalizada no site, ela aparece aqui.{% endif %}
     </div>
     {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    const csrf = decodeURIComponent((document.cookie.split("; ").find(l => l.startsWith("csrftoken=")) || "").split("=")[1] || "");
+    document.querySelectorAll(".seletor-status-pedido").forEach(sel => {
+        let anterior = sel.value;
+        sel.addEventListener("change", () => {
+            sel.disabled = true;
+            fetch(sel.dataset.url, { method: "PUT", headers: { "Content-Type": "application/json", "X-CSRFToken": csrf }, body: JSON.stringify({ status: sel.value }) })
+                .then(r => r.json())
+                .then(d => {
+                    if (!d.success) throw new Error(d.erro || "erro");
+                    sel.className = sel.className.replace(/PEDIDO_\w+/, "PEDIDO_" + d.status);
+                    anterior = sel.value;
+                })
+                .catch(() => { sel.value = anterior; alert("Não foi possível mudar o status. Tente de novo."); })
+                .finally(() => { sel.disabled = false; });
+        });
+    });
+})();
+</script>
 {% endblock %}

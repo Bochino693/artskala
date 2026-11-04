@@ -9,8 +9,28 @@ class OrcamentoForm(forms.ModelForm):
     class Meta:
         model = Orcamento
         fields = ("titulo", "tipo", "cliente_nome", "cliente_email", "cliente_telefone",
+                  "cliente_documento", "cep", "endereco", "numero", "complemento", "bairro",
+                  "cidade", "uf", "latitude", "longitude", "distancia_km", "tempo_deslocamento_min",
                   "data_validade", "data_prevista_entrega", "desconto_percentual",
                   "custo_extra", "forma_pagamento", "prazo_execucao", "observacoes")
+
+    # Campos decimais chegam com máscara ("1.234,56", "12,5"): normaliza antes de validar.
+    DECIMAIS = ("desconto_percentual", "custo_extra", "latitude", "longitude", "distancia_km")
+
+    def __init__(self, data=None, *args, **kwargs):
+        if data is not None:
+            from .dinheiro import para_decimal
+            data = data.copy()
+            for campo in self.DECIMAIS:
+                valor = data.get(campo)
+                if valor not in (None, ""):
+                    data[campo] = str(para_decimal(valor))
+            if data.get("uf"):
+                data["uf"] = data["uf"].strip().upper()[:2]
+        super().__init__(data, *args, **kwargs)
+        for campo in ("cliente_documento", "cep", "endereco", "numero", "complemento", "bairro",
+                      "cidade", "uf", "latitude", "longitude", "distancia_km", "tempo_deslocamento_min"):
+            self.fields[campo].required = False
 
 
 class ItemForm(forms.Form):
@@ -33,7 +53,10 @@ class ItemForm(forms.Form):
 
 def validar_itens(post):
     campos = ("produto", "projeto", "descricao", "data", "quantidade", "valor", "custo")
+    from .dinheiro import para_decimal
     listas = {key: post.getlist("item_%s[]" % key) for key in campos}
+    for chave in ("valor", "custo"):          # "1.500,00" dos campos com máscara
+        listas[chave] = [str(para_decimal(v)) if str(v).strip() else v for v in listas[chave]]
     tamanhos = {len(values) for values in listas.values()}
     if len(tamanhos) != 1 or not 1 <= len(listas["quantidade"]) <= 100:
         raise ValidationError("Informe de 1 a 100 itens completos no orçamento.")

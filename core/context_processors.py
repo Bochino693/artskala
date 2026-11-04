@@ -45,3 +45,17 @@ def menu_site(request):
         )
 
     return {"menu_categorias": SimpleLazyObject(categorias)}
+
+
+def gestao_acesso(request):
+    """`pode.<tela>` nos templates da gestão: o menu mostra só o que a função abre."""
+    from .equipe import funcoes_do_usuario, mapa_de_acesso, POR_CODIGO
+
+    def mapa():
+        return mapa_de_acesso(request.user)
+
+    def funcao():
+        codigos = funcoes_do_usuario(request.user)
+        return ", ".join(POR_CODIGO[c]["titulo"] for c in sorted(codigos)) or ""
+
+    return {"pode": SimpleLazyObject(mapa), "funcao_equipe": SimpleLazyObject(funcao)}

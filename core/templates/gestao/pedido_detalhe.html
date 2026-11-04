@@ -1,0 +1,94 @@
+{% extends "gestao/base_gestao.html" %}
+{% load artskala %}
+{% block titulo %}Pedido #{{ pedido.id }}{% endblock %}
+
+{% block conteudo %}
+<div class="cabecalho-pagina">
+    <div>
+        <div class="eyebrow"><a href="{% url 'gestao_pedidos' %}">← Pedidos</a> · {{ pedido|codigo }}</div>
+        <h1 class="titulo-pagina">Pedido #{{ pedido.id }}</h1>
+        <div class="subtitulo-pagina">Feito em {{ pedido.criacao|date:"d/m/Y \à\s H:i" }} por {{ cliente.nome }} · atualizado em {{ pedido.modificado|date:"d/m/Y H:i" }}</div>
+    </div>
+    <div class="acoes-linha">
+        <select id="status-pedido" class="selo-select PEDIDO_{{ pedido.status }}" data-url="{% url 'gestao_pedido_detalhe' pedido.pk %}" aria-label="Status do pedido">
+            {% for chave, rotulo in status_choices %}<option value="{{ chave }}" {% if pedido.status == chave %}selected{% endif %}>{{ rotulo }}</option>{% endfor %}
+        </select>
+        <a class="btn btn-secundario" href="{% url 'gestao_etiquetas' %}?tipo=pedido&ids={{ pedido.pk }}">Etiqueta de envio</a>
+        {% if cliente.whatsapp %}<a class="btn btn-primario" href="{{ cliente.whatsapp }}" target="_blank" rel="noopener">WhatsApp do cliente</a>{% endif %}
+    </div>
+</div>
+
+<div class="grade-cartoes">
+    <div class="cartao-stat azul"><div class="rotulo">Total</div><div class="valor">{{ pedido.valor_total|brl }}</div><div class="apoio">{{ pedido.get_metodo_pagamento_display }}</div></div>
+    <div class="cartao-stat vermelho"><div class="rotulo">Custo</div><div class="valor">{{ pedido.custo_total|brl }}</div><div class="apoio">Custo dos itens</div></div>
+    <div class="cartao-stat verde"><div class="rotulo">Lucro</div><div class="valor">{{ pedido.lucro_total|brl }}</div><div class="apoio">Margem {{ pedido.margem_lucro_percentual|pct }}</div></div>
+    <div class="cartao-stat"><div class="rotulo">Itens</div><div class="valor">{{ itens|length }}</div><div class="apoio">Linhas no pedido</div></div>
+</div>
+
+<div class="duas-colunas">
+    <div class="painel">
+        <h2 class="painel-titulo">Itens</h2>
+        <div class="tabela-responsiva">
+            <table class="ledger">
+                <thead><tr><th>Produto</th><th class="num">Qtd.</th><th class="num">Unitário</th><th class="num">Subtotal</th><th class="num">Lucro</th></tr></thead>
+                <tbody>
+                    {% for item in itens %}
+                    <tr>
+                        <td><a href="{% url 'gestao_produto_detalhe' item.produto_id %}">{{ item.produto.nome_produto }}</a><br><code class="codigo-mini">{{ item.produto|codigo }}</code></td>
+                        <td class="num">{{ item.quantidade }}</td>
+                        <td class="num">{{ item.preco_unitario|brl }}</td>
+                        <td class="num"><strong>{{ item.subtotal|brl }}</strong></td>
+                        <td class="num">{{ item.lucro_total|brl }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="resumo-valores">
+            <div><span>Subtotal dos itens</span><strong>{{ subtotal|brl }}</strong></div>
+            {% if pedido.desconto_cupom %}<div><span>Cupom {{ pedido.cupom_codigo }}</span><strong>− {{ pedido.desconto_cupom|brl }}</strong></div>{% endif %}
+            <div class="total"><span>Total do pedido</span><strong>{{ pedido.valor_total|brl }}</strong></div>
+        </div>
+    </div>
+
+    <div>
+        <div class="painel" style="margin-bottom:20px">
+            <h2 class="painel-titulo">Cliente</h2>
+            <dl class="lista-dados">
+                <dt>Nome</dt><dd>{{ cliente.nome }}</dd>
+                <dt>E-mail</dt><dd>{% if cliente.email %}<a href="mailto:{{ cliente.email }}">{{ cliente.email }}</a>{% else %}—{% endif %}</dd>
+                <dt>Telefone</dt><dd>{{ cliente.telefone|default:"—" }}</dd>
+                {% if cliente.cpf %}<dt>CPF/CNPJ</dt><dd>{{ cliente.cpf }}</dd>{% endif %}
+            </dl>
+        </div>
+        <div class="painel">
+            <h2 class="painel-titulo">Entrega</h2>
+            <dl class="lista-dados">
+                <dt>Endereço</dt><dd>{{ cliente.endereco|default:"Não informado" }}</dd>
+                {% if cliente.cidade %}<dt>Cidade</dt><dd>{{ cliente.cidade }}</dd>{% endif %}
+                {% if cliente.cep %}<dt>CEP</dt><dd>{{ cliente.cep }}</dd>{% endif %}
+                {% if pedido.observacoes %}<dt>Observações</dt><dd>{{ pedido.observacoes|linebreaksbr }}</dd>{% endif %}
+            </dl>
+            {% if cliente.endereco %}<a class="btn btn-secundario btn-mini" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&origin={{ 'Rua Eduardo Zumkeller, 170, São Paulo - SP'|urlencode }}&destination={{ cliente.endereco|urlencode }}{% if cliente.cidade %}%2C%20{{ cliente.cidade|urlencode }}{% endif %}">Ver rota no mapa</a>{% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    const sel = document.getElementById("status-pedido");
+    const csrf = decodeURIComponent((document.cookie.split("; ").find(l => l.startsWith("csrftoken=")) || "").split("=")[1] || "");
+    let anterior = sel.value;
+    sel.addEventListener("change", () => {
+        sel.disabled = true;
+        fetch(sel.dataset.url, { method: "PUT", headers: { "Content-Type": "application/json", "X-CSRFToken": csrf }, body: JSON.stringify({ status: sel.value }) })
+            .then(r => r.json())
+            .then(d => { if (!d.success) throw new Error(); sel.className = sel.className.replace(/PEDIDO_\w+/, "PEDIDO_" + d.status); anterior = sel.value; })
+            .catch(() => { sel.value = anterior; alert("Não foi possível mudar o status."); })
+            .finally(() => { sel.disabled = false; });
+    });
+})();
+</script>
+{% endblock %}
