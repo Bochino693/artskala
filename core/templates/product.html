@@ -4,7 +4,7 @@
 {% block title %}{{ produto.nome_produto }} | ArtSkala{% endblock %}
 {% block descricao %}{{ produto.descricao_produto|default:"Produzido sob medida pela ArtSkala Comunicação Visual."|truncatechars:150 }}{% endblock %}
 
-{% block extra_head %}<link href="{% static 'site/produto.css' %}?v=20261107" rel="stylesheet">{% endblock %}
+{% block extra_head %}<link href="{% static 'site/produto.css' %}?v=20261108" rel="stylesheet">{% endblock %}
 
 {% block content %}
 {% with atual=produto.preco_atual fotos=imagens %}
