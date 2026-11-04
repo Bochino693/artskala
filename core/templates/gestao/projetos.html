@@ -1,5 +1,5 @@
 {% extends "gestao/base_gestao.html" %}
-{% load artskala %}
+{% load static artskala %}
 
 {% block titulo %}Projetos{% endblock %}
 
@@ -65,6 +65,7 @@
                     <table class="ledger">
                         <thead>
                             <tr>
+                                <th class="col-chevron"></th>
                                 <th class="col-titulo">Projeto</th>
                                 <th>Cliente</th>
                                 <th>Execução</th>
@@ -76,8 +77,9 @@
                         </thead>
                         <tbody>
                             {% for proj in projetos %}
-                                <tr>
-                                    <td class="col-titulo">{{ proj.titulo }}</td>
+                                <tr data-expansivel>
+                                    <td class="col-chevron"><button type="button" class="chevron" data-linha-alternar aria-expanded="false" aria-label="Ver detalhes"></button></td>
+                                    <td class="col-titulo">{{ proj.titulo }}<br><code class="codigo-mini">{{ proj|codigo }}</code></td>
                                     <td>{{ proj.cliente|default:"—" }}</td>
                                     <td>{{ proj.data_execucao|date:"d/m/Y"|default:"—" }}</td>
                                     <td class="num">{{ proj.valor_estimado|brl }}</td>
@@ -88,12 +90,27 @@
                                             <a href="{% url 'gestao_projeto_detalhe' proj.pk %}" class="btn btn-secundario" style="padding: 7px 12px; min-height: 34px;">
                                                 Editar
                                             </a>
-                                            <button type="button" class="btn btn-perigo" style="padding: 7px 12px; min-height: 34px;" onclick="excluirProjeto({{ proj.pk }})">
+                                            <button type="button" class="btn btn-perigo" style="padding: 7px 12px; min-height: 34px;" data-nome="{{ proj.titulo }}" onclick="excluirProjeto({{ proj.pk }}, this.dataset.nome)">
                                                 Excluir
                                             </button>
                                         </div>
                                     </td>
                                 </tr>
+                                <tr class="linha-detalhe" hidden><td colspan="8"><div class="detalhe">
+                                    <div><h5>Descrição</h5><p>{{ proj.descricao|default:"Sem descrição."|truncatechars:260 }}</p></div>
+                                    <div><h5>Números</h5><ul>
+                                        <li><span>Valor</span><span>{{ proj.valor_estimado|brl }}</span></li>
+                                        <li><span>Custo</span><span>{{ proj.custo_estimado|brl }}</span></li>
+                                        <li><span>Margem</span><span>{{ proj.margem_lucro_percentual|pct }}</span></li>
+                                        <li><span>Execução</span><span>{{ proj.data_execucao|date:"d/m/Y"|default:"—" }}</span></li>
+                                    </ul></div>
+                                    <div><h5>Fotos</h5><div class="detalhe-fotos">{% for img in proj.imagens.all|slice:":6" %}{% if img.imagem %}<img src="{{ img.imagem.url|tamanho:'120x120' }}" alt="" loading="lazy">{% endif %}{% empty %}<p class="texto-fraco">Sem fotos.</p>{% endfor %}</div></div>
+                                    <div class="detalhe-acoes">
+                                        <a class="btn btn-secundario btn-mini" href="{% url 'gestao_projeto_detalhe' proj.pk %}">Editar</a>
+                                        <a class="btn btn-secundario btn-mini" href="{% url 'gestao_etiquetas' %}?tipo=projeto&ids={{ proj.pk }}">Etiqueta</a>
+                                        <a class="btn btn-secundario btn-mini" href="{{ loja_base }}/projects/{{ proj.pk }}/" target="_blank" rel="noopener">Ver no site ↗</a>
+                                    </div>
+                                </div></td></tr>
                             {% endfor %}
                         </tbody>
                     </table>
@@ -126,7 +143,7 @@
                         </a>
                         <div class="acoes-linha" style="margin-top: 12px;">
                             <a href="{% url 'gestao_projeto_detalhe' proj.pk %}" class="btn btn-secundario" style="flex: 1;">Editar</a>
-                            <button type="button" class="btn btn-perigo" style="flex: 1;" onclick="excluirProjeto({{ proj.pk }})">Excluir</button>
+                            <button type="button" class="btn btn-perigo" style="flex: 1;" data-nome="{{ proj.titulo }}" onclick="excluirProjeto({{ proj.pk }}, this.dataset.nome)">Excluir</button>
                         </div>
                     </div>
                 {% endfor %}
@@ -224,28 +241,22 @@
         return null;
     }
 
-    function excluirProjeto(pk) {
-        if (!confirm('Tem certeza que deseja excluir este projeto? Esta ação não pode ser desfeita.')) {
-            return;
-        }
-
-        const urlBase = "{% url 'gestao_projeto_detalhe' 1 %}".replace('/1/', `/${pk}/`);
-
-        fetch(urlBase, {
-            method: 'DELETE',
-            headers: {
-                'X-CSRFToken': getCookie('csrftoken'),
-            },
-        })
-            .then((res) => res.json())
-            .then((dados) => {
-                if (dados.success) {
-                    window.location.href = dados.redirect;
-                } else {
-                    alert('Não foi possível excluir o projeto.');
-                }
-            })
-            .catch(() => alert('Erro ao excluir o projeto. Tente novamente.'));
+    function excluirProjeto(pk, nome) {
+        Gestao.confirmar({
+            titulo: 'Excluir projeto?',
+            texto: '"' + (nome || 'Este projeto') + '" sai do portfólio e do site. Essa ação não pode ser desfeita.',
+            ok: 'Excluir projeto',
+        }).then((sim) => {
+            if (!sim) return;
+            const urlBase = "{% url 'gestao_projeto_detalhe' 1 %}".replace('/1/', `/${pk}/`);
+            fetch(urlBase, { method: 'DELETE', headers: { 'X-CSRFToken': getCookie('csrftoken') } })
+                .then((res) => res.json())
+                .then((dados) => {
+                    if (dados.success) { Gestao.aviso('Projeto excluído.'); setTimeout(() => { window.location.href = dados.redirect; }, 600); }
+                    else Gestao.aviso('Não foi possível excluir o projeto.', 'erro');
+                })
+                .catch(() => Gestao.aviso('Erro ao excluir o projeto. Tente novamente.', 'erro'));
+        });
     }
 </script>
 {% endblock %}

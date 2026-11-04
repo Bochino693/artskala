@@ -10,7 +10,7 @@
         <div class="subtitulo-pagina">Feito em {{ pedido.criacao|date:"d/m/Y \à\s H:i" }} por {{ cliente.nome }} · atualizado em {{ pedido.modificado|date:"d/m/Y H:i" }}</div>
     </div>
     <div class="acoes-linha">
-        <select id="status-pedido" class="selo-select PEDIDO_{{ pedido.status }}" data-url="{% url 'gestao_pedido_detalhe' pedido.pk %}" aria-label="Status do pedido">
+        <select id="status-pedido" class="selo-select PEDIDO_{{ pedido.status }}" data-status-url="{% url 'gestao_pedido_detalhe' pedido.pk %}" data-status-classe="selo-select" data-status-prefixo="PEDIDO_" aria-label="Status do pedido">
             {% for chave, rotulo in status_choices %}<option value="{{ chave }}" {% if pedido.status == chave %}selected{% endif %}>{{ rotulo }}</option>{% endfor %}
         </select>
         <a class="btn btn-secundario" href="{% url 'gestao_etiquetas' %}?tipo=pedido&ids={{ pedido.pk }}">Etiqueta de envio</a>
@@ -73,22 +73,4 @@
         </div>
     </div>
 </div>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-(function () {
-    const sel = document.getElementById("status-pedido");
-    const csrf = decodeURIComponent((document.cookie.split("; ").find(l => l.startsWith("csrftoken=")) || "").split("=")[1] || "");
-    let anterior = sel.value;
-    sel.addEventListener("change", () => {
-        sel.disabled = true;
-        fetch(sel.dataset.url, { method: "PUT", headers: { "Content-Type": "application/json", "X-CSRFToken": csrf }, body: JSON.stringify({ status: sel.value }) })
-            .then(r => r.json())
-            .then(d => { if (!d.success) throw new Error(); sel.className = sel.className.replace(/PEDIDO_\w+/, "PEDIDO_" + d.status); anterior = sel.value; })
-            .catch(() => { sel.value = anterior; alert("Não foi possível mudar o status."); })
-            .finally(() => { sel.disabled = false; });
-    });
-})();
-</script>
 {% endblock %}

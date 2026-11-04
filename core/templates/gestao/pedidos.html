@@ -62,13 +62,15 @@
         </div>
         <button type="submit" class="btn btn-secundario">Filtrar</button>
         {% if busca or status_filtro %}<a class="btn btn-secundario" href="{% url 'gestao_pedidos' %}">Limpar</a>{% endif %}
+        <button type="button" class="btn btn-secundario" data-todas-linhas="#tabela-pedidos">Abrir todos</button>
     </form>
 
     {% if pedidos %}
     <div class="tabela-responsiva tabela-desktop">
-        <table class="ledger ledger-compacta">
+        <table class="ledger ledger-compacta" id="tabela-pedidos">
             <thead>
                 <tr>
+                    <th class="col-chevron"></th>
                     <th>Pedido</th>
                     <th>Data</th>
                     <th>Cliente</th>
@@ -81,12 +83,13 @@
             </thead>
             <tbody>
                 {% for pedido in pedidos %}
-                <tr>
+                <tr data-expansivel>
+                    <td class="col-chevron"><button type="button" class="chevron" data-linha-alternar aria-expanded="false" aria-label="Ver detalhes"></button></td>
                     <td><a href="{% url 'gestao_pedido_detalhe' pedido.pk %}"><strong>#{{ pedido.id }}</strong></a><br><code class="codigo-mini">{{ pedido|codigo }}</code></td>
                     <td>{{ pedido.criacao|date:"d/m/Y" }}<br><small class="texto-fraco">{{ pedido.criacao|date:"H:i" }}</small></td>
                     <td>{{ pedido.usuario.get_full_name|default:pedido.usuario.username }}<br><small class="texto-fraco">{{ pedido.usuario.email }}</small></td>
                     <td class="col-status">
-                        <select class="seletor-status-pedido selo-select PEDIDO_{{ pedido.status }}" data-url="{% url 'gestao_pedido_detalhe' pedido.pk %}" aria-label="Status do pedido #{{ pedido.id }}">
+                        <select class="selo-select PEDIDO_{{ pedido.status }}" data-status-url="{% url 'gestao_pedido_detalhe' pedido.pk %}" data-status-classe="selo-select" data-status-prefixo="PEDIDO_" aria-label="Status do pedido #{{ pedido.id }}">
                             {% for chave, rotulo in status_choices %}<option value="{{ chave }}" {% if pedido.status == chave %}selected{% endif %}>{{ rotulo }}</option>{% endfor %}
                         </select>
                     </td>
@@ -95,11 +98,28 @@
                     <td class="num col-num"><strong>{{ pedido.valor_total|brl }}</strong></td>
                     <td class="col-num">
                         <div class="acoes-linha">
-                            <a class="btn btn-secundario btn-mini" href="{% url 'gestao_pedido_detalhe' pedido.pk %}">Abrir</a>
+                            <a class="btn btn-secundario btn-mini" href="{% url 'gestao_pedido_detalhe' pedido.pk %}" data-ficha="{% url 'gestao_pedido_detalhe' pedido.pk %}" data-ficha-titulo="Pedido #{{ pedido.pk }}">Abrir</a>
                             <a class="btn btn-secundario btn-mini" href="{% url 'gestao_etiquetas' %}?tipo=pedido&ids={{ pedido.pk }}" title="Etiqueta de envio">Etiqueta</a>
                         </div>
                     </td>
                 </tr>
+                <tr class="linha-detalhe" hidden><td colspan="9"><div class="detalhe">
+                    <div><h5>Itens do pedido</h5><ul>{% for item in pedido.itens.all %}<li><span>{{ item.quantidade }}× {{ item.produto.nome_produto }}</span><span>{{ item.subtotal|brl }}</span></li>{% endfor %}</ul></div>
+                    <div><h5>Cliente</h5>
+                        <p><strong>{{ pedido.usuario.get_full_name|default:pedido.usuario.username }}</strong></p>
+                        {% if pedido.usuario.email %}<p>{{ pedido.usuario.email }}</p>{% endif %}
+                        {% if pedido.usuario.perfil.telefone %}<p>{{ pedido.usuario.perfil.telefone }}</p>{% endif %}
+                    </div>
+                    <div><h5>Entrega</h5>
+                        <p>{{ pedido.endereco|default:pedido.usuario.perfil.endereco|default:"Endereço não informado" }}</p>
+                        {% if pedido.observacoes %}<p class="texto-fraco">{{ pedido.observacoes|truncatechars:120 }}</p>{% endif %}
+                    </div>
+                    <div><h5>Valores</h5><ul>
+                        <li><span>Total</span><span>{{ pedido.valor_total|brl }}</span></li>
+                        <li><span>Custo</span><span>{{ pedido.custo_total|brl }}</span></li>
+                        <li><span>Lucro</span><span>{{ pedido.lucro_total|brl }}</span></li>
+                    </ul></div>
+                </div></td></tr>
                 {% endfor %}
             </tbody>
         </table>
@@ -129,27 +149,4 @@
     </div>
     {% endif %}
 </div>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-(function () {
-    const csrf = decodeURIComponent((document.cookie.split("; ").find(l => l.startsWith("csrftoken=")) || "").split("=")[1] || "");
-    document.querySelectorAll(".seletor-status-pedido").forEach(sel => {
-        let anterior = sel.value;
-        sel.addEventListener("change", () => {
-            sel.disabled = true;
-            fetch(sel.dataset.url, { method: "PUT", headers: { "Content-Type": "application/json", "X-CSRFToken": csrf }, body: JSON.stringify({ status: sel.value }) })
-                .then(r => r.json())
-                .then(d => {
-                    if (!d.success) throw new Error(d.erro || "erro");
-                    sel.className = sel.className.replace(/PEDIDO_\w+/, "PEDIDO_" + d.status);
-                    anterior = sel.value;
-                })
-                .catch(() => { sel.value = anterior; alert("Não foi possível mudar o status. Tente de novo."); })
-                .finally(() => { sel.disabled = false; });
-        });
-    });
-})();
-</script>
 {% endblock %}

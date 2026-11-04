@@ -69,3 +69,17 @@ def definir_funcao(user, codigo):
     user.is_staff = codigo in POR_CODIGO
     user.is_superuser = codigo == "gestao"
     user.save(update_fields=["is_staff", "is_superuser"])
+
+
+ROTULOS_TELAS = {
+    "dashboard": "Painel", "orcamentos": "Orçamentos", "pedidos": "Pedidos do site", "produtos": "Produtos",
+    "projetos": "Projetos", "etiquetas": "Etiquetas", "relatorio": "Relatórios", "instagram": "Instagram",
+    "equipe": "Equipe e clientes", "perfil": "Perfil",
+}
+
+
+def mapa_de_acesso_por_funcao(codigo):
+    """[(nome da tela, True)] das telas que uma função abre (para a lista da equipe)."""
+    if codigo == "gestao":
+        return [(nome, True) for nome in ROTULOS_TELAS.values()]
+    return [(ROTULOS_TELAS[t], True) for t, funcoes in ACESSO.items() if codigo in funcoes and t in ROTULOS_TELAS]

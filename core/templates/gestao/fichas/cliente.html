@@ -1,0 +1,55 @@
+{% load artskala %}<span hidden data-ficha-titulo="Cliente · {{ contato.nome }}"></span>
+<div class="ficha-cabeca">
+    <span class="avatar-inicial cliente">{{ cliente.first_name|default:cliente.username|slice:":1"|upper }}</span>
+    <div>
+        <h3>{{ contato.nome }}{% if google %} <span class="selo-google" title="Cadastro feito com o Google">Google</span>{% endif %}</h3>
+        <small>@{{ cliente.username }} · cliente desde {{ cliente.date_joined|date:"d/m/Y" }}</small>
+    </div>
+</div>
+
+<div class="ficha-numeros">
+    <div class="ficha-numero"><small>Pedidos</small><strong>{{ n_pedidos }}</strong></div>
+    <div class="ficha-numero"><small>Total comprado</small><strong>{{ total_comprado|brl }}</strong></div>
+    <div class="ficha-numero"><small>Ticket médio</small><strong>{{ ticket|brl }}</strong></div>
+    <div class="ficha-numero"><small>Última compra</small><strong>{% if ultimo %}{{ ultimo.criacao|date:"d/m/y" }}{% else %}—{% endif %}</strong></div>
+</div>
+
+<div class="ficha-bloco">
+    <h4>Contato</h4>
+    <dl class="ficha-lista">
+        <dt>E-mail</dt><dd>{% if contato.email %}<a href="mailto:{{ contato.email }}">{{ contato.email }}</a>{% else %}—{% endif %}</dd>
+        <dt>Telefone</dt><dd>{{ contato.telefone|default:"—" }}</dd>
+        {% if contato.cpf %}<dt>CPF/CNPJ</dt><dd>{{ contato.cpf }}</dd>{% endif %}
+        <dt>Último acesso</dt><dd>{{ cliente.last_login|date:"d/m/Y H:i"|default:"Nunca entrou" }}</dd>
+    </dl>
+</div>
+
+{% if contato.endereco or contato.cidade or contato.cep %}
+<div class="ficha-bloco">
+    <h4>Endereço</h4>
+    <dl class="ficha-lista">
+        {% if contato.endereco %}<dt>Rua</dt><dd>{{ contato.endereco }}</dd>{% endif %}
+        {% if contato.cidade %}<dt>Cidade</dt><dd>{{ contato.cidade }}</dd>{% endif %}
+        {% if contato.cep %}<dt>CEP</dt><dd>{{ contato.cep }}</dd>{% endif %}
+    </dl>
+</div>
+{% endif %}
+
+<div class="ficha-bloco">
+    <h4>Últimos pedidos</h4>
+    {% if pedidos %}
+    <ul class="ficha-itens">
+        {% for p in pedidos %}
+            <li><a href="{% url 'gestao_pedido_detalhe' p.pk %}"><span><strong>#{{ p.pk }}</strong> · {{ p.criacao|date:"d/m/Y" }}<small>{{ p.get_metodo_pagamento_display }}</small></span><span><span class="selo PEDIDO_{{ p.status }}">{{ p.get_status_display }}</span> <b>{{ p.valor_total|brl }}</b></span></a></li>
+        {% endfor %}
+    </ul>
+    {% else %}
+        <p class="texto-fraco">Este cliente ainda não fez pedidos.</p>
+    {% endif %}
+</div>
+
+<div class="ficha-acoes">
+    {% if contato.whatsapp %}<a class="btn btn-primario" href="{{ contato.whatsapp }}" target="_blank" rel="noopener">WhatsApp</a>{% endif %}
+    {% if contato.email %}<a class="btn btn-secundario" href="mailto:{{ contato.email }}">E-mail</a>{% endif %}
+    {% if n_pedidos %}<a class="btn btn-secundario" href="{% url 'gestao_pedidos' %}?q={{ contato.email|default:cliente.username|urlencode }}">Todos os pedidos</a>{% endif %}
+</div>

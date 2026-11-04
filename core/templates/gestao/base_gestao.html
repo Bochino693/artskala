@@ -866,14 +866,18 @@
 
     {% block extra_head %}{% endblock %}
     <link rel="stylesheet" href="{% static 'gestao/modern.css' %}">
-    <link rel="stylesheet" href="{% static 'gestao/sistema.css' %}?v=20261107">
-    <script src="{% static 'gestao/sistema.js' %}?v=20261107"></script>
+    <link rel="stylesheet" href="{% static 'gestao/sistema.css' %}?v=20261108">
+    <script src="{% static 'gestao/sistema.js' %}?v=20261108"></script>
+    <script>try { if (window.matchMedia("(min-width: 861px)").matches && localStorage.getItem("ak-menu") === "recolhido") document.documentElement.classList.add("menu-recolhido"); } catch (e) { /* sem armazenamento */ }</script>
 </head>
 
 <body class="art-gestao {% block body_class %}{% endblock %}">
     <div class="topo-mobile">
         <div class="topo-mobile-linha">
-            <div>
+            <button type="button" class="btn-menu" data-menu-alternar aria-label="Abrir o menu" aria-controls="menu-lateral" aria-expanded="false">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
+            <div class="topo-mobile-marca">
                 <div class="marca">Art<span>Skala</span></div>
                 <div class="marca-sub" style="margin:0;">Área de gestão</div>
             </div>
@@ -892,126 +896,70 @@
             </div>
         </div>
 
-        <nav class="nav-mobile">
-            <a href="{% url 'gestao_dashboard' %}" class="nav-item {% if secao_ativa == 'dashboard' %}ativo{% endif %}">
-                ◆ Dashboard
-            </a>
-
-            {% if pode.produtos %}<a href="{% url 'gestao_produtos' %}" class="nav-item {% if secao_ativa == 'produtos' %}ativo{% endif %}">
-                ◈ Produtos
-            </a>{% endif %}
-
-            {% if pode.projetos %}<a href="{% url 'gestao_projetos' %}" class="nav-item {% if secao_ativa == 'projetos' %}ativo{% endif %}">
-                ▧ Projetos
-            </a>{% endif %}
-
-            {% if pode.orcamentos %}<a href="{% url 'orcamentos' %}" class="nav-item {% if secao_ativa == 'orcamentos' %}ativo{% endif %}">
-                ▤ Orçamentos
-            </a>{% endif %}
-
-            {% if pode.pedidos %}<a href="{% url 'gestao_pedidos' %}" class="nav-item {% if secao_ativa == 'pedidos' %}ativo{% endif %}">
-                ▣ Pedidos
-            </a>{% endif %}
-
-            {% if pode.etiquetas %}<a href="{% url 'gestao_etiquetas' %}" class="nav-item {% if secao_ativa == 'etiquetas' %}ativo{% endif %}">
-                ▦ Etiquetas
-            </a>{% endif %}
-
-            {% if pode.relatorio %}<a href="{% url 'gestao_relatorio' %}" class="nav-item {% if secao_ativa == 'relatorio' %}ativo{% endif %}">
-                Σ Relatórios
-            </a>{% endif %}
-
-            {% if pode.instagram %}<a href="{% url 'gestao_instagram' %}" class="nav-item {% if secao_ativa == 'instagram' %}ativo{% endif %}">
-                ◎ Instagram
-            </a>{% endif %}
-
-            {% if pode.equipe %}<a href="{% url 'gestao_equipe' %}" class="nav-item {% if secao_ativa == 'equipe' %}ativo{% endif %}">
-                ◉ Equipe
-            </a>{% endif %}
-
-            <a href="{% url 'gestao_perfil' %}" class="nav-item {% if secao_ativa == 'gestao_perfil' %}ativo{% endif %}">
-                ● Perfil
-            </a>
-        </nav>
     </div>
 
     <div class="layout">
-        <aside class="sidebar">
-            <div>
-                <div class="marca">Art<span>Skala</span></div>
+        <div class="menu-fundo" data-menu-fechar aria-hidden="true"></div>
+        <aside class="sidebar" id="menu-lateral" aria-label="Menu da gestão">
+            <div class="marca-bloco">
+                <div class="marca"><span class="marca-cheia">Art<span>Skala</span></span><span class="marca-curta" aria-hidden="true">A<span>S</span></span></div>
                 <div class="marca-sub">Área de gestão</div>
             </div>
+            <button type="button" class="menu-fechar-gaveta" data-menu-fechar aria-label="Fechar o menu">×</button>
 
             <div class="nav-secao">Visão geral</div>
 
-            <a href="{% url 'gestao_dashboard' %}" class="nav-item {% if secao_ativa == 'dashboard' %}ativo{% endif %}">
-                <span class="nav-icone">◆</span>
-                Dashboard
+            <a title="Dashboard" href="{% url 'gestao_dashboard' %}" class="nav-item {% if secao_ativa == 'dashboard' %}ativo{% endif %}"><span class="nav-icone">◆</span><span class="nav-texto">Dashboard</span>
             </a>
 
             <div class="nav-secao">Catálogo</div>
 
-            {% if pode.produtos %}<a href="{% url 'gestao_produtos' %}" class="nav-item {% if secao_ativa == 'produtos' %}ativo{% endif %}">
-                <span class="nav-icone">◈</span>
-                Produtos
+            {% if pode.produtos %}<a title="Produtos" href="{% url 'gestao_produtos' %}" class="nav-item {% if secao_ativa == 'produtos' %}ativo{% endif %}"><span class="nav-icone">◈</span><span class="nav-texto">Produtos</span>
             </a>{% endif %}
 
-            {% if pode.projetos %}<a href="{% url 'gestao_projetos' %}" class="nav-item {% if secao_ativa == 'projetos' %}ativo{% endif %}">
-                <span class="nav-icone">▧</span>
-                Projetos
+            {% if pode.projetos %}<a title="Projetos" href="{% url 'gestao_projetos' %}" class="nav-item {% if secao_ativa == 'projetos' %}ativo{% endif %}"><span class="nav-icone">▧</span><span class="nav-texto">Projetos</span>
             </a>{% endif %}
 
             <div class="nav-secao">Comercial</div>
 
-            {% if pode.orcamentos %}<a href="{% url 'orcamentos' %}" class="nav-item {% if secao_ativa == 'orcamentos' %}ativo{% endif %}">
-                <span class="nav-icone">▤</span>
-                Orçamentos
+            {% if pode.orcamentos %}<a title="Orçamentos" href="{% url 'orcamentos' %}" class="nav-item {% if secao_ativa == 'orcamentos' %}ativo{% endif %}"><span class="nav-icone">▤</span><span class="nav-texto">Orçamentos</span>
             </a>{% endif %}
 
-            {% if pode.pedidos %}<a href="{% url 'gestao_pedidos' %}" class="nav-item {% if secao_ativa == 'pedidos' %}ativo{% endif %}">
-                <span class="nav-icone">▣</span>
-                Pedidos do site
+            {% if pode.pedidos %}<a title="Pedidos do site" href="{% url 'gestao_pedidos' %}" class="nav-item {% if secao_ativa == 'pedidos' %}ativo{% endif %}"><span class="nav-icone">▣</span><span class="nav-texto">Pedidos do site</span>
             </a>{% endif %}
 
-            {% if pode.etiquetas %}<a href="{% url 'gestao_etiquetas' %}" class="nav-item {% if secao_ativa == 'etiquetas' %}ativo{% endif %}">
-                <span class="nav-icone">▦</span>
-                Etiquetas
+            {% if pode.etiquetas %}<a title="Etiquetas" href="{% url 'gestao_etiquetas' %}" class="nav-item {% if secao_ativa == 'etiquetas' %}ativo{% endif %}"><span class="nav-icone">▦</span><span class="nav-texto">Etiquetas</span>
             </a>{% endif %}
 
-            {% if pode.relatorio %}<a href="{% url 'gestao_relatorio' %}" class="nav-item {% if secao_ativa == 'relatorio' %}ativo{% endif %}">
-                <span class="nav-icone">Σ</span>
-                Relatórios
+            {% if pode.relatorio %}<a title="Relatórios" href="{% url 'gestao_relatorio' %}" class="nav-item {% if secao_ativa == 'relatorio' %}ativo{% endif %}"><span class="nav-icone">Σ</span><span class="nav-texto">Relatórios</span>
             </a>{% endif %}
 
-            {% if pode.instagram %}<a href="{% url 'gestao_instagram' %}" class="nav-item {% if secao_ativa == 'instagram' %}ativo{% endif %}">
-                <span class="nav-icone">◎</span>
-                Instagram
+            {% if pode.instagram %}<a title="Instagram" href="{% url 'gestao_instagram' %}" class="nav-item {% if secao_ativa == 'instagram' %}ativo{% endif %}"><span class="nav-icone">◎</span><span class="nav-texto">Instagram</span>
             </a>{% endif %}
 
             <div class="nav-secao">Conta</div>
 
-            {% if pode.equipe %}<a href="{% url 'gestao_equipe' %}" class="nav-item {% if secao_ativa == 'equipe' %}ativo{% endif %}">
-                <span class="nav-icone">◉</span>
-                Equipe e clientes
+            {% if pode.equipe %}<a title="Equipe e clientes" href="{% url 'gestao_equipe' %}" class="nav-item {% if secao_ativa == 'equipe' %}ativo{% endif %}"><span class="nav-icone">◉</span><span class="nav-texto">Equipe e clientes</span>
             </a>{% endif %}
 
-            <a href="{% url 'gestao_perfil' %}" class="nav-item {% if secao_ativa == 'gestao_perfil' %}ativo{% endif %}">
-                <span class="nav-icone">●</span>
-                Perfil da gestão
+            <a title="Perfil da gestão" href="{% url 'gestao_perfil' %}" class="nav-item {% if secao_ativa == 'gestao_perfil' %}ativo{% endif %}"><span class="nav-icone">●</span><span class="nav-texto">Perfil da gestão</span>
             </a>
 
             <div class="sidebar-rodape">
                 <div class="usuario-cartao"><span class="avatar-inicial">{{ request.user.first_name|default:request.user.username|slice:":1"|upper }}</span><span><strong>{{ request.user.get_full_name|default:request.user.username }}</strong><small>{{ funcao_equipe|default:"Equipe" }}</small></span></div>
-                <a href="{{ loja_url }}">← Voltar à loja</a>
+                <a href="{{ loja_url }}" title="Voltar à loja"><span class="nav-icone">←</span><span class="nav-texto">Voltar à loja</span></a>
                 <form method="post" action="{% url 'interno_logout' %}" class="form-sair">
                     {% csrf_token %}
-                    <button type="submit">Sair da gestão</button>
+                    <button type="submit" title="Sair da gestão"><span class="sair-icone" aria-hidden="true">⏻</span><span class="nav-texto">Sair da gestão</span></button>
                 </form>
             </div>
         </aside>
 
         <main class="conteudo">
             <div class="barra-topo">
+                <button type="button" class="btn-menu btn-menu--topo" data-menu-alternar aria-label="Fechar ou abrir o menu" aria-controls="menu-lateral" aria-expanded="true" title="Fechar ou abrir o menu ( [ )">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+                </button>
                 <button type="button" class="barra-busca" data-abrir-busca><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span>Buscar produto, cliente, orçamento ou código…</span><kbd>Ctrl K</kbd></button>
                 <div class="ak-atalhos">
                     <a class="btn btn-primario" href="{% url 'orcamentos' %}?novo=1">+ Orçamento</a>

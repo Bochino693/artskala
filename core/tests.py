@@ -761,3 +761,94 @@ class GoogleLoginTests(TestCase):
         self.assertEqual(resposta.status_code, 302)
         self.assertIn('accounts.google.com', resposta['Location'])
         self.assertIn('callback', resposta['Location'])
+
+
+class GestaoInterfaceTests(TestCase):
+    """Menu que fecha/abre, fichas em modal, linhas que abrem e interruptores."""
+
+    def setUp(self):
+        from .models import CategoriaProdutos, ItemPedido, Pedido, PerfilUsuario, Produto
+        self.gestor = get_user_model().objects.create_superuser('equipe', 'e@example.com', 'senha-forte-123')
+        self.client.force_login(self.gestor)
+        cat = CategoriaProdutos.objects.create(nome_categoria='Placas')
+        self.produto = Produto.objects.create(categoria=cat, nome_produto='Placa ACM', preco=150, custo=60, estoque=3)
+        self.cliente = get_user_model().objects.create_user('marina', 'marina@example.com', 'senha-forte-123', first_name='Marina')
+        PerfilUsuario.objects.create(usuario=self.cliente, telefone='(11) 98765-4321', cidade='São Paulo', estado='SP', endereco='Rua A, 10')
+        self.pedido = Pedido.objects.create(usuario=self.cliente, status='PAGO', endereco='Rua A, 10')
+        ItemPedido.objects.create(pedido=self.pedido, produto=self.produto, quantidade=2, preco_unitario=150, custo_unitario=60)
+        self.pedido.recalcular_totais()
+
+    def test_menu_lateral_tem_botao_e_gaveta(self):
+        pagina = self.client.get('/interno/')
+        self.assertContains(pagina, 'data-menu-alternar')
+        self.assertContains(pagina, 'id="menu-lateral"')
+        self.assertContains(pagina, 'class="menu-fundo"')
+        self.assertContains(pagina, 'nav-texto')                 # o texto some no trilho; o title fica
+        self.assertContains(pagina, 'title="Pedidos do site"')
+        self.assertContains(pagina, 'localStorage.getItem("ak-menu")')   # lembra a escolha sem piscar
+
+    def test_ficha_do_cliente_em_modal(self):
+        r = self.client.get('/interno/clientes/%s/ficha/' % self.cliente.pk, {'modal': 1})
+        self.assertEqual(r.status_code, 200)
+        self.assertNotContains(r, '<html')
+        self.assertContains(r, 'Cliente · Marina')
+        self.assertContains(r, 'R$ 300,00')                     # total comprado
+        self.assertContains(r, 'https://wa.me/5511987654321')
+        # equipe nunca aparece como "cliente"
+        self.assertEqual(self.client.get('/interno/clientes/%s/ficha/' % self.gestor.pk).status_code, 404)
+
+    def test_ficha_do_pedido_e_do_orcamento_em_modal(self):
+        from .models import Orcamento
+        pedido = self.client.get('/interno/pedidos/%s/' % self.pedido.pk, {'modal': 1})
+        self.assertNotContains(pedido, '<html')
+        self.assertContains(pedido, 'ficha-itens')
+        self.assertContains(pedido, 'data-status-url')
+        completo = self.client.get('/interno/pedidos/%s/' % self.pedido.pk)
+        self.assertContains(completo, '<html')                  # sem ?modal=1 continua a página inteira
+        o = Orcamento.objects.create(usuario=self.gestor, titulo='Fachada', cliente_nome='Kasuko', distancia_km='12.4')
+        ficha = self.client.get('/interno/orcamentos/%s/ficha/' % o.pk)
+        self.assertNotContains(ficha, '<html')
+        self.assertContains(ficha, 'Orçamento #%s · Fachada' % o.pk)
+        self.assertContains(ficha, '12,4 km')
+
+    def test_fichas_respeitam_a_funcao(self):
+        from .equipe import definir_funcao
+        producao = get_user_model().objects.create_user('prod', password='senha-forte-123')
+        definir_funcao(producao, 'producao')
+        self.client.force_login(producao)
+        self.assertEqual(self.client.get('/interno/orcamentos/', follow=False).status_code, 200)
+        self.assertEqual(self.client.get('/interno/clientes/%s/ficha/' % self.cliente.pk)['Location'], '/interno/')
+
+    def test_listas_tem_linhas_que_abrem(self):
+        for url, marcas in (
+            ('/interno/pedidos/', ('data-expansivel', 'linha-detalhe', 'data-todas-linhas', 'Itens do pedido')),
+            ('/interno/produtos/', ('data-linha-alternar', 'detalhe-fotos', 'Ver no site')),
+            ('/interno/equipe/', ('interruptor', 'O que esta pessoa abre')),
+            ('/interno/equipe/?aba=clientes', ('data-ficha=', 'Abrir ficha completa', 'Ticket médio')),
+        ):
+            pagina = self.client.get(url)
+            for marca in marcas:
+                self.assertContains(pagina, marca, msg_prefix=url)
+
+    def test_orcamentos_lista_expande_e_abre_ficha(self):
+        from .models import Orcamento
+        Orcamento.objects.create(usuario=self.gestor, titulo='Letreiro', cliente_nome='Dojo')
+        pagina = self.client.get('/interno/orcamentos/')
+        self.assertContains(pagina, 'data-expansivel')
+        self.assertContains(pagina, 'data-ficha="/interno/orcamentos/')
+        self.assertContains(pagina, 'Etiqueta de produção')
+
+    def test_gestao_nao_usa_mais_os_alertas_do_navegador(self):
+        from pathlib import Path
+        pasta = Path(__file__).resolve().parent / 'templates' / 'gestao'
+        for nome in ('produtos.html', 'projetos.html', 'orcamentos.html', 'pedidos.html', 'pedido_detalhe.html'):
+            texto = (pasta / nome).read_text()
+            self.assertNotIn('alert(', texto, nome)
+            self.assertNotIn(' confirm(', texto.replace('Gestao.confirmar(', ''), nome)
+
+    def test_mensagens_viram_avisos_e_ha_modais_na_base(self):
+        pagina = self.client.get('/interno/equipe/')
+        self.assertContains(pagina, 'sistema.js')
+        js = (__import__('pathlib').Path(__file__).resolve().parent / 'static' / 'gestao' / 'sistema.js').read_text()
+        for nome in ('confirmar', 'abrirFicha', 'aviso', 'ligarLinhas', 'menuLateral'):
+            self.assertIn(nome, js)

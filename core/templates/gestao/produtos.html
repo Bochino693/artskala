@@ -79,6 +79,7 @@
                     <table class="ledger">
                         <thead>
                             <tr>
+                                <th class="col-chevron"></th>
                                 <th class="col-titulo">Produto</th>
                                 <th>Categoria</th>
                                 <th class="num">Preço</th>
@@ -90,7 +91,8 @@
                         </thead>
                         <tbody>
                             {% for p in produtos %}
-                                <tr>
+                                <tr data-expansivel>
+                                    <td class="col-chevron"><button type="button" class="chevron" data-linha-alternar aria-expanded="false" aria-label="Ver detalhes"></button></td>
                                     <td class="col-titulo">{{ p.nome_produto }}<br><code class="codigo-mini">{{ p|codigo }}</code></td>
                                     <td>{{ p.categoria.nome_categoria }}</td>
                                     <td class="num">{% if p.preco > 0 %}{{ p.preco|brl }}{% else %}<span class="texto-fraco">Sob consulta</span>{% endif %}</td>
@@ -109,12 +111,28 @@
                                                 Editar
                                             </a>
                                             <a href="{% url 'gestao_etiquetas' %}?tipo=produto&ids={{ p.pk }}" class="btn btn-secundario" style="padding: 7px 12px; min-height: 34px;" title="Etiqueta de preço">Etiqueta</a>
-                                            <button type="button" class="btn btn-perigo" style="padding: 7px 12px; min-height: 34px;" onclick="excluirProduto({{ p.pk }})">
+                                            <button type="button" class="btn btn-perigo" style="padding: 7px 12px; min-height: 34px;" data-nome="{{ p.nome_produto }}" onclick="excluirProduto({{ p.pk }}, this.dataset.nome)">
                                                 Excluir
                                             </button>
                                         </div>
                                     </td>
                                 </tr>
+                                <tr class="linha-detalhe" hidden><td colspan="8"><div class="detalhe">
+                                    <div><h5>Descrição</h5><p>{{ p.descricao_produto|default:"Sem descrição." }}</p></div>
+                                    <div><h5>Números</h5><ul>
+                                        <li><span>Preço de venda</span><span>{% if p.preco > 0 %}{{ p.preco|brl }}{% else %}Sob consulta{% endif %}</span></li>
+                                        <li><span>Custo</span><span>{{ p.custo|brl }}</span></li>
+                                        <li><span>Margem</span><span>{{ p.margem_lucro_percentual|pct }}</span></li>
+                                        <li><span>Estoque</span><span>{{ p.estoque }}</span></li>
+                                        <li><span>Avaliação</span><span>{{ p.avaliacao|pct:1|slice:":-1" }} / 5</span></li>
+                                    </ul></div>
+                                    <div><h5>Fotos</h5><div class="detalhe-fotos">{% for img in p.imagens.all|slice:":6" %}{% if img.imagem %}<img src="{{ img.imagem.url|tamanho:'120x120' }}" alt="" loading="lazy">{% endif %}{% empty %}<p class="texto-fraco">Sem fotos.</p>{% endfor %}</div></div>
+                                    <div class="detalhe-acoes">
+                                        <a class="btn btn-secundario btn-mini" href="{% url 'gestao_produto_detalhe' p.pk %}">Editar</a>
+                                        <a class="btn btn-secundario btn-mini" href="{% url 'gestao_etiquetas' %}?tipo=produto&ids={{ p.pk }}">Etiqueta</a>
+                                        <a class="btn btn-secundario btn-mini" href="{{ loja_base }}/products/{{ p.pk }}/" target="_blank" rel="noopener">Ver no site ↗</a>
+                                    </div>
+                                </div></td></tr>
                             {% endfor %}
                         </tbody>
                     </table>
@@ -144,7 +162,7 @@
                         </a>
                         <div class="acoes-linha" style="margin-top: 12px;">
                             <a href="{% url 'gestao_produto_detalhe' p.pk %}" class="btn btn-secundario" style="flex: 1;">Editar</a>
-                            <button type="button" class="btn btn-perigo" style="flex: 1;" onclick="excluirProduto({{ p.pk }})">Excluir</button>
+                            <button type="button" class="btn btn-perigo" style="flex: 1;" data-nome="{{ p.nome_produto }}" onclick="excluirProduto({{ p.pk }}, this.dataset.nome)">Excluir</button>
                         </div>
                     </div>
                 {% endfor %}
@@ -298,28 +316,22 @@
         return null;
     }
 
-    function excluirProduto(pk) {
-        if (!confirm('Tem certeza que deseja excluir este produto? Esta ação não pode ser desfeita.')) {
-            return;
-        }
-
-        const urlBase = "{% url 'gestao_produto_detalhe' 1 %}".replace('/1/', `/${pk}/`);
-
-        fetch(urlBase, {
-            method: 'DELETE',
-            headers: {
-                'X-CSRFToken': getCookie('csrftoken'),
-            },
-        })
-            .then((res) => res.json())
-            .then((dados) => {
-                if (dados.success) {
-                    window.location.href = dados.redirect;
-                } else {
-                    alert('Não foi possível excluir o produto.');
-                }
-            })
-            .catch(() => alert('Erro ao excluir o produto. Tente novamente.'));
+    function excluirProduto(pk, nome) {
+        Gestao.confirmar({
+            titulo: 'Excluir produto?',
+            texto: '"' + (nome || 'Este produto') + '" sai do catálogo e do site. Essa ação não pode ser desfeita.',
+            ok: 'Excluir produto',
+        }).then((sim) => {
+            if (!sim) return;
+            const urlBase = "{% url 'gestao_produto_detalhe' 1 %}".replace('/1/', `/${pk}/`);
+            fetch(urlBase, { method: 'DELETE', headers: { 'X-CSRFToken': getCookie('csrftoken') } })
+                .then((res) => res.json())
+                .then((dados) => {
+                    if (dados.success) { Gestao.aviso('Produto excluído.'); setTimeout(() => { window.location.href = dados.redirect; }, 600); }
+                    else Gestao.aviso('Não foi possível excluir o produto.', 'erro');
+                })
+                .catch(() => Gestao.aviso('Erro ao excluir o produto. Tente novamente.', 'erro'));
+        });
     }
 </script>
 {% endblock %}

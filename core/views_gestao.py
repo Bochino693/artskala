@@ -5,7 +5,7 @@ from decimal import Decimal
 from urllib.parse import quote
 
 from django.conf import settings
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, Max, Q, Sum
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
@@ -48,35 +48,38 @@ def _digitos(texto):
     return re.sub(r"\D", "", str(texto or ""))
 
 
-def cliente_do_pedido(pedido):
-    """Nome, contato e endereço do cliente (perfil + endereço do pedido)."""
-    usuario = pedido.usuario
+def contato_do_usuario(usuario, endereco="", mensagem=""):
+    """Nome, contato, endereço e link do WhatsApp de uma pessoa (perfil + endereço dado)."""
     try:
         perfil = usuario.perfil
     except Exception:  # sem perfil cadastrado
         perfil = None
     telefone = getattr(perfil, "telefone", "") or ""
     cidade = " - ".join(p for p in (getattr(perfil, "cidade", ""), getattr(perfil, "estado", "")) if p)
-    cep = getattr(perfil, "cep", "") or ""
-    endereco = pedido.endereco or getattr(perfil, "endereco", "") or ""
     digitos = _digitos(telefone)
     if digitos and not digitos.startswith("55"):
         digitos = "55" + digitos
     nome = usuario.get_full_name() or usuario.username
+    mensagem = mensagem or f"Olá, {nome.split()[0]}! Aqui é da ArtSkala."
     return {
         "nome": nome,
         "email": usuario.email,
         "telefone": telefone,
         "cpf": getattr(perfil, "cpf", "") or "",
-        "endereco": endereco,
+        "endereco": endereco or getattr(perfil, "endereco", "") or "",
         "cidade": cidade,
-        "cep": cep,
-        "whatsapp": (
-            f"https://wa.me/{digitos}?text="
-            + quote(f"Olá, {nome.split()[0]}! Aqui é da ArtSkala, sobre o seu pedido #{pedido.pk}.")
-            if len(digitos) >= 12 else ""
-        ),
+        "cep": getattr(perfil, "cep", "") or "",
+        "whatsapp": f"https://wa.me/{digitos}?text={quote(mensagem)}" if len(digitos) >= 12 else "",
     }
+
+
+def cliente_do_pedido(pedido):
+    """O cliente de um pedido: contato do perfil + o endereço do próprio pedido."""
+    nome = pedido.usuario.get_full_name() or pedido.usuario.username
+    return contato_do_usuario(
+        pedido.usuario, endereco=pedido.endereco,
+        mensagem=f"Olá, {nome.split()[0]}! Aqui é da ArtSkala, sobre o seu pedido #{pedido.pk}.",
+    )
 
 
 # ============================================================ busca rápida
@@ -254,6 +257,8 @@ class GestaoPedidoDetalheView(SuperuserGestaoRequiredMixin, View):
             "status_choices": Pedido.STATUS,
             "secao_ativa": "pedidos",
         }
+        if request.GET.get("modal"):
+            return render(request, "gestao/fichas/pedido.html", ctx)
         return render(request, "gestao/pedido_detalhe.html", ctx)
 
     def put(self, request, pk):
@@ -414,7 +419,7 @@ class EquipeView(SuperuserGestaoRequiredMixin, View):
 
     def _equipe(self):
         from django.contrib.auth.models import User
-        from .equipe import FUNCOES, funcoes_do_usuario
+        from .equipe import FUNCOES, funcoes_do_usuario, mapa_de_acesso_por_funcao
 
         grupos = [f["grupo"] for f in FUNCOES]
         pessoas = (User.objects.filter(Q(is_superuser=True) | Q(is_staff=True) | Q(groups__name__in=grupos))
@@ -423,7 +428,8 @@ class EquipeView(SuperuserGestaoRequiredMixin, View):
         for u in pessoas:
             funcoes = funcoes_do_usuario(u) if u.is_active else ({"gestao"} if u.is_superuser else
                       {f["codigo"] for f in FUNCOES if f["grupo"] in {g.name for g in u.groups.all()}})
-            linhas.append({"u": u, "funcao": next(iter(sorted(funcoes)), "")})
+            funcao = next(iter(sorted(funcoes)), "")
+            linhas.append({"u": u, "funcao": funcao, "telas": [t for t, ok in mapa_de_acesso_por_funcao(funcao)]})
         return linhas
 
     def _clientes(self, busca):
@@ -432,7 +438,8 @@ class EquipeView(SuperuserGestaoRequiredMixin, View):
         clientes = (User.objects.filter(is_staff=False, is_superuser=False)
                     .select_related("perfil")
                     .annotate(n_pedidos=Count("pedidos", filter=vendidos, distinct=True),
-                              gasto=Sum("pedidos__valor_total", filter=vendidos))
+                              gasto=Sum("pedidos__valor_total", filter=vendidos),
+                              ultimo_pedido=Max("pedidos__criacao", filter=vendidos))
                     .order_by("-gasto", "-date_joined"))
         if busca:
             clientes = clientes.filter(Q(username__icontains=busca) | Q(first_name__icontains=busca)
@@ -465,6 +472,11 @@ class EquipeView(SuperuserGestaoRequiredMixin, View):
                 "u": c, "telefone": telefone,
                 "cidade": " - ".join(p for p in (getattr(perfil, "cidade", ""), getattr(perfil, "estado", "")) if p),
                 "n_pedidos": c.n_pedidos, "gasto": c.gasto or Decimal("0"),
+                "ticket": (c.gasto / c.n_pedidos) if c.n_pedidos and c.gasto else Decimal("0"),
+                "ultimo_pedido": c.ultimo_pedido,
+                "endereco": getattr(perfil, "endereco", "") or "",
+                "cep": getattr(perfil, "cep", "") or "",
+                "cpf": getattr(perfil, "cpf", "") or "",
                 "whatsapp": f"https://wa.me/{digitos}" if len(digitos) >= 12 else "",
             })
         from .google import endereco_de_retorno, google_ativo, ids_com_google
@@ -575,3 +587,42 @@ class EquipeView(SuperuserGestaoRequiredMixin, View):
             update_session_auth_hash(request, pessoa)
         messages.success(request, f"{pessoa.get_full_name() or pessoa.username} salvo(a) como {POR_CODIGO[funcao]['titulo']}.")
         return voltar
+
+
+# ============================================================ fichas em modal
+
+class ClienteFichaView(SuperuserGestaoRequiredMixin, View):
+    """Pedaço de HTML com tudo de um cliente (abre num modal na lista de clientes)."""
+    secao_gestao = "pedidos"
+
+    def get(self, request, pk):
+        from django.contrib.auth.models import User
+        from .google import veio_do_google
+
+        cliente = get_object_or_404(User.objects.select_related("perfil"), pk=pk, is_staff=False, is_superuser=False)
+        todos = Pedido.objects.filter(usuario=cliente)
+        validos = todos.exclude(status="CANCELADO")
+        total = validos.aggregate(v=Sum("valor_total"))["v"] or Decimal("0")
+        quantidade = validos.count()
+        ctx = {
+            "cliente": cliente,
+            "contato": contato_do_usuario(cliente),
+            "google": veio_do_google(cliente),
+            "pedidos": todos.order_by("-criacao")[:6],
+            "n_pedidos": quantidade,
+            "total_comprado": total,
+            "ticket": (total / quantidade) if quantidade else Decimal("0"),
+            "ultimo": todos.order_by("-criacao").first(),
+        }
+        return render(request, "gestao/fichas/cliente.html", ctx)
+
+
+class OrcamentoFichaView(SuperuserGestaoRequiredMixin, View):
+    """Pedaço de HTML com o resumo de um orçamento (abre num modal na lista)."""
+    secao_gestao = "orcamentos"
+
+    def get(self, request, pk):
+        orcamento = get_object_or_404(
+            Orcamento.objects.prefetch_related("itens__produto", "itens__projeto"), pk=pk, ativo=True,
+        )
+        return render(request, "gestao/fichas/orcamento.html", {"o": orcamento, "itens": list(orcamento.itens.all())})

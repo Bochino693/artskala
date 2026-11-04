@@ -24,3 +24,11 @@ def ids_com_google():
         return set()
     from allauth.socialaccount.models import SocialAccount
     return set(SocialAccount.objects.filter(provider="google").values_list("user_id", flat=True))
+
+
+def veio_do_google(usuario):
+    """True se esta pessoa entrou/cadastrou pelo Google."""
+    if not apps.is_installed("allauth.socialaccount"):
+        return False
+    from allauth.socialaccount.models import SocialAccount
+    return SocialAccount.objects.filter(user=usuario, provider="google").exists()

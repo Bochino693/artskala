@@ -1,0 +1,42 @@
+{% load artskala %}<span hidden data-ficha-titulo="Pedido #{{ pedido.pk }} · {{ cliente.nome }}"></span>
+<div class="ficha-cabeca">
+    <div style="flex:1">
+        <h3>Pedido #{{ pedido.pk }} <code class="codigo-mini">{{ pedido|codigo }}</code></h3>
+        <small>{{ pedido.criacao|date:"d/m/Y \à\s H:i" }} · {{ pedido.get_metodo_pagamento_display }}</small>
+    </div>
+    <select class="selo-select PEDIDO_{{ pedido.status }}" data-status-url="{% url 'gestao_pedido_detalhe' pedido.pk %}" data-status-classe="selo-select" data-status-prefixo="PEDIDO_" aria-label="Status do pedido">
+        {% for chave, rotulo in status_choices %}<option value="{{ chave }}" {% if pedido.status == chave %}selected{% endif %}>{{ rotulo }}</option>{% endfor %}
+    </select>
+</div>
+
+<div class="ficha-bloco">
+    <h4>Itens</h4>
+    <ul class="ficha-itens">
+        {% for item in itens %}
+            <li><span><strong>{{ item.quantidade }}×</strong> {{ item.produto.nome_produto }}<small>{{ item.preco_unitario|brl }} cada</small></span><b>{{ item.subtotal|brl }}</b></li>
+        {% endfor %}
+    </ul>
+    <div class="ficha-totais">
+        <div><span>Subtotal</span><span>{{ subtotal|brl }}</span></div>
+        {% if pedido.desconto_cupom %}<div><span>Cupom {{ pedido.cupom_codigo }}</span><span>− {{ pedido.desconto_cupom|brl }}</span></div>{% endif %}
+        <div class="total"><span>Total</span><span>{{ pedido.valor_total|brl }}</span></div>
+        <div class="texto-fraco"><span>Lucro estimado</span><span>{{ pedido.lucro_total|brl }} · {{ pedido.margem_lucro_percentual|pct }}</span></div>
+    </div>
+</div>
+
+<div class="ficha-bloco">
+    <h4>Cliente e entrega</h4>
+    <dl class="ficha-lista">
+        <dt>Nome</dt><dd>{{ cliente.nome }}</dd>
+        <dt>E-mail</dt><dd>{% if cliente.email %}<a href="mailto:{{ cliente.email }}">{{ cliente.email }}</a>{% else %}—{% endif %}</dd>
+        <dt>Telefone</dt><dd>{{ cliente.telefone|default:"—" }}</dd>
+        <dt>Endereço</dt><dd>{{ cliente.endereco|default:"Não informado" }}{% if cliente.cidade %} · {{ cliente.cidade }}{% endif %}{% if cliente.cep %} · CEP {{ cliente.cep }}{% endif %}</dd>
+        {% if pedido.observacoes %}<dt>Observações</dt><dd>{{ pedido.observacoes|linebreaksbr }}</dd>{% endif %}
+    </dl>
+</div>
+
+<div class="ficha-acoes">
+    {% if cliente.whatsapp %}<a class="btn btn-primario" href="{{ cliente.whatsapp }}" target="_blank" rel="noopener">WhatsApp</a>{% endif %}
+    <a class="btn btn-secundario" href="{% url 'gestao_etiquetas' %}?tipo=pedido&ids={{ pedido.pk }}">Etiqueta de envio</a>
+    <a class="btn btn-secundario" href="{% url 'gestao_pedido_detalhe' pedido.pk %}">Abrir página inteira</a>
+</div>

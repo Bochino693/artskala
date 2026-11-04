@@ -15,6 +15,8 @@ def enderecos_site(request):
         "gestao_url": reverse("gestao_dashboard"),
         # "Abrir o site" de dentro da gestão: no próprio domínio é a raiz.
         "loja_url": settings.SITE_URL if getattr(request, "is_interno", False) else "/",
+        # para montar endereços do site: {{ loja_base }}/products/3/ (vazio no próprio domínio)
+        "loja_base": settings.SITE_URL if getattr(request, "is_interno", False) else "",
     }
 
 
