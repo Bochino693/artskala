@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load artskala %}
 
 {% block title %}Promoções | ArtSkala{% endblock %}
 
@@ -24,7 +25,7 @@
                     {% with produto=oferta.produto foto=oferta.produto.imagens.all.0 %}
                     <article class="ak-card-produto" data-revelar>
                         <div class="ak-card-foto">
-                            {% if foto and foto.imagem %}<img src="{{ foto.imagem.url }}" alt="{{ produto.nome_produto }}" loading="lazy">{% else %}<div class="ak-sem-foto"><i class="bi bi-tag" aria-hidden="true"></i>{{ oferta.titulo }}</div>{% endif %}
+                            {% if foto and foto.imagem %}<img src="{{ foto.imagem.url|tamanho:'720x540' }}" alt="{{ produto.nome_produto }}" loading="lazy">{% else %}<div class="ak-sem-foto"><i class="bi bi-tag" aria-hidden="true"></i>{{ oferta.titulo }}</div>{% endif %}
                             <span class="ak-card-etiqueta">Até {{ oferta.fim|date:"d/m" }}</span>
                             <span class="ak-card-oferta">-{{ oferta.percentual|floatformat:0 }}%</span>
                         </div>

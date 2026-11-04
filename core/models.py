@@ -610,3 +610,40 @@ class VideoProjeto(Prime):
 
     def __str__(self):
         return self.titulo
+
+
+class PostInstagram(Prime):
+    """Publicação do @artskalaa trazida pela API oficial do Instagram."""
+
+    instagram_id = models.CharField(max_length=64, unique=True)
+    tipo = models.CharField(max_length=20, blank=True, default="IMAGE")
+    legenda = models.TextField(blank=True, default="")
+    link = models.URLField(max_length=300, help_text="Endereço do post no Instagram.")
+    imagem = models.ImageField(upload_to="instagram/", blank=True, null=True)
+    publicado_em = models.DateTimeField(null=True, blank=True)
+    curtidas = models.PositiveIntegerField(null=True, blank=True)
+    comentarios = models.PositiveIntegerField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Post do Instagram"
+        verbose_name_plural = "Posts do Instagram"
+        ordering = ["-publicado_em", "-id"]
+
+    def __str__(self):
+        return (self.legenda.splitlines() or [self.instagram_id])[0][:80]
+
+
+class ConfigInstagram(models.Model):
+    """Token da API do Instagram (renovado sozinho) e o resultado da última sincronização."""
+
+    token = models.TextField(blank=True, default="", help_text="Token de acesso de longa duração.")
+    expira_em = models.DateTimeField(null=True, blank=True)
+    ultima_sincronizacao = models.DateTimeField(null=True, blank=True)
+    ultimo_resultado = models.TextField(blank=True, default="")
+
+    class Meta:
+        verbose_name = "Configuração do Instagram"
+        verbose_name_plural = "Configuração do Instagram"
+
+    def __str__(self):
+        return "Instagram @artskalaa"

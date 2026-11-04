@@ -1,9 +1,9 @@
-{% comment %}Cartão de produto: {% include "partials/card_produto.html" with produto=produto %}{% endcomment %}
+{% load artskala %}{% comment %}Cartão de produto: {% include "partials/card_produto.html" with produto=produto %}{% endcomment %}
 {% with foto=produto.imagens.all.0 atual=produto.preco_atual %}
 <article class="ak-card-produto" data-revelar>
     <div class="ak-card-foto">
         {% if foto and foto.imagem %}
-            <img src="{{ foto.imagem.url }}" alt="{{ produto.nome_produto }}" loading="lazy" decoding="async" width="600" height="450">
+            <img src="{{ foto.imagem.url|tamanho:'720x540' }}" alt="{{ produto.nome_produto }}" loading="lazy" decoding="async" width="600" height="450">
         {% else %}
             <div class="ak-sem-foto"><i class="bi bi-image" aria-hidden="true"></i>Foto em breve</div>
         {% endif %}

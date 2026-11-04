@@ -213,7 +213,7 @@
 
 .ak-insta-mosaico { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 
-.ak-insta-mosaico a {
+.ak-insta-mosaico > a {
     position: relative;
     overflow: hidden;
     aspect-ratio: 1;
@@ -226,26 +226,74 @@
     text-decoration: none;
 }
 
-.ak-insta-mosaico a:nth-child(n + 7) { display: none; }
+.ak-insta-mosaico > a:nth-child(n + 7) { display: none; }
 
-.ak-insta-mosaico img { width: 100%; height: 100%; object-fit: cover; transition: transform .4s ease; }
-.ak-insta-mosaico a:hover img { transform: scale(1.06); }
+.ak-insta-mosaico img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    image-rendering: auto;
+    transition: transform .45s ease, filter .35s ease;
+}
 
-.ak-insta-mosaico a::after {
-    content: "\F437";  /* bi-instagram */
-    font-family: "bootstrap-icons";
+/* Passar o mouse como no Instagram: escurece, mostra a legenda e os números. */
+.ak-insta-legenda {
     position: absolute;
     inset: 0;
-    display: grid;
-    place-items: center;
-    background: rgba(216, 31, 39, .55);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    padding: 14px;
+    background: linear-gradient(180deg, rgba(20, 6, 7, .35), rgba(20, 6, 7, .78));
     color: #fff;
-    font-size: 1.6rem;
+    text-align: center;
     opacity: 0;
     transition: opacity .25s ease;
 }
 
-.ak-insta-mosaico a:hover::after { opacity: 1; }
+.ak-insta-legenda i.bi-instagram, .ak-insta-legenda i.bi-images { font-size: 1.35rem; }
+
+.ak-insta-legenda span {
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-size: .8rem;
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+.ak-insta-legenda small { font-size: .78rem; font-weight: 800; }
+.ak-insta-legenda small i { font-size: .8rem; }
+
+.ak-insta-post:hover img, .ak-insta-post:focus-visible img { transform: scale(1.05); }
+.ak-insta-post:hover .ak-insta-legenda, .ak-insta-post:focus-visible .ak-insta-legenda { opacity: 1; }
+
+.ak-insta-tipo {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 1;
+    width: 26px;
+    height: 26px;
+    display: grid;
+    place-items: center;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, .45);
+    color: #fff;
+    font-size: .85rem;
+}
+
+.ak-insta-vago:hover { background: var(--ak-vermelho); color: #fff; }
+
+/* Tela de toque não tem "passar o mouse": fica só um selinho do Instagram. */
+@media (hover: none) {
+    .ak-insta-legenda { opacity: 1; inset: auto 6px 6px auto; padding: 0; width: 28px; height: 28px; border-radius: 8px; background: rgba(0, 0, 0, .45); }
+    .ak-insta-legenda span, .ak-insta-legenda small { display: none; }
+    .ak-insta-legenda i.bi-instagram, .ak-insta-legenda i.bi-images { font-size: .9rem; }
+}
 
 .ak-insta-temas { display: grid; gap: 10px; margin: 22px 0 26px; }
 .ak-insta-temas div { display: flex; gap: 12px; align-items: flex-start; }
