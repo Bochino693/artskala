@@ -109,3 +109,116 @@ class LojaTests(TestCase):
         self.assertEqual(pedido.valor_total, Decimal('180.00'))
         pedido.recalcular_totais()
         self.assertEqual(pedido.valor_total, Decimal('180.00'))
+
+
+class InstagramImportTests(TestCase):
+    """Importa a exportação oficial do Instagram (ZIP com content/posts_1.json)."""
+
+    def setUp(self):
+        import io
+        import json
+        import shutil
+        import tempfile
+        import zipfile
+        from PIL import Image
+
+        self.pasta = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.pasta, ignore_errors=True)
+        self.media = self.settings(MEDIA_ROOT=self.pasta + '/media')
+        self.media.enable()
+        self.addCleanup(self.media.disable)
+
+        foto = io.BytesIO()
+        Image.new('RGB', (40, 30), (236, 50, 55)).save(foto, 'JPEG')
+        legenda = 'Fachada nova em ACM \U0001F525\n#comunicacaovisual @cliente'.encode('utf-8').decode('latin-1')
+        posts = [
+            {'title': legenda, 'creation_timestamp': 1761926400,
+             'media': [{'uri': 'media/posts/202510/foto1.jpg'}, {'uri': 'media/posts/202510/foto2.jpg'},
+                       {'uri': 'media/posts/202510/video.mp4'}]},
+            {'media': [{'uri': 'media/posts/202509/foto3.jpg', 'title': 'Toldo retrátil pronto',
+                        'creation_timestamp': 1759000000}]},
+            {'title': 'Só vídeo', 'creation_timestamp': 1758000000, 'media': [{'uri': 'media/posts/202509/v.mp4'}]},
+        ]
+        self.zip = self.pasta + '/instagram.zip'
+        with zipfile.ZipFile(self.zip, 'w') as z:
+            z.writestr('instagram-artskalaa/your_instagram_activity/content/posts_1.json', json.dumps(posts))
+            for nome in ('foto1', 'foto2', 'foto3'):
+                z.writestr(f'instagram-artskalaa/media/posts/2025{"10" if nome != "foto3" else "09"}/{nome}.jpg', foto.getvalue())
+
+    def importar(self, *args):
+        import io
+        from django.core.management import call_command
+        saida = io.StringIO()
+        call_command('importar_instagram', self.zip, *args, stdout=saida)
+        return saida.getvalue()
+
+    def test_cria_projetos_com_fotos_sem_duplicar(self):
+        from .models import Projeto
+        self.importar()
+        self.assertEqual(Projeto.objects.count(), 2)   # o post só com vídeo fica de fora
+        fachada = Projeto.objects.get(titulo='Fachada nova em ACM')
+        self.assertIn('\U0001F525', fachada.descricao)  # acento/emoji consertado
+        self.assertEqual(fachada.imagens.count(), 2)
+        self.assertTrue(fachada.ativo)
+        self.assertIn('2 já existiam', self.importar())
+        self.assertEqual(Projeto.objects.count(), 2)
+        self.assertContains(self.client.get('/projects/%s/' % fachada.pk), 'data-ampliar')
+
+    def test_simular_nao_grava_e_rascunho_fica_inativo(self):
+        from .models import Projeto
+        self.assertIn('seriam criados', self.importar('--simular'))
+        self.assertFalse(Projeto.objects.exists())
+        self.importar('--rascunho', '--limite', '1')
+        self.assertEqual(list(Projeto.objects.values_list('ativo', flat=True)), [False])
+
+    def test_como_produtos(self):
+        from django.core.management.base import CommandError
+        from .models import Produto
+        with self.assertRaises(CommandError):
+            self.importar('--tipo', 'produto')
+        self.importar('--tipo', 'produto', '--categoria', 'Toldos')
+        toldo = Produto.objects.get(nome_produto='Toldo retrátil pronto')
+        self.assertEqual(toldo.categoria.nome_categoria, 'Toldos')
+        self.assertEqual(toldo.imagens.count(), 1)
+        self.assertContains(self.client.get('/products/'), 'Sob consulta')
+
+
+class SiteNovoTests(TestCase):
+    """Estrutura nova do site: busca, menu de categorias e páginas da conta."""
+
+    def setUp(self):
+        from .models import CategoriaProdutos, Produto
+        self.categoria = CategoriaProdutos.objects.create(nome_categoria='Toldos')
+        Produto.objects.create(categoria=self.categoria, nome_produto='Toldo retrátil', preco=1890)
+        Produto.objects.create(categoria=self.categoria, nome_produto='Faixa', preco=60, descricao_produto='lona')
+
+    def test_busca_de_produtos(self):
+        resposta = self.client.get('/products/', {'q': 'retrátil'})
+        self.assertContains(resposta, 'Toldo retrátil')
+        self.assertNotContains(resposta, '>Faixa<')
+        self.assertContains(self.client.get('/products/', {'q': 'LONA'}), 'Faixa')
+
+    def test_menu_mostra_categorias_e_cores_da_marca(self):
+        resposta = self.client.get('/')
+        self.assertContains(resposta, 'site/artskala.css')
+        self.assertContains(resposta, 'Toldos <b>2</b>', html=False)
+        self.assertContains(resposta, 'data-cart-count')
+
+    def test_pedidos_do_cliente(self):
+        from .models import Pedido, ItemPedido, Produto
+        user = get_user_model().objects.create_user('cliente', password='teste123')
+        outro = get_user_model().objects.create_user('outro', password='teste123')
+        pedido = Pedido.objects.create(usuario=user, metodo_pagamento='PIX', endereco='Rua A, 1')
+        ItemPedido.objects.create(pedido=pedido, produto=Produto.objects.first(), quantidade=1, preco_unitario=10, custo_unitario=5)
+        pedido.recalcular_totais(salvar=True)
+        self.client.force_login(user)
+        self.assertContains(self.client.get('/orders/'), '#%s' % pedido.pk)
+        detalhe = self.client.get('/orders/%s/' % pedido.pk)
+        self.assertContains(detalhe, 'Pedido <span>#%s</span>' % pedido.pk, html=False)
+        self.assertContains(detalhe, 'Rua A, 1')
+        self.client.force_login(outro)
+        self.assertEqual(self.client.get('/orders/%s/' % pedido.pk).status_code, 404)
+
+    def test_paginas_publicas_novas(self):
+        for url in ['/', '/products/', '/categories/', '/categories/%s/' % self.categoria.pk, '/projects/', '/promocoes/', '/payment/']:
+            self.assertEqual(self.client.get(url).status_code, 200, url)

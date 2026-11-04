@@ -1,10 +1,41 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends 'base.html' %}
 
-</body>
-</html>
+{% block title %}Pedidos pendentes | ArtSkala{% endblock %}
+
+{% block content %}
+
+<section class="ak-pagina-topo">
+    <div class="container">
+        <nav class="ak-trilha" aria-label="Você está em">
+            <a href="{% url 'home' %}">Início</a> <span aria-hidden="true">/</span>
+            <span aria-current="page">Pedidos pendentes</span>
+        </nav>
+        <span class="ak-selo"><i class="bi bi-shield-lock" aria-hidden="true"></i> Equipe</span>
+        <h1>Pedidos <span>pendentes</span></h1>
+        <p>{{ pedidos|length }} pedido{{ pedidos|length|pluralize }} aguardando atendimento. Para mudar o status, use a <a href="{{ gestao_url }}">gestão</a>.</p>
+    </div>
+</section>
+
+<section class="ak-secao ak-secao--compacta">
+    <div class="container" style="max-width: 980px">
+        {% if pedidos %}
+            <div class="ak-lista-pedidos">
+                {% for pedido in pedidos %}
+                    <div class="ak-pedido">
+                        <span class="ak-pedido-num">#{{ pedido.pk }}</span>
+                        <span>
+                            <strong>{{ pedido.usuario.get_full_name|default:pedido.usuario.username }}</strong>
+                            <small>{{ pedido.criacao|date:"d/m/Y H:i" }} · {% for item in pedido.itens.all %}{{ item.quantidade }}× {{ item.produto.nome_produto }}{% if not forloop.last %}, {% endif %}{% endfor %}</small>
+                        </span>
+                        <span class="ak-status ak-status--{{ pedido.status }}">{{ pedido.get_metodo_pagamento_display }}</span>
+                        <span class="ak-pedido-total preco-brl" data-preco="{{ pedido.valor_total|stringformat:'s' }}">R$ {{ pedido.valor_total|floatformat:2 }}</span>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="ak-vazio"><i class="bi bi-check2-all" aria-hidden="true"></i><h3>Nada pendente</h3><p>Todos os pedidos foram atendidos.</p></div>
+        {% endif %}
+    </div>
+</section>
+
+{% endblock %}

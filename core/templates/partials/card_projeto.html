@@ -1,0 +1,15 @@
+{% comment %}Cartão de projeto: {% include "partials/card_projeto.html" with projeto=projeto %}{% endcomment %}
+{% with foto=projeto.imagens.all.0 %}
+<a class="ak-card-projeto" href="{% url 'project_detail' projeto.id %}" data-revelar>
+    {% if foto and foto.imagem %}
+        <img src="{{ foto.imagem.url }}" alt="{{ projeto.titulo }}" loading="lazy" decoding="async" width="640" height="512">
+    {% else %}
+        <div class="ak-sem-foto"><i class="bi bi-images" aria-hidden="true"></i>Projeto ArtSkala</div>
+    {% endif %}
+    <div class="ak-card-projeto-info">
+        <small>{{ projeto.cliente|default:"Projeto realizado" }}</small>
+        <h3>{{ projeto.titulo }}</h3>
+        {% if projeto.data_execucao %}<span>{{ projeto.data_execucao|date:"F \d\e Y" }}</span>{% endif %}
+    </div>
+</a>
+{% endwith %}

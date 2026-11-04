@@ -8,8 +8,8 @@
 
 <style>
     :root {
-        --yellow: #f6c400;
-        --yellow-dark: #d9aa00;
+        --yellow: #d81f27;
+        --yellow-dark: #a3131a;
         --dark: #111111;
         --soft: #f6f7f9;
         --muted: #6c757d;
@@ -27,9 +27,9 @@
                 rgba(255, 255, 255, 0.92) 45%,
                 rgba(255, 255, 255, 0.70) 100%
             ),
-            radial-gradient(circle at 85% 20%, rgba(246, 196, 0, 0.28), transparent 30%),
+            radial-gradient(circle at 85% 20%, rgba(236, 50, 55, 0.28), transparent 30%),
             radial-gradient(circle at 15% 90%, rgba(17, 17, 17, 0.05), transparent 26%),
-            url("{% static 'img/home-bg.jpg' %}");
+            var(--ak-fundo-marca);
         background-size: cover;
         background-position: center;
         background-repeat: no-repeat;
@@ -146,8 +146,8 @@
     .product-category {
         display: inline-flex;
         align-self: flex-start;
-        background: #fff4bf;
-        color: #806500;
+        background: #fff1f1;
+        color: #a3131a;
         font-size: 0.76rem;
         font-weight: 900;
         border-radius: 999px;
@@ -215,8 +215,8 @@
     }
 
     .stock-off {
-        background: #fff3cd;
-        color: #7a5d00;
+        background: #fff1f1;
+        color: #a3131a;
     }
 
     .detail-description {
@@ -281,8 +281,8 @@
 
     .section-tag {
         display: inline-block;
-        background: #fff4bf;
-        color: #806500;
+        background: #fff1f1;
+        color: #a3131a;
         border-radius: 999px;
         padding: 8px 15px;
         font-size: 0.78rem;
@@ -396,7 +396,7 @@
 
     .cta-box {
         background:
-            radial-gradient(circle at 20% 20%, rgba(246, 196, 0, 0.42), transparent 30%),
+            radial-gradient(circle at 20% 20%, rgba(236, 50, 55, 0.42), transparent 30%),
             #ffffff;
         border: 1px solid var(--border);
         border-radius: 40px;

@@ -1,0 +1,29 @@
+{% comment %}Cartão de produto: {% include "partials/card_produto.html" with produto=produto %}{% endcomment %}
+{% with foto=produto.imagens.all.0 atual=produto.preco_atual %}
+<article class="ak-card-produto" data-revelar>
+    <div class="ak-card-foto">
+        {% if foto and foto.imagem %}
+            <img src="{{ foto.imagem.url }}" alt="{{ produto.nome_produto }}" loading="lazy" decoding="async" width="600" height="450">
+        {% else %}
+            <div class="ak-sem-foto"><i class="bi bi-image" aria-hidden="true"></i>Foto em breve</div>
+        {% endif %}
+        <span class="ak-card-etiqueta">{{ produto.categoria.nome_categoria }}</span>
+        {% if atual < produto.preco %}<span class="ak-card-oferta">Oferta</span>{% endif %}
+    </div>
+    <div class="ak-card-corpo">
+        <h3><a href="{% url 'product_detail' produto.id %}">{{ produto.nome_produto }}</a></h3>
+        <p>{{ produto.descricao_produto|default:"Produzido sob medida pela ArtSkala."|truncatechars:90 }}</p>
+        <div class="ak-card-rodape">
+            {% if atual > 0 %}
+                <div class="ak-preco">
+                    {% if atual < produto.preco %}<del class="preco-brl" data-preco="{{ produto.preco|stringformat:'s' }}">R$ {{ produto.preco|floatformat:2 }}</del>{% endif %}
+                    <strong class="preco-brl" data-preco="{{ atual|stringformat:'s' }}">R$ {{ atual|floatformat:2 }}</strong>
+                </div>
+            {% else %}
+                <div class="ak-preco ak-preco--consulta"><strong>Sob consulta</strong></div>
+            {% endif %}
+            <span class="ak-card-ver" aria-hidden="true"><i class="bi bi-arrow-right"></i></span>
+        </div>
+    </div>
+</article>
+{% endwith %}

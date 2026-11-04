@@ -183,12 +183,17 @@ def _dados_grafico_mensal_orcamentos(orcamentos):
 
 class HomeView(View):
     def get(self, request):
+        produtos = list(_produtos_ativos().order_by("-criacao")[:8])
         ctx = {
-            "produtos": _produtos_ativos().order_by("-criacao")[:8],
+            "produtos": produtos,
+            # vitrine do topo: os mais novos que têm foto
+            "vitrine": [p for p in produtos if p.imagens.all()][:5],
             "projetos": _projetos_ativos().order_by("-criacao")[:6],
             "categorias": CategoriaProdutos.objects.filter(ativo=True).annotate(
                 total_produtos=Count("produtos", filter=Q(produtos__ativo=True))
             ),
+            "total_produtos": Produto.objects.filter(ativo=True).count(),
+            "total_projetos": Projeto.objects.filter(ativo=True).count(),
         }
         return render(request, "home.html", ctx)
 
@@ -206,10 +211,21 @@ class ProductsView(View):
             except (TypeError, ValueError):
                 categoria_ativa = None
 
+        busca = request.GET.get("q", "").strip()[:80]
+        if busca:
+            produtos = produtos.filter(
+                Q(nome_produto__icontains=busca)
+                | Q(descricao_produto__icontains=busca)
+                | Q(categoria__nome_categoria__icontains=busca)
+            )
+
         ctx = {
             "produtos": produtos,
-            "categorias": CategoriaProdutos.objects.filter(ativo=True).order_by("nome_categoria"),
+            "categorias": CategoriaProdutos.objects.filter(ativo=True)
+            .annotate(total_produtos=Count("produtos", filter=Q(produtos__ativo=True)))
+            .order_by("nome_categoria"),
             "categoria_ativa": categoria_ativa,
+            "busca": busca,
         }
         return render(request, "products.html", ctx)
 

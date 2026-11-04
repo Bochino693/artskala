@@ -1,0 +1,51 @@
+ARTSKALA — SITE V3 (vermelho e branco, estrutura da Lazer & Sport)
+
+O QUE MUDOU
+- Cores da marca: o vermelho do símbolo (#ec3237) e branco. O amarelo antigo
+  saiu de todas as telas; o fundo de ondas vermelhas (images/back-art.png) virou
+  a assinatura do topo das páginas e do rodapé.
+- Estrutura igual à do site da Lazer & Sport:
+  * cabeçalho fixo com painel "Produtos" (categorias com contagem), busca,
+    conta, carrinho com contador e botão "Orçamento" no WhatsApp;
+  * no celular: menu lateral com atalhos (WhatsApp, Instagram, carrinho,
+    pedidos/entrar) e barra de baixo (Início, Produtos, Orçamento, Carrinho, Menu);
+  * home: topo com vitrine dos produtos mais novos, categorias, destaques,
+    "Como trabalhamos" em faixa vermelha, portfólio, Instagram, mapa e chamada;
+  * páginas do catálogo com trilha (Início / Produtos / ...), selo, título e
+    números; cartões iguais em todas as telas; "Sob consulta" quando o preço é 0.
+- Busca de produtos: /products/?q=toldo (nome, descrição ou categoria).
+- Páginas que estavam em branco ou quebradas foram feitas:
+  Meus pedidos, detalhe do pedido (antes dava erro depois de finalizar),
+  pedidos pendentes, pagamento, finalizar pedido, projeto e promoções.
+- Arquivos novos: core/static/site/artskala.css, artskala.js e home.css;
+  core/templates/partials/ (cartões e faixa de orçamento).
+
+FOTOS DO INSTAGRAM (@artskalaa)
+O site não puxa fotos direto do Instagram (o Instagram bloqueia isso). O jeito
+certo e gratuito é a exportação oficial da própria conta:
+
+1. No celular, no Instagram da @artskalaa: Configurações > Central de Contas >
+   Suas informações e permissões > Baixar suas informações >
+   Baixar ou transferir informações > @artskalaa > Algumas das suas informações >
+   marque "Conteúdo" > Baixar no dispositivo > Formato: JSON >
+   Qualidade da mídia: Alta > Criar arquivos.
+2. O Instagram manda um e-mail com o link do ZIP (pode levar algumas horas).
+3. No computador, com o ambiente do projeto ativo (e as variáveis do banco e do
+   Cloudinary de produção, para as fotos irem direto para o site):
+
+     python manage.py importar_instagram C:\caminho\instagram-artskalaa.zip --simular
+     python manage.py importar_instagram C:\caminho\instagram-artskalaa.zip
+
+   Cada publicação com foto vira um PROJETO (portfólio), com todas as fotos do
+   carrossel; a primeira linha da legenda vira o título. Rodar de novo não
+   duplica. Vídeos (Reels) ficam de fora.
+
+   Opções úteis:
+     --rascunho                cria desativado para revisar na gestão antes
+     --desde 2026-01-01        só publicações a partir da data
+     --limite 20               no máximo 20 publicações
+     --tipo produto --categoria "Fachadas"   cria produtos em vez de projetos
+
+VERIFICAÇÃO
+python manage.py test core  -> 17 testes (inclui o importador e as páginas novas).
+Conferido no navegador em 1440 px e 390 px (celular).
