@@ -363,3 +363,28 @@ class FotosNitidasTests(TestCase):
         self.assertEqual(resposta.status_code, 301)
         self.assertIn('images/favicon.ico', resposta['Location'])
         self.assertContains(self.client.get('/'), 'apple-touch-icon')
+
+
+class PaginaProdutoTests(TestCase):
+    def setUp(self):
+        from .models import CategoriaProdutos, Produto
+        self.produto = Produto.objects.create(categoria=CategoriaProdutos.objects.create(nome_categoria='Toldos'),
+                                              nome_produto='Toldo retrátil', preco=1890, estoque=3)
+
+    def test_ficha_e_carrinho_sem_recarregar(self):
+        from .models import ItemCarrinho
+        resposta = self.client.get('/products/%s/' % self.produto.pk)
+        self.assertContains(resposta, 'class="ak-form-carrinho"')
+        self.assertContains(resposta, 'Toldo%20retr%C3%A1til')      # WhatsApp já com o nome do produto
+        user = get_user_model().objects.create_user('cliente', password='teste123')
+        self.client.force_login(user)
+        r = self.client.post('/carrinho/adicionar/%s/' % self.produto.pk, {'quantidade': 2}, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(r.json()['total_itens'], 2)
+        self.assertEqual(ItemCarrinho.objects.get().quantidade, 2)
+
+    def test_sem_estoque_vira_orcamento(self):
+        self.produto.estoque = 0
+        self.produto.save()
+        resposta = self.client.get('/products/%s/' % self.produto.pk)
+        self.assertNotContains(resposta, 'class="ak-form-carrinho"')
+        self.assertContains(resposta, 'Pedir orçamento deste produto')

@@ -72,3 +72,23 @@ O erro 500 ao abrir um projeto vinha do banco de produção sem a migração
 migrações pendentes quando sobe na Vercel, com trava para duas instâncias não
 migrarem ao mesmo tempo. Para desligar: MIGRAR_AO_INICIAR=false.
 Erros 500 passam a aparecer com o motivo em Vercel > Deployments > Logs.
+
+INSTAGRAM AUTOMÁTICO (posts novos entram sozinhos no site)
+O bloco "Acompanhe no Instagram" da home mostra os 6 posts mais recentes do
+@artskalaa: cada foto leva direto para o post e, ao passar o mouse, mostra a
+legenda, as curtidas e os comentários. Para ligar (uma vez só):
+1. A conta @artskalaa precisa ser profissional (Empresa ou Criador de
+   conteúdo): Instagram > Configurações > Tipo de conta e ferramentas.
+2. Em developers.facebook.com: Meus apps > Criar app > caso de uso
+   "Gerenciar mensagens e conteúdo no Instagram" > "Configuração da API com
+   login do Instagram" > adicione a conta @artskalaa > "Gerar token".
+3. Na Vercel (Settings > Environment Variables, Production):
+     INSTAGRAM_TOKEN = o token gerado
+     CRON_SECRET     = uma senha longa qualquer (protege a sincronização)
+   e faça Redeploy.
+Pronto: todo dia às 08:17 (Brasília) o site busca os posts novos (vercel.json).
+Para buscar na hora: /system/ > Posts do Instagram > ação "Buscar posts novos
+no Instagram agora", ou "python manage.py sincronizar_instagram".
+O token vale 60 dias e é renovado sozinho; o resultado da última busca fica em
+/system/ > Configuração do Instagram. Para esconder um post, desmarque "ativo".
+Enquanto não houver posts sincronizados, o bloco mostra as fotos dos projetos.

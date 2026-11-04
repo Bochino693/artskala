@@ -1,991 +1,232 @@
 {% extends 'base.html' %}
+{% load static artskala %}
 
-{% load static %}
+{% block title %}{{ produto.nome_produto }} | ArtSkala{% endblock %}
+{% block descricao %}{{ produto.descricao_produto|default:"Produzido sob medida pela ArtSkala Comunicação Visual."|truncatechars:150 }}{% endblock %}
 
-{% block title %}ArtSkala | {{ produto.nome_produto }}{% endblock %}
+{% block extra_head %}<link href="{% static 'site/produto.css' %}?v=20261105" rel="stylesheet">{% endblock %}
 
 {% block content %}
+{% with atual=produto.preco_atual fotos=imagens %}
 
-<style>
-    :root {
-        --yellow: #d81f27;
-        --yellow-dark: #a3131a;
-        --dark: #111111;
-        --soft: #f6f7f9;
-        --muted: #6c757d;
-        --border: #eeeeee;
-        --white: #ffffff;
-    }
-
-    .detail-hero {
-        position: relative;
-        overflow: hidden;
-        background:
-            linear-gradient(
-                90deg,
-                rgba(255, 255, 255, 0.98) 0%,
-                rgba(255, 255, 255, 0.92) 45%,
-                rgba(255, 255, 255, 0.70) 100%
-            ),
-            radial-gradient(circle at 85% 20%, rgba(236, 50, 55, 0.28), transparent 30%),
-            radial-gradient(circle at 15% 90%, rgba(17, 17, 17, 0.05), transparent 26%),
-            var(--ak-fundo-marca);
-        background-size: cover;
-        background-position: center;
-        background-repeat: no-repeat;
-        border-bottom: 1px solid var(--border);
-        padding-top: 34px;
-        padding-bottom: 68px;
-    }
-
-    .detail-hero::before {
-        content: "";
-        position: absolute;
-        inset: 0;
-        background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.60) 100%);
-        pointer-events: none;
-    }
-
-    .detail-hero .container {
-        position: relative;
-        z-index: 1;
-    }
-
-    .breadcrumb-bar {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 8px;
-        font-size: 0.86rem;
-        font-weight: 700;
-        color: var(--muted);
-        margin-bottom: 30px;
-    }
-
-    .breadcrumb-bar a {
-        color: var(--muted);
-        text-decoration: none;
-    }
-
-    .breadcrumb-bar a:hover {
-        color: var(--dark);
-    }
-
-    .breadcrumb-bar .current {
-        color: var(--dark);
-    }
-
-    .gallery-main {
-        width: 100%;
-        height: 460px;
-        border-radius: 34px;
-        overflow: hidden;
-        background: #ffffff;
-        box-shadow: 0 25px 60px rgba(17, 17, 17, 0.10);
-        margin-bottom: 16px;
-    }
-
-    .gallery-main img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        display: block;
-    }
-
-    .gallery-main .product-no-image {
-        width: 100%;
-        height: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-        color: var(--muted);
-        font-weight: 900;
-        font-size: 1.1rem;
-    }
-
-    .gallery-thumbs {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12px;
-    }
-
-    .gallery-thumb {
-        width: 84px;
-        height: 84px;
-        border-radius: 18px;
-        overflow: hidden;
-        border: 2px solid transparent;
-        cursor: pointer;
-        transition: 0.2s ease;
-        background: var(--soft);
-    }
-
-    .gallery-thumb img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        display: block;
-    }
-
-    .gallery-thumb:hover,
-    .gallery-thumb.active {
-        border-color: var(--yellow);
-    }
-
-    .detail-panel {
-        background: rgba(255, 255, 255, 0.92);
-        backdrop-filter: blur(18px);
-        border: 1px solid rgba(255,255,255,0.85);
-        border-radius: 34px;
-        padding: 36px;
-        box-shadow: 0 25px 60px rgba(17, 17, 17, 0.10);
-        height: 100%;
-    }
-
-    .product-category {
-        display: inline-flex;
-        align-self: flex-start;
-        background: #fff1f1;
-        color: #a3131a;
-        font-size: 0.76rem;
-        font-weight: 900;
-        border-radius: 999px;
-        padding: 8px 13px;
-        margin-bottom: 18px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .detail-title {
-        font-size: clamp(1.9rem, 3vw, 2.5rem);
-        line-height: 1.1;
-        letter-spacing: -1.5px;
-        color: var(--dark);
-        font-weight: 900;
-        margin-bottom: 14px;
-    }
-
-    .rating-row {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin-bottom: 22px;
-    }
-
-    .rating-stars {
-        color: var(--yellow-dark);
-        font-size: 1.05rem;
-        letter-spacing: 2px;
-    }
-
-    .rating-value {
-        font-weight: 800;
-        color: var(--dark);
-        font-size: 0.92rem;
-    }
-
-    .detail-price-row {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        margin-bottom: 22px;
-    }
-
-    .detail-price {
-        font-size: 2.1rem;
-        font-weight: 900;
-        color: var(--dark);
-        margin: 0;
-    }
-
-    .stock-badge {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 999px;
-        padding: 8px 14px;
-        font-size: 0.78rem;
-        font-weight: 900;
-    }
-
-    .stock-ok {
-        background: #e7f8ef;
-        color: #157347;
-    }
-
-    .stock-off {
-        background: #fff1f1;
-        color: #a3131a;
-    }
-
-    .detail-description {
-        color: var(--muted);
-        line-height: 1.8;
-        margin-bottom: 28px;
-    }
-
-    .detail-actions,
-    .product-actions {
-        display: grid;
-        gap: 12px;
-    }
-
-    .add-cart-form {
-        margin: 0;
-    }
-
-    .btn-modern {
-        border-radius: 999px;
-        padding: 14px 22px;
-        font-weight: 800;
-    }
-
-    .detail-info-list {
-        margin-top: 26px;
-        display: grid;
-        gap: 10px;
-    }
-
-    .detail-info-item {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 12px 14px;
-        background: var(--soft);
-        border-radius: 16px;
-        font-weight: 700;
-        color: #222222;
-        font-size: 0.92rem;
-    }
-
-    .detail-info-item span {
-        width: 30px;
-        height: 30px;
-        background: var(--yellow);
-        color: #111111;
-        border-radius: 10px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 0.78rem;
-        font-weight: 900;
-        flex-shrink: 0;
-    }
-
-    .related-section {
-        padding-top: 68px;
-        padding-bottom: 68px;
-        background: #ffffff;
-    }
-
-    .section-tag {
-        display: inline-block;
-        background: #fff1f1;
-        color: #a3131a;
-        border-radius: 999px;
-        padding: 8px 15px;
-        font-size: 0.78rem;
-        font-weight: 900;
-        text-transform: uppercase;
-        letter-spacing: 0.7px;
-        margin-bottom: 14px;
-    }
-
-    .section-title {
-        letter-spacing: -1.5px;
-        font-weight: 900;
-        color: var(--dark);
-    }
-
-    .product-card {
-        border: 0;
-        border-radius: 30px;
-        overflow: hidden;
-        background: #ffffff;
-        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.05);
-        transition: 0.28s ease;
-        height: 100%;
-    }
-
-    .product-card:hover {
-        transform: translateY(-8px);
-        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.09);
-    }
-
-    .product-image {
-        width: 100%;
-        height: 255px;
-        object-fit: cover;
-        display: block;
-    }
-
-    .product-no-image {
-        width: 100%;
-        height: 255px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-        color: var(--muted);
-        font-weight: 900;
-        font-size: 1rem;
-    }
-
-    .product-card-body {
-        padding: 26px;
-        display: flex;
-        flex-direction: column;
-        height: calc(100% - 255px);
-    }
-
-    .product-name {
-        font-size: 1.18rem;
-        font-weight: 900;
-        line-height: 1.35;
-        color: var(--dark);
-        margin-bottom: 10px;
-    }
-
-    .product-description {
-        color: var(--muted);
-        line-height: 1.65;
-        margin-bottom: 18px;
-        flex-grow: 1;
-    }
-
-    .product-meta {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        margin-bottom: 18px;
-    }
-
-    .product-price {
-        font-size: 1.25rem;
-        font-weight: 900;
-        color: var(--dark);
-        margin: 0;
-    }
-
-    .empty-state {
-        background: var(--soft);
-        border: 1px dashed #cfcfcf;
-        border-radius: 34px;
-        padding: 70px 30px;
-        text-align: center;
-    }
-
-    .empty-state h3 {
-        font-weight: 900;
-        color: var(--dark);
-        margin-bottom: 14px;
-    }
-
-    .empty-state p {
-        color: var(--muted);
-        max-width: 680px;
-        margin: 0 auto 24px auto;
-        line-height: 1.7;
-    }
-
-    .cta-products {
-        padding-top: 10px;
-    }
-
-    .cta-box {
-        background:
-            radial-gradient(circle at 20% 20%, rgba(236, 50, 55, 0.42), transparent 30%),
-            #ffffff;
-        border: 1px solid var(--border);
-        border-radius: 40px;
-        padding: 60px 28px;
-        text-align: center;
-        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.04);
-    }
-
-    .cta-box h2 {
-        font-weight: 900;
-        letter-spacing: -1.4px;
-        color: var(--dark);
-        margin-bottom: 14px;
-    }
-
-    .cta-box p {
-        color: var(--muted);
-        max-width: 760px;
-        margin: 0 auto 28px auto;
-        line-height: 1.75;
-    }
-
-    .cart-global-alert {
-        position: fixed;
-        right: 22px;
-        bottom: 22px;
-        z-index: 9999;
-        background: #111111;
-        color: #ffffff;
-        border-radius: 999px;
-        padding: 14px 20px;
-        font-weight: 900;
-        box-shadow: 0 18px 45px rgba(0,0,0,.22);
-        opacity: 0;
-        transform: translateY(14px);
-        transition: 0.22s ease;
-    }
-
-    .cart-global-alert.show {
-        opacity: 1;
-        transform: translateY(0);
-    }
-
-    .cart-global-alert.error {
-        background: #842029;
-    }
-
-    @media (max-width: 991px) {
-        .gallery-main {
-            height: 360px;
-        }
-
-        .detail-panel {
-            padding: 28px;
-        }
-    }
-
-    @media (max-width: 575px) {
-        .gallery-main {
-            height: 300px;
-            border-radius: 26px;
-        }
-
-        .detail-panel {
-            padding: 24px;
-        }
-
-        .detail-price {
-            font-size: 1.7rem;
-        }
-
-        .cta-box {
-            padding: 42px 22px;
-        }
-
-        .cart-global-alert {
-            left: 14px;
-            right: 14px;
-            bottom: 18px;
-            text-align: center;
-            border-radius: 22px;
-        }
-    }
-</style>
-
-<section class="detail-hero">
-
+<section class="ak-produto">
     <div class="container">
+        <nav class="ak-trilha" aria-label="Você está em">
+            <a href="{% url 'home' %}">Início</a> <span aria-hidden="true">/</span>
+            <a href="{% url 'products' %}">Produtos</a> <span aria-hidden="true">/</span>
+            {% if produto.categoria %}<a href="{% url 'category_detail' produto.categoria.id %}">{{ produto.categoria.nome_categoria }}</a> <span aria-hidden="true">/</span>{% endif %}
+            <span aria-current="page">{{ produto.nome_produto }}</span>
+        </nav>
 
-        <div class="breadcrumb-bar">
-            <a href="{% url 'home' %}">Início</a>
-            <span>/</span>
-            <a href="{% url 'products' %}">Produtos</a>
-            {% if produto.categoria %}
-                <span>/</span>
-                <a href="{% url 'products' %}?categoria={{ produto.categoria.id }}">{{ produto.categoria.nome_categoria }}</a>
-            {% endif %}
-            <span>/</span>
-            <span class="current">{{ produto.nome_produto }}</span>
-        </div>
-
-        <div class="row g-4">
-
-            <div class="col-lg-6">
-
-                {% with primeira_imagem=imagens.first %}
-                    <div class="gallery-main" id="galleryMain">
-                        {% if primeira_imagem and primeira_imagem.imagem %}
-                            <img src="{{ primeira_imagem.imagem.url }}" alt="{{ produto.nome_produto }}" id="galleryMainImg">
-                        {% else %}
-                            <div class="product-no-image">
-                                Sem imagem
-                            </div>
-                        {% endif %}
-                    </div>
+        <div class="ak-produto-grade">
+            {# ---------------------------------------------- fotos #}
+            <div class="ak-produto-fotos">
+                {% with principal=fotos.0 %}
+                    {% if principal and principal.imagem %}
+                        <button type="button" class="ak-produto-principal" data-ampliar="{{ principal.imagem.url|tamanho:'2000' }}" aria-label="Ampliar foto de {{ produto.nome_produto }}">
+                            <img id="ak-foto-principal" src="{{ principal.imagem.url|tamanho:'1200x900' }}" alt="{{ produto.nome_produto }}" width="1200" height="900" fetchpriority="high">
+                            <span class="ak-produto-lupa" aria-hidden="true"><i class="bi bi-arrows-fullscreen"></i></span>
+                        </button>
+                    {% else %}
+                        <div class="ak-produto-principal ak-sem-foto"><i class="bi bi-image" aria-hidden="true"></i>Foto em breve</div>
+                    {% endif %}
                 {% endwith %}
-
-                {% if imagens|length > 1 %}
-                    <div class="gallery-thumbs">
-                        {% for imagem in imagens %}
+                {% if fotos|length > 1 %}
+                    <div class="ak-produto-minis" role="group" aria-label="Fotos do produto">
+                        {% for imagem in fotos %}
                             {% if imagem.imagem %}
-                                <div class="gallery-thumb {% if forloop.first %}active{% endif %}" onclick="trocarImagem(this, '{{ imagem.imagem.url }}')">
-                                    <img src="{{ imagem.imagem.url }}" alt="{{ produto.nome_produto }}">
-                                </div>
+                                <button type="button" class="ak-produto-mini {% if forloop.first %}ativo{% endif %}"
+                                        data-foto="{{ imagem.imagem.url|tamanho:'1200x900' }}" data-grande="{{ imagem.imagem.url|tamanho:'2000' }}"
+                                        aria-label="Ver foto {{ forloop.counter }}" aria-pressed="{% if forloop.first %}true{% else %}false{% endif %}">
+                                    <img src="{{ imagem.imagem.url|tamanho:'160x120' }}" alt="" loading="lazy" width="80" height="60">
+                                </button>
                             {% endif %}
                         {% endfor %}
                     </div>
                 {% endif %}
-
             </div>
 
-            <div class="col-lg-6">
-
-                <div class="detail-panel">
-
-                    {% if produto.categoria %}
-                        <span class="product-category">
-                            {{ produto.categoria.nome_categoria }}
-                        </span>
-                    {% endif %}
-
-                    <h1 class="detail-title">
-                        {{ produto.nome_produto }}
-                    </h1>
-
-                    {% if produto.avaliacao %}
-                        <div class="rating-row">
-                            <span class="rating-stars">★★★★★</span>
-                            <span class="rating-value">{{ produto.avaliacao }} / 5</span>
-                        </div>
-                    {% endif %}
-
-                    <div class="detail-price-row">
-                        <p class="detail-price">
-                            <span class="preco-brl" data-preco="{{ produto.preco_atual }}">
-                                {{ produto.preco_atual }}
-                            </span>
-                        </p>
-
-                        {% if produto.estoque > 0 %}
-                            <span class="stock-badge stock-ok">
-                                Disponível
-                            </span>
-                        {% else %}
-                            <span class="stock-badge stock-off">
-                                Sob consulta
-                            </span>
-                        {% endif %}
-                    </div>
-
-                    <p class="detail-description">
-                        {{ produto.descricao_produto|default:"Sem descrição disponível para este produto." }}
-                    </p>
-
-                    <div class="detail-actions">
-
-                        {% if produto.estoque > 0 %}
-                            <form
-                                method="post"
-                                action="{% url 'cart_add' produto.id %}"
-                                class="add-cart-form"
-                            >
-                                {% csrf_token %}
-
-                                <input type="hidden" name="quantidade" value="1">
-
-                                <button type="submit" class="btn btn-warning btn-modern w-100">
-                                    <i class="bi bi-cart-plus"></i>
-                                    Adicionar ao carrinho
-                                </button>
-                            </form>
-                        {% else %}
-                            <a href="{% url 'home' %}#orcamento" class="btn btn-warning btn-modern">
-                                Solicitar orçamento
-                            </a>
-                        {% endif %}
-
-                        <a href="{% url 'products' %}" class="btn btn-outline-dark btn-modern">
-                            Voltar ao catálogo
-                        </a>
-
-                    </div>
-
-                    <div class="detail-info-list">
-                        <div class="detail-info-item">
-                            <span>01</span>
-                            Acabamento profissional garantido
-                        </div>
-                        <div class="detail-info-item">
-                            <span>02</span>
-                            Orçamento sob medida para seu projeto
-                        </div>
-                        <div class="detail-info-item">
-                            <span>03</span>
-                            Produção e entrega personalizadas
-                        </div>
-                    </div>
-
+            {# ---------------------------------------------- ficha #}
+            <div class="ak-produto-ficha">
+                <div class="d-flex flex-wrap gap-2 align-items-center">
+                    {% if produto.categoria %}<a class="ak-selo text-decoration-none" href="{% url 'category_detail' produto.categoria.id %}"><i class="bi {% include 'partials/icone_categoria.html' with nome=produto.categoria.nome_categoria %}" aria-hidden="true"></i> {{ produto.categoria.nome_categoria }}</a>{% endif %}
+                    {% if atual < produto.preco %}<span class="ak-selo ak-selo--cheio">Oferta</span>{% endif %}
                 </div>
 
+                <h1>{{ produto.nome_produto }}</h1>
+
+                {% if produto.avaliacao %}
+                    <div class="ak-produto-nota" aria-label="Avaliação {{ produto.avaliacao|floatformat:1 }} de 5">
+                        <span aria-hidden="true">{% for i in "12345" %}<i class="bi bi-star-fill"></i>{% endfor %}</span>
+                        <strong>{{ produto.avaliacao|floatformat:1 }}</strong> / 5
+                    </div>
+                {% endif %}
+
+                <div class="ak-produto-preco">
+                    {% if atual > 0 %}
+                        {% if atual < produto.preco %}<del class="preco-brl" data-preco="{{ produto.preco|stringformat:'s' }}">R$ {{ produto.preco|floatformat:2 }}</del>{% endif %}
+                        <strong class="preco-brl" data-preco="{{ atual|stringformat:'s' }}">R$ {{ atual|floatformat:2 }}</strong>
+                    {% else %}
+                        <strong>Sob consulta</strong>
+                    {% endif %}
+                    {% if produto.estoque > 0 %}
+                        <span class="ak-disponivel"><i class="bi bi-check-circle-fill" aria-hidden="true"></i> Disponível</span>
+                    {% else %}
+                        <span class="ak-disponivel ak-disponivel--nao"><i class="bi bi-clock" aria-hidden="true"></i> Produção sob encomenda</span>
+                    {% endif %}
+                </div>
+
+                <p class="ak-produto-descricao">{{ produto.descricao_produto|default:"Produzido sob medida pela ArtSkala, com acabamento profissional."|linebreaksbr }}</p>
+
+                {% with msg="Olá! Vim pelo site da ArtSkala e quero um orçamento de: "|add:produto.nome_produto %}
+                <div class="ak-produto-acoes">
+                    {% if produto.estoque > 0 and atual > 0 %}
+                        <form method="post" action="{% url 'cart_add' produto.id %}" class="ak-form-carrinho" data-carrinho>
+                            {% csrf_token %}
+                            <div class="ak-quantidade" role="group" aria-label="Quantidade">
+                                <button type="button" data-menos aria-label="Diminuir"><i class="bi bi-dash" aria-hidden="true"></i></button>
+                                <input type="number" name="quantidade" value="1" min="1" max="{{ produto.estoque }}" inputmode="numeric" aria-label="Quantidade">
+                                <button type="button" data-mais aria-label="Aumentar"><i class="bi bi-plus" aria-hidden="true"></i></button>
+                            </div>
+                            <button type="submit" class="btn btn-danger flex-grow-1"><i class="bi bi-bag-plus me-1" aria-hidden="true"></i> Adicionar ao carrinho</button>
+                        </form>
+                        <a class="btn ak-btn-whats-contorno" href="https://wa.me/5511960827853?text={{ msg|urlencode }}" target="_blank" rel="noopener"><i class="bi bi-whatsapp me-1" aria-hidden="true"></i> Tirar dúvida no WhatsApp</a>
+                    {% else %}
+                        <a class="btn btn-danger" href="https://wa.me/5511960827853?text={{ msg|urlencode }}" target="_blank" rel="noopener"><i class="bi bi-whatsapp me-1" aria-hidden="true"></i> Pedir orçamento deste produto</a>
+                    {% endif %}
+                </div>
+                {% endwith %}
+
+                <ul class="ak-produto-garantias">
+                    <li><i class="bi bi-rulers" aria-hidden="true"></i><span><strong>Sob medida</strong>Medimos e ajustamos ao seu espaço.</span></li>
+                    <li><i class="bi bi-brush" aria-hidden="true"></i><span><strong>Arte inclusa</strong>Criamos ou adaptamos o layout da sua marca.</span></li>
+                    <li><i class="bi bi-tools" aria-hidden="true"></i><span><strong>Instalação</strong>Equipe própria para instalar no local.</span></li>
+                </ul>
             </div>
-
         </div>
-
     </div>
-
 </section>
 
-<section class="related-section">
-
-    <div class="container">
-
-        <div class="mb-5">
-            <span class="section-tag">
-                Você também pode gostar
-            </span>
-
-            <h2 class="section-title mb-2">
-                Produtos relacionados
-            </h2>
-
-            <p class="text-muted mb-0">
-                Outras soluções da mesma categoria que podem te interessar.
-            </p>
-        </div>
-
-        <div class="row g-4 products-grid">
-
-            {% for relacionado in relacionados %}
-
-                <div class="col-xl-3 col-lg-4 col-md-6">
-
-                    <div class="product-card">
-
-                        {% with primeira_imagem=relacionado.imagens.first %}
-                            {% if primeira_imagem and primeira_imagem.imagem %}
-                                <img
-                                    src="{{ primeira_imagem.imagem.url }}"
-                                    alt="{{ relacionado.nome_produto }}"
-                                    class="product-image"
-                                >
-                            {% else %}
-                                <div class="product-no-image">
-                                    Sem imagem
-                                </div>
-                            {% endif %}
-                        {% endwith %}
-
-                        <div class="product-card-body">
-
-                            {% if relacionado.categoria %}
-                                <span class="product-category">
-                                    {{ relacionado.categoria.nome_categoria }}
-                                </span>
-                            {% endif %}
-
-                            <h3 class="product-name">
-                                {{ relacionado.nome_produto }}
-                            </h3>
-
-                            <p class="product-description">
-                                {{ relacionado.descricao_produto|truncatechars:110 }}
-                            </p>
-
-                            <div class="product-meta">
-
-                                <p class="product-price">
-                                    <span class="preco-brl" data-preco="{{ relacionado.preco }}">
-                                        {{ relacionado.preco }}
-                                    </span>
-                                </p>
-
-                                {% if relacionado.estoque > 0 %}
-                                    <span class="stock-badge stock-ok">
-                                        Disponível
-                                    </span>
-                                {% else %}
-                                    <span class="stock-badge stock-off">
-                                        Sob consulta
-                                    </span>
-                                {% endif %}
-
-                            </div>
-
-                            <div class="product-actions">
-
-                                {% if relacionado.estoque > 0 %}
-                                    <form
-                                        method="post"
-                                        action="{% url 'cart_add' relacionado.id %}"
-                                        class="add-cart-form"
-                                    >
-                                        {% csrf_token %}
-
-                                        <input type="hidden" name="quantidade" value="1">
-
-                                        <button type="submit" class="btn btn-warning btn-modern w-100">
-                                            <i class="bi bi-cart-plus"></i>
-                                            Adicionar ao carrinho
-                                        </button>
-                                    </form>
-                                {% else %}
-                                    <a href="{% url 'home' %}#orcamento" class="btn btn-warning btn-modern w-100">
-                                        Solicitar orçamento
-                                    </a>
-                                {% endif %}
-
-                                <a href="{% url 'product_detail' relacionado.id %}" class="btn btn-dark btn-modern w-100">
-                                    Ver Produto
-                                </a>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
+{% if relacionados %}
+    <section class="ak-secao ak-secao--gelo ak-secao--compacta">
+        <div class="container">
+            <div class="ak-cabeca-secao">
+                <div>
+                    <span class="ak-selo">Da mesma categoria</span>
+                    <h2 class="ak-titulo">Você também pode <span>gostar</span></h2>
                 </div>
-
-            {% empty %}
-
-                <div class="col-12">
-
-                    <div class="empty-state">
-
-                        <h3>
-                            Nenhum produto relacionado
-                        </h3>
-
-                        <p>
-                            Não encontramos outros produtos ativos nesta mesma categoria no momento.
-                        </p>
-
-                        <a href="{% url 'products' %}" class="btn btn-dark btn-modern">
-                            Ver todo o catálogo
-                        </a>
-
-                    </div>
-
-                </div>
-
-            {% endfor %}
-
-        </div>
-
-        <div class="cta-products mt-5">
-
-            <div class="cta-box">
-
-                <span class="section-tag">
-                    Atendimento personalizado
-                </span>
-
-                <h2>
-                    Precisa de um produto sob medida?
-                </h2>
-
-                <p>
-                    Fale com a ArtSkala e solicite um orçamento personalizado para fachadas,
-                    toldos, adesivos, banners, brindes e soluções completas de comunicação visual.
-                </p>
-
-                <div class="d-flex flex-column flex-sm-row justify-content-center gap-3">
-                    <a href="{% url 'home' %}#orcamento" class="btn btn-warning btn-modern">
-                        Solicitar orçamento
-                    </a>
-                    <a href="{% url 'projects' %}" class="btn btn-outline-dark btn-modern">
-                        Ver projetos
-                    </a>
-                </div>
-
+                {% if produto.categoria %}<a class="ak-link-seta" href="{% url 'category_detail' produto.categoria.id %}">Ver toda a categoria <i class="bi bi-arrow-right" aria-hidden="true"></i></a>{% endif %}
             </div>
-
+            <div class="ak-grade">
+                {% for relacionado in relacionados %}
+                    {% include 'partials/card_produto.html' with produto=relacionado %}
+                {% endfor %}
+            </div>
         </div>
+    </section>
+{% endif %}
 
-    </div>
+{% include 'partials/chamada.html' %}
 
-</section>
+{% endwith %}
+{% endblock %}
 
+{% block extra_js %}
 <script>
-    function trocarImagem(el, url) {
-        const imagemPrincipal = document.getElementById("galleryMainImg");
+(function () {
+    "use strict";
 
-        if (imagemPrincipal) {
-            imagemPrincipal.src = url;
-        }
-
-        document.querySelectorAll(".gallery-thumb").forEach(function (thumb) {
-            thumb.classList.remove("active");
-        });
-
-        el.classList.add("active");
-    }
-
-    function getCookie(name) {
-        let cookieValue = null;
-
-        if (document.cookie && document.cookie !== "") {
-            const cookies = document.cookie.split(";");
-
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-
-                if (cookie.substring(0, name.length + 1) === (name + "=")) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-
-        return cookieValue;
-    }
-
-    function formatarMoedaBR(valor) {
-        let numero = valor;
-
-        if (typeof numero === "string") {
-            numero = numero
-                .trim()
-                .replace("R$", "")
-                .replace(/\s/g, "");
-
-            if (numero.includes(",")) {
-                numero = numero.replace(/\./g, "").replace(",", ".");
-            }
-
-            numero = Number(numero);
-        }
-
-        if (isNaN(numero)) {
-            numero = 0;
-        }
-
-        return new Intl.NumberFormat("pt-BR", {
-            style: "currency",
-            currency: "BRL",
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        }).format(numero);
-    }
-
-    function formatarTodosPrecos() {
-        document.querySelectorAll(".preco-brl").forEach(function (el) {
-            const valor = el.dataset.preco || el.textContent || "0";
-            el.textContent = formatarMoedaBR(valor);
-        });
-    }
-
-    function atualizarBadgeCarrinho(totalItens) {
-        document.querySelectorAll("[data-cart-count]").forEach(function (badge) {
-            badge.textContent = totalItens;
-
-            if (Number(totalItens) > 0) {
-                badge.classList.remove("d-none");
-            } else {
-                badge.classList.add("d-none");
-            }
-        });
-    }
-
-    function mostrarAvisoCarrinho(texto, erro) {
-        const antigo = document.querySelector(".cart-global-alert");
-
-        if (antigo) {
-            antigo.remove();
-        }
-
-        const aviso = document.createElement("div");
-        aviso.className = "cart-global-alert";
-        aviso.textContent = texto;
-
-        if (erro) {
-            aviso.classList.add("error");
-        }
-
-        document.body.appendChild(aviso);
-
-        setTimeout(function () {
-            aviso.classList.add("show");
-        }, 50);
-
-        setTimeout(function () {
-            aviso.classList.remove("show");
-
-            setTimeout(function () {
-                aviso.remove();
-            }, 250);
-        }, 2300);
-    }
-
-    document.addEventListener("DOMContentLoaded", function () {
-        formatarTodosPrecos();
-
-        document.addEventListener("submit", function (event) {
-            const form = event.target.closest(".add-cart-form");
-
-            if (!form) {
-                return;
-            }
-
-            event.preventDefault();
-
-            const botao = form.querySelector("button");
-            const textoOriginal = botao ? botao.innerHTML : "";
-
-            if (botao) {
-                botao.disabled = true;
-                botao.innerHTML = '<i class="bi bi-hourglass-split"></i> Adicionando...';
-            }
-
-            fetch(form.action, {
-                method: "POST",
-                headers: {
-                    "X-CSRFToken": getCookie("csrftoken"),
-                    "X-Requested-With": "XMLHttpRequest"
-                },
-                body: new FormData(form)
-            })
-            .then(function (response) {
-                if (response.status === 401) {
-                    return response.json().then(function (data) {
-                        window.location.href = data.redirect || "{% url 'login' %}";
-                        return null;
-                    });
-                }
-
-                if (!response.ok) {
-                    throw new Error("Erro ao adicionar.");
-                }
-
-                return response.json();
-            })
-            .then(function (data) {
-                if (!data) {
-                    return;
-                }
-
-                if (data.success) {
-                    atualizarBadgeCarrinho(data.total_itens);
-                    mostrarAvisoCarrinho("Produto adicionado ao carrinho.");
-
-                    if (botao) {
-                        botao.innerHTML = '<i class="bi bi-check-circle"></i> Adicionado';
-                    }
-                } else {
-                    mostrarAvisoCarrinho("Não foi possível adicionar ao carrinho.", true);
-
-                    if (botao) {
-                        botao.innerHTML = textoOriginal;
-                    }
-                }
-            })
-            .catch(function () {
-                mostrarAvisoCarrinho("Erro ao adicionar ao carrinho.", true);
-
-                if (botao) {
-                    botao.innerHTML = textoOriginal;
-                }
-            })
-            .finally(function () {
-                setTimeout(function () {
-                    if (botao) {
-                        botao.disabled = false;
-                        botao.innerHTML = textoOriginal;
-                    }
-                }, 1000);
+    // Fotos: a miniatura troca a principal (e o que abre no zoom).
+    const principal = document.getElementById("ak-foto-principal");
+    document.querySelectorAll(".ak-produto-mini").forEach(function (mini) {
+        mini.addEventListener("click", function () {
+            if (!principal) return;
+            principal.src = mini.dataset.foto;
+            principal.closest("[data-ampliar]").dataset.ampliar = mini.dataset.grande;
+            document.querySelectorAll(".ak-produto-mini").forEach(function (m) {
+                m.classList.toggle("ativo", m === mini);
+                m.setAttribute("aria-pressed", String(m === mini));
             });
         });
     });
-</script>
 
+    // Quantidade
+    document.querySelectorAll(".ak-quantidade").forEach(function (grupo) {
+        const campo = grupo.querySelector("input");
+        const limite = Number(campo.max) || 999;
+        const ajustar = function (passo) {
+            const valor = Math.min(limite, Math.max(1, (Number(campo.value) || 1) + passo));
+            campo.value = valor;
+        };
+        grupo.querySelector("[data-menos]").addEventListener("click", function () { ajustar(-1); });
+        grupo.querySelector("[data-mais]").addEventListener("click", function () { ajustar(1); });
+    });
+
+    // Aviso que aparece no canto (mesmo estilo das mensagens do site).
+    function avisar(texto, ok) {
+        let caixa = document.querySelector(".ak-mensagens");
+        if (!caixa) {
+            caixa = document.createElement("div");
+            caixa.className = "ak-mensagens";
+            caixa.setAttribute("role", "status");
+            document.body.appendChild(caixa);
+        }
+        const aviso = document.createElement("div");
+        aviso.className = "ak-aviso" + (ok ? " ak-aviso--ok" : "");
+        aviso.innerHTML = '<i class="bi ' + (ok ? "bi-check-circle" : "bi-exclamation-circle") + '" aria-hidden="true"></i><span></span>';
+        aviso.querySelector("span").textContent = texto;
+        caixa.appendChild(aviso);
+        setTimeout(function () { aviso.style.transition = "opacity .4s ease"; aviso.style.opacity = "0"; }, 2600);
+        setTimeout(function () { aviso.remove(); }, 3100);
+    }
+
+    function cookie(nome) {
+        const achado = document.cookie.split(";").map(function (c) { return c.trim(); })
+            .find(function (c) { return c.indexOf(nome + "=") === 0; });
+        return achado ? decodeURIComponent(achado.slice(nome.length + 1)) : "";
+    }
+
+    // Adicionar ao carrinho sem sair da página.
+    document.querySelectorAll("[data-carrinho]").forEach(function (form) {
+        form.addEventListener("submit", function (evento) {
+            evento.preventDefault();
+            const botao = form.querySelector("button[type=submit]");
+            const original = botao.innerHTML;
+            botao.disabled = true;
+            botao.innerHTML = '<i class="bi bi-hourglass-split me-1" aria-hidden="true"></i> Adicionando...';
+            fetch(form.action, {
+                method: "POST",
+                headers: { "X-CSRFToken": cookie("csrftoken"), "X-Requested-With": "XMLHttpRequest" },
+                body: new FormData(form)
+            })
+                .then(function (resposta) {
+                    return resposta.json().catch(function () { return {}; }).then(function (dados) {
+                        if (resposta.status === 401) {
+                            window.location.href = (dados.redirect || "{% url 'login' %}") + "?next=" + encodeURIComponent(window.location.pathname);
+                            return null;
+                        }
+                        if (!resposta.ok || !dados.success) throw new Error(dados.message || "Não foi possível adicionar.");
+                        return dados;
+                    });
+                })
+                .then(function (dados) {
+                    if (!dados) return;
+                    document.querySelectorAll("[data-cart-count]").forEach(function (selo) {
+                        selo.textContent = dados.total_itens;
+                        selo.classList.toggle("d-none", Number(dados.total_itens) <= 0);
+                    });
+                    botao.innerHTML = '<i class="bi bi-check-circle me-1" aria-hidden="true"></i> Adicionado';
+                    avisar("Produto adicionado ao carrinho.", true);
+                })
+                .catch(function (erro) {
+                    botao.innerHTML = original;
+                    avisar(erro.message || "Erro ao adicionar ao carrinho.", false);
+                })
+                .finally(function () {
+                    setTimeout(function () { botao.disabled = false; botao.innerHTML = original; }, 1400);
+                });
+        });
+    });
+})();
+</script>
 {% endblock %}

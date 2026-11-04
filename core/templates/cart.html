@@ -265,15 +265,15 @@
     }
 </style>
 
-<section class="cart-hero">
+<section class="ak-pagina-topo">
     <div class="container">
-        <h1 class="page-title">
-            Seu Carrinho
-        </h1>
-
-        <p class="page-subtitle">
-            Confira os produtos antes de finalizar seu pedido.
-        </p>
+        <nav class="ak-trilha" aria-label="Você está em">
+            <a href="{% url 'home' %}">Início</a> <span aria-hidden="true">/</span>
+            <span aria-current="page">Carrinho</span>
+        </nav>
+        <span class="ak-selo"><i class="bi bi-bag" aria-hidden="true"></i> Seu pedido</span>
+        <h1>Seu <span>carrinho</span></h1>
+        <p>Confira os produtos e as quantidades antes de finalizar. Dúvidas? Fale com a gente pelo WhatsApp.</p>
     </div>
 </section>
 
