@@ -10,6 +10,7 @@ Ambientes:
 
 from pathlib import Path
 import os
+import secrets
 
 import dj_database_url
 
@@ -44,6 +45,15 @@ def add_unique(items: list[str], value: str) -> None:
 IS_VERCEL = os.environ.get("VERCEL") == "1"
 IS_PRODUCTION = IS_VERCEL
 
+# No BUILD a Vercel só importa este arquivo para descobrir o app Django
+# (WSGI, arquivos estáticos). Ali as variáveis secretas podem faltar -- num
+# deploy de Preview, por exemplo -- e qualquer exceção derruba o build com
+# DJANGO_SETTINGS_FAILED. As travas abaixo valem para o site no ar; no build
+# entram valores provisórios que nunca atendem visitante nenhum.
+# (A Vercel define CI=1 somente durante o build.)
+IS_BUILD = IS_VERCEL and os.environ.get("CI", "").strip().lower() in {"1", "true"}
+EXIGIR_VARIAVEIS = IS_PRODUCTION and not IS_BUILD
+
 DEBUG = env_bool("DEBUG", default=not IS_PRODUCTION)
 
 SECRET_KEY = os.environ.get("SECRET_KEY", "").strip()
@@ -51,6 +61,8 @@ SECRET_KEY = os.environ.get("SECRET_KEY", "").strip()
 if not SECRET_KEY:
     if DEBUG:
         SECRET_KEY = "django-insecure-local-dev-key-change-me"
+    elif IS_BUILD:
+        SECRET_KEY = "somente-build-" + secrets.token_urlsafe(32)
     else:
         raise RuntimeError(
             "SECRET_KEY não configurada. "
@@ -193,7 +205,7 @@ if DATABASE_URL:
         "default": database_config,
     }
 
-elif IS_PRODUCTION:
+elif EXIGIR_VARIAVEIS:
     raise RuntimeError(
         "DATABASE_URL não configurada. "
         "Adicione a URI Transaction Pooler do Supabase na Vercel."
@@ -325,7 +337,7 @@ if USE_CLOUDINARY:
 
     MEDIA_URL = "/media/"
 
-elif IS_PRODUCTION:
+elif EXIGIR_VARIAVEIS:
     raise RuntimeError(
         "Cloudinary não configurado. Adicione "
         "CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY e "
