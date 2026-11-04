@@ -186,6 +186,11 @@ class InstagramImportTests(TestCase):
 class SiteNovoTests(TestCase):
     """Estrutura nova do site: busca, menu de categorias e páginas da conta."""
 
+    def test_email_oficial(self):
+        pagina = self.client.get('/')
+        self.assertContains(pagina, 'mailto:artskala@gmail.com')
+        self.assertNotContains(pagina, 'Atendimento@artskala.com.br')
+
     def setUp(self):
         from .models import CategoriaProdutos, Produto
         self.categoria = CategoriaProdutos.objects.create(nome_categoria='Toldos')
@@ -225,7 +230,7 @@ class SiteNovoTests(TestCase):
 
 
 class AreaInternaTests(TestCase):
-    """Gestão em interno.artskala.com.br (o endereço antigo segue aceito)."""
+    """Gestão em /interno/ no próprio site; o subdomínio é opcional (e o antigo segue aceito)."""
 
     def setUp(self):
         self.gestor = get_user_model().objects.create_superuser('equipe', 'equipe@example.com', 'senha-forte-123')
@@ -238,16 +243,35 @@ class AreaInternaTests(TestCase):
         self.assertIn('no-store', resposta['Cache-Control'])
         self.assertEqual(self.client.get('/projetos/', HTTP_HOST='interno.artskala.com.br').status_code, 200)
 
-    def test_gestao_do_site_vai_para_o_interno(self):
-        from django.test import override_settings
-        with override_settings(INTERNAL_SITE_ENABLED=True):
-            resposta = self.client.get('/gestao/projetos/')
-            self.assertEqual(resposta.status_code, 307)
-            self.assertEqual(resposta['Location'], 'https://interno.artskala.com.br/projetos/')
-            self.client.force_login(self.gestor)
-            self.assertContains(self.client.get('/'), 'https://interno.artskala.com.br/')
-        with override_settings(INTERNAL_SITE_ENABLED=False):
-            self.assertContains(self.client.get('/'), 'href="/gestao/"')
+    def test_gestao_por_rota_no_proprio_site(self):
+        # sem depender do subdomínio: /interno/ no próprio domínio
+        anonimo = self.client.get('/interno/projetos/')
+        self.assertEqual(anonimo.status_code, 302)
+        self.assertEqual(anonimo['Location'], '/interno/login/?next=/interno/projetos/')
+        self.assertContains(self.client.get('/interno/login/'), 'Acesso da equipe')
+        entrou = self.client.post('/interno/login/?next=/interno/projetos/',
+                                  {'username': 'equipe', 'password': 'senha-forte-123', 'next': '/interno/projetos/'})
+        self.assertEqual(entrou['Location'], '/interno/projetos/')
+        for rota in ('', 'produtos/', 'projetos/', 'orcamentos/', 'pedidos/', 'relatorio/', 'instagram/', 'perfil/'):
+            resposta = self.client.get('/interno/' + rota)
+            self.assertEqual(resposta.status_code, 200, rota)
+            self.assertIn('no-store', resposta['Cache-Control'])
+        painel = self.client.get('/interno/')
+        self.assertContains(painel, 'href="/interno/produtos/"')
+        self.assertContains(painel, 'action="/interno/sair/"')
+        self.assertEqual(self.client.get('/gestao/projetos/').status_code, 200)     # link antigo continua
+        self.assertContains(self.client.get('/'), 'href="/interno/"')
+        self.assertEqual(self.client.get('/interno/login/')['Location'], '/interno/')  # já logado
+        self.client.post('/interno/sair/')
+        self.assertEqual(self.client.get('/interno/').status_code, 302)
+
+    def test_login_da_equipe_recusa_cliente(self):
+        get_user_model().objects.create_user('cliente', password='senha-forte-123')
+        resposta = self.client.post('/interno/login/', {'username': 'cliente', 'password': 'senha-forte-123'})
+        self.assertContains(resposta, 'só para a equipe ArtSkala')
+        self.assertNotIn('_auth_user_id', self.client.session)
+        self.assertContains(self.client.post('/interno/login/', {'username': 'equipe', 'password': 'errada'}),
+                            'Usuário ou senha incorretos')
 
     def test_cliente_comum_nao_entra_no_interno(self):
         cliente = get_user_model().objects.create_user('cliente', password='senha-forte-123')
@@ -474,7 +498,7 @@ class VitrineInstagramTests(TestCase):
         lote1 = [i for i in ITENS if i.get('lote', 1) == 1]
         self.assertEqual(semear(Produto, CategoriaProdutos, ImagemProduto), len(lote1))
         self.assertEqual(semear(Produto, CategoriaProdutos, ImagemProduto), 0)
-        self.assertEqual(semear(Produto, CategoriaProdutos, ImagemProduto, lotes=(2,)), len(ITENS) - len(lote1))
+        self.assertEqual(semear(Produto, CategoriaProdutos, ImagemProduto, lotes=(2, 3)), len(ITENS) - len(lote1))
         novos = Produto.objects.exclude(pk=loja.pk)
         self.assertEqual(novos.count(), len(ITENS))
         self.assertFalse(novos.exclude(preco=0).exists())
@@ -489,13 +513,32 @@ class VitrineInstagramTests(TestCase):
         catalogo = self.client.get('/products/')
         self.assertContains(catalogo, 'R$ 89,00')                 # item da loja continua com preço
         self.assertContains(catalogo, 'Luminoso recortado com LED neon')
+        self.assertTrue(CategoriaProdutos.objects.filter(nome_categoria='Impressão digital').exists())
+
+    def test_todas_as_fotos_existem(self):
+        from .vitrine import FOTOS_EXTRAS, ITENS, PASTA_FOTOS, PROJETOS
+        nomes = {f for grupo in (ITENS, PROJETOS, FOTOS_EXTRAS) for item in grupo for f in item['fotos']}
+        faltando = sorted(n for n in nomes if not (PASTA_FOTOS / n).exists())
+        self.assertEqual(faltando, [])
+
+    def test_fotos_extras_entram_no_item_existente_uma_vez(self):
+        from .models import CategoriaProdutos, ImagemProduto, Produto
+        from .vitrine import FOTOS_EXTRAS, semear, semear_fotos_extras
+        self.assertEqual(semear_fotos_extras(Produto, ImagemProduto), 0)      # sem o item, não faz nada
+        semear(Produto, CategoriaProdutos, ImagemProduto)
+        total = sum(len(e['fotos']) for e in FOTOS_EXTRAS if e['lote'] == 3)
+        self.assertEqual(semear_fotos_extras(Produto, ImagemProduto), total)
+        self.assertEqual(semear_fotos_extras(Produto, ImagemProduto), 0)
+        frota = Produto.objects.get(nome_produto='Adesivação de veículos e frotas')
+        self.assertEqual(frota.imagens.count(), 6)
+        self.assertContains(self.client.get('/products/%s/' % frota.pk), 'adesivacao-kombi-rappi')
 
 
     def test_portfolio_de_projetos(self):
         from .models import ImagemProjeto, Projeto
         from .vitrine import PROJETOS, semear_projetos
-        self.assertEqual(semear_projetos(Projeto, ImagemProjeto), len(PROJETOS))
-        self.assertEqual(semear_projetos(Projeto, ImagemProjeto), 0)
+        self.assertEqual(semear_projetos(Projeto, ImagemProjeto, lotes=(2, 3)), len(PROJETOS))
+        self.assertEqual(semear_projetos(Projeto, ImagemProjeto, lotes=(2, 3)), 0)
         le_petit = Projeto.objects.get(cliente='Le Petit Macarons Boutique')
         self.assertEqual(le_petit.imagens.count(), 3)
         self.assertContains(self.client.get('/projects/%s/' % le_petit.pk), 'data-ampliar')

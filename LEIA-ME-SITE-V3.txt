@@ -47,24 +47,29 @@ certo e gratuito é a exportação oficial da própria conta:
      --tipo produto --categoria "Fachadas"   cria produtos em vez de projetos
 
 VERIFICAÇÃO
-python manage.py test core  -> 17 testes (inclui o importador e as páginas novas).
+python manage.py test core  -> 44 testes (importador, Instagram, vitrine, área interna, páginas).
 Conferido no navegador em 1440 px e 390 px (celular).
 
-ÁREA INTERNA — interno.artskala.com.br
-O sistema já responde em interno.artskala.com.br (o endereço antigo
-innterno.artskala.com continua aceito). Falta só apontar o domínio:
-1. Vercel > projeto artskala > Settings > Domains > Add > interno.artskala.com.br.
-2. No DNS do artskala.com.br (Registro.br ou onde o domínio estiver), crie o
-   registro que a Vercel mostrar: CNAME "interno" apontando para o destino
-   indicado (normalmente cname.vercel-dns.com).
-3. Quando a Vercel mostrar o domínio como "Valid", /gestao/ no site passa a
-   levar para o interno. Enquanto o DNS não propagar, coloque
-   INTERNAL_SITE_ENABLED=false nas variáveis da Vercel para seguir usando
-   /gestao/ no próprio site.
-Variáveis opcionais: INTERNAL_HOST (outro subdomínio) e SITE_URL (endereço
-do site público; padrão https://artskala.com.br).
-O acesso à gestão exige usuário superusuário; o login do interno é separado
-do login do site.
+ÁREA INTERNA — artskala.com.br/interno/ (sem subdomínio)
+A gestão agora fica numa rota do próprio site, sem depender de DNS:
+  artskala.com.br/interno/             painel
+  artskala.com.br/interno/login/       entrada da equipe (só superusuário)
+  /interno/produtos/  /interno/projetos/  /interno/orcamentos/
+  /interno/pedidos/   /interno/relatorio/ /interno/instagram/  /interno/perfil/
+- O link "Gestão" do site (para quem é da equipe) já leva para /interno/.
+- Os endereços antigos /gestao/... continuam abrindo as mesmas telas.
+- Quem não está logado vai para o login da equipe e, depois de entrar, volta
+  para a tela que tentou abrir. Cliente da loja não entra (aparece o aviso).
+- "Sair da gestão" fica no rodapé do menu (no celular, botão "Sair" no topo).
+- As telas internas não ficam em cache nem aparecem no Google.
+- O site não redireciona mais para interno.artskala.com.br. A variável
+  INTERNAL_SITE_ENABLED não é mais usada e pode ser apagada da Vercel.
+  (Se um dia quiser o subdomínio, basta apontar o DNS: ele abre as mesmas
+  telas sem o /interno/.)
+
+E-MAIL OFICIAL
+artskala@gmail.com aparece no rodapé, na home e na proposta comercial
+impressa. Para trocar sem mexer no código: variável EMAIL_CONTATO na Vercel.
 
 MIGRAÇÕES DO BANCO (erro 500 na página de projeto)
 O erro 500 ao abrir um projeto vinha do banco de produção sem a migração
@@ -79,8 +84,8 @@ O bloco "Acompanhe no Instagram" da home mostra os 6 posts mais recentes do
 legenda, as curtidas e os comentários. Enquanto não houver posts, o bloco
 mostra as fotos dos projetos (sem curtidas, que só o Instagram tem).
 
-Tudo se faz na gestão, em "Instagram" (interno.artskala.com.br/instagram/ ou
-/gestao/instagram/), sem mexer na Vercel:
+Tudo se faz na gestão, em "Instagram" (artskala.com.br/interno/instagram/),
+sem mexer na Vercel:
 1. A conta @artskalaa precisa ser profissional (Empresa ou Criador de
    conteúdo): Instagram > Configurações > Tipo de conta e ferramentas.
 2. Em developers.facebook.com: Meus apps > Criar app > caso de uso Instagram
@@ -107,3 +112,25 @@ Produtos criados assim entram sem preço e sem estoque ("Sob consulta", com
 orçamento no WhatsApp). Para vender pela loja, edite o produto em Gestão >
 Produtos e coloque preço e estoque. Para a melhor qualidade, troque depois
 pela foto original na edição do produto ou do projeto.
+
+TRABALHOS PASSANDO NA HOME
+Logo abaixo do topo, duas faixas de fotos andam sozinhas em sentidos opostos:
+em cima os projetos realizados, embaixo os produtos e serviços (sem repetir
+a mesma foto). Ao passar o mouse a faixa para; dá para arrastar com o dedo
+ou o mouse; o botão "Pausar" para tudo; clicar abre o trabalho. Quem usa o
+celular com "reduzir movimento" vê as fotos paradas, roláveis para o lado.
+Entra sozinho tudo que for cadastrado em Gestão > Projetos e Produtos.
+
+LOTE 3 DOS PRINTS (5 a 10)
+Produtos sob consulta: Letras caixa em PVC e acrílico; Fresagem CNC de ACM e
+acrílico; Placa em ACM com impressão digital; Placa redonda em acrílico e
+ACM; Placa de identificação em acrílico recortado; Letreiro neon de LED;
+Quadro decorativo impresso em alta resolução; Banner e painel em lona
+impressa; Envelopamento de veículos (nova categoria: Impressão digital).
+Fotos novas na "Adesivação de veículos e frotas" (Rappi, Choperia Dom Villy,
+Saruê Ranch, Leone Faixas, Correios) e em "Peças em acrílico e PVC".
+Projetos: Kasuko Sushi, Sun-Dome Dojo, EMS Engenharia, Kombi Rappi, Choperia
+Dom Villy, Saruê Ranch, Leone Faixas, Correios e a placa da sede ArtSkala.
+Ficaram de fora: fotos com o efeito do mouse por cima (geladeira envelopada,
+fachada, recepção), a fachada com telefones cortados e os quadros cortados
+na borda do print. Mande prints dessas sem o mouse em cima que eu incluo.

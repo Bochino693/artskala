@@ -9,13 +9,12 @@ from django.urls import reverse
 def enderecos_site(request):
     return {
         "site_url": settings.SITE_URL,
+        "email_contato": settings.EMAIL_CONTATO,
         "google_login_enabled": settings.GOOGLE_LOGIN_ENABLED,
-        # Com o subdomínio interno desligado, a gestão continua em /gestao/.
-        "gestao_url": (
-            "https://" + settings.INTERNAL_HOST + "/"
-            if settings.INTERNAL_SITE_ENABLED
-            else reverse("gestao_dashboard")
-        ),
+        # A gestão fica em /interno/ no próprio site (sem subdomínio).
+        "gestao_url": reverse("gestao_dashboard"),
+        # "Abrir o site" de dentro da gestão: no próprio domínio é a raiz.
+        "loja_url": settings.SITE_URL if getattr(request, "is_interno", False) else "/",
     }
 
 

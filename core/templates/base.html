@@ -16,7 +16,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="{% static 'site/artskala.css' %}?v=20261105" rel="stylesheet">
+    <link href="{% static 'site/artskala.css' %}?v=20261106" rel="stylesheet">
     <style>:root { --ak-fundo-marca: url("{% static 'images/back-art.png' %}"); }</style>
     {% block extra_head %}{% endblock %}
 </head>
@@ -189,7 +189,7 @@
                 <div class="ak-rodape-social">
                     <a href="https://www.instagram.com/artskalaa/" target="_blank" rel="noopener" aria-label="Instagram"><i class="bi bi-instagram" aria-hidden="true"></i></a>
                     <a href="{{ whats }}" target="_blank" rel="noopener" aria-label="WhatsApp"><i class="bi bi-whatsapp" aria-hidden="true"></i></a>
-                    <a href="mailto:Atendimento@artskala.com.br" aria-label="E-mail"><i class="bi bi-envelope" aria-hidden="true"></i></a>
+                    <a href="mailto:{{ email_contato }}" aria-label="E-mail"><i class="bi bi-envelope" aria-hidden="true"></i></a>
                 </div>
             </div>
             <div>
@@ -206,7 +206,7 @@
                 <ul>
                     <li><i class="bi bi-telephone" aria-hidden="true"></i><a href="tel:+551122353589">11 2235-3589</a></li>
                     <li><i class="bi bi-whatsapp" aria-hidden="true"></i><a href="{{ whats }}" target="_blank" rel="noopener">11 96082-7853</a></li>
-                    <li><i class="bi bi-envelope" aria-hidden="true"></i><a href="mailto:Atendimento@artskala.com.br">Atendimento@artskala.com.br</a></li>
+                    <li><i class="bi bi-envelope" aria-hidden="true"></i><a href="mailto:{{ email_contato }}">{{ email_contato }}</a></li>
                     <li><i class="bi bi-instagram" aria-hidden="true"></i><a href="https://www.instagram.com/artskalaa/" target="_blank" rel="noopener">@artskalaa</a></li>
                 </ul>
             </div>
@@ -245,7 +245,7 @@
 </dialog>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
-<script src="{% static 'site/artskala.js' %}?v=20261105"></script>
+<script src="{% static 'site/artskala.js' %}?v=20261106"></script>
 {% block extra_js %}{% endblock %}
 </body>
 {% endwith %}

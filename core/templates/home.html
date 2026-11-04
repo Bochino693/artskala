@@ -3,7 +3,7 @@
 
 {% block title %}ArtSkala | Fachadas, Toldos, Letreiros e Comunicação Visual{% endblock %}
 
-{% block extra_head %}<link href="{% static 'site/home.css' %}?v=20261105" rel="stylesheet">{% endblock %}
+{% block extra_head %}<link href="{% static 'site/home.css' %}?v=20261106" rel="stylesheet">{% endblock %}
 
 {% block content %}
 
@@ -102,6 +102,57 @@
         <div class="ak-diferencial" data-revelar><i class="bi bi-whatsapp" aria-hidden="true"></i><div><strong>Orçamento rápido</strong><span>Atendimento direto no WhatsApp</span></div></div>
     </div>
 </div>
+
+{# ====================== TRABALHOS PASSANDO ====================== #}
+{% if trabalhos %}
+<section class="ak-trampos" id="trabalhos" aria-labelledby="trampos-titulo" data-trampos>
+    <div class="container">
+        <div class="ak-cabeca-secao">
+            <div>
+                <span class="ak-selo"><span class="ak-ponto" aria-hidden="true"></span> Feito na ArtSkala</span>
+                <h2 class="ak-titulo" id="trampos-titulo">Trabalhos que já estão <span>na rua</span>.</h2>
+                <p class="ak-sub">Fachadas, placas, letreiros e adesivações que saíram do nosso galpão. Toque numa foto para ver o trabalho.</p>
+            </div>
+            <div class="ak-trampos-acoes">
+                <button type="button" class="ak-trampos-pausa" data-trampos-pausa aria-pressed="false">
+                    <i class="bi bi-pause-fill" aria-hidden="true"></i><span>Pausar</span>
+                </button>
+                <a class="ak-link-seta" href="{% url 'projects' %}">Ver portfólio <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+            </div>
+        </div>
+    </div>
+
+    {% for linha in trabalhos.linhas %}
+        <div class="ak-trampos-linha ak-trampos-linha--{{ linha.sentido }}" style="--ak-tempo: {{ linha.tempo }}s">
+            <div class="ak-trampos-trilho">
+                {% for copia in "12" %}
+                    <ul class="ak-trampos-grupo" {% if forloop.last %}aria-hidden="true"{% endif %}>
+                        {% for t in linha.itens %}
+                            <li {% if t.repetido and not forloop.parentloop.last %}aria-hidden="true"{% endif %}>
+                                <a class="ak-trampo" href="{{ t.link }}" draggable="false" {% if forloop.parentloop.last or t.repetido %}tabindex="-1"{% endif %}>
+                                    <img src="{{ t.foto|tamanho:'480x600' }}" alt="" width="240" height="300" loading="lazy" decoding="async" draggable="false">
+                                    <span class="ak-trampo-tag">{{ t.tag }}</span>
+                                    <span class="ak-trampo-info">
+                                        <strong>{{ t.titulo }}</strong>
+                                        {% if t.legenda %}
+                                            <small>{{ t.legenda }}</small>
+                                        {% elif t.preco > 0 %}
+                                            <small class="preco-brl" data-preco="{{ t.preco|stringformat:'s' }}">R$ {{ t.preco|floatformat:2 }}</small>
+                                        {% else %}
+                                            <small>Sob consulta</small>
+                                        {% endif %}
+                                    </span>
+                                    <span class="ak-trampo-ver" aria-hidden="true"><i class="bi bi-arrow-up-right"></i></span>
+                                </a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% endfor %}
+            </div>
+        </div>
+    {% endfor %}
+</section>
+{% endif %}
 
 {# ============================ CATEGORIAS ============================ #}
 <section class="ak-secao" id="categorias" aria-labelledby="categorias-titulo">
@@ -269,7 +320,7 @@
                 <div>
                     <div class="ak-local-item"><i class="bi bi-geo-alt" aria-hidden="true"></i><div><strong>Endereço</strong><span>Rua Eduardo Zumkeller, 170 — Galpão 01, São Paulo - SP</span></div></div>
                     <div class="ak-local-item"><i class="bi bi-telephone" aria-hidden="true"></i><div><strong>Telefone</strong><span><a class="text-white" href="tel:+551122353589">11 2235-3589</a> · WhatsApp <a class="text-white" href="{{ whats }}" target="_blank" rel="noopener">11 96082-7853</a></span></div></div>
-                    <div class="ak-local-item"><i class="bi bi-envelope" aria-hidden="true"></i><div><strong>E-mail</strong><span><a class="text-white" href="mailto:Atendimento@artskala.com.br">Atendimento@artskala.com.br</a></span></div></div>
+                    <div class="ak-local-item"><i class="bi bi-envelope" aria-hidden="true"></i><div><strong>E-mail</strong><span><a class="text-white" href="mailto:{{ email_contato }}">{{ email_contato }}</a></span></div></div>
                 </div>
                 <div class="d-flex flex-wrap gap-2">
                     <a class="btn ak-btn-branco" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=Rua%20Eduardo%20Zumkeller%2C%20170%20-%20Galp%C3%A3o%2001%20-%20S%C3%A3o%20Paulo%2C%20Brasil"><i class="bi bi-map me-1" aria-hidden="true"></i> Google Maps</a>
@@ -294,7 +345,7 @@
             <div class="ak-chamada-acoes">
                 <a href="{{ whats }}" target="_blank" rel="noopener" class="btn btn-danger"><i class="bi bi-whatsapp me-1" aria-hidden="true"></i> Orçamento pelo WhatsApp</a>
                 <a href="tel:+551122353589" class="btn btn-outline-dark"><i class="bi bi-telephone me-1" aria-hidden="true"></i> 11 2235-3589</a>
-                <a href="mailto:Atendimento@artskala.com.br" class="btn btn-outline-dark"><i class="bi bi-envelope me-1" aria-hidden="true"></i> Enviar e-mail</a>
+                <a href="mailto:{{ email_contato }}" class="btn btn-outline-dark"><i class="bi bi-envelope me-1" aria-hidden="true"></i> Enviar e-mail</a>
             </div>
         </div>
     </div>

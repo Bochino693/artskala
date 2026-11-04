@@ -87,7 +87,8 @@
 
     <form method="post">
         {% csrf_token %}
-        {% if form.non_field_errors %}<div class="erro">Usuário ou senha incorretos. Confira e tente de novo.</div>{% endif %}
+        {% for mensagem in messages %}<div class="erro">{{ mensagem }}</div>{% endfor %}
+        {% for erro in form.non_field_errors %}<div class="erro">{{ erro }}</div>{% endfor %}
         <label for="{{ form.username.id_for_label }}">Usuário</label>
         {{ form.username }}
         <label for="{{ form.password.id_for_label }}">Senha</label>
@@ -96,7 +97,7 @@
         <button type="submit">Entrar</button>
     </form>
 
-    <p class="rodape"><a href="{{ site_url }}">← Abrir o site</a></p>
+    <p class="rodape"><a href="{{ loja_url }}">← Abrir o site</a></p>
 </main>
 </body>
 </html>
