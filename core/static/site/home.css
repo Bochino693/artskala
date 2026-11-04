@@ -6,10 +6,65 @@
     position: relative;
     overflow: hidden;
     padding: 64px 0 56px;
+    background: var(--ak-gelo);
+    isolation: isolate;
+}
+.ak-hero > .container { position: relative; z-index: 1; }
+
+/* ------------------------------------------------ fundo com vida */
+.ak-hero-vivo { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.ak-hero-camada {
+    position: absolute; inset: -14px; width: calc(100% + 28px); height: calc(100% + 28px);
+    transform: translate3d(calc(var(--mx, 0) * -12px), calc(var(--my, 0) * -8px), 0);
+    transition: transform .9s cubic-bezier(.2, .7, .2, 1);
+    will-change: transform;
+}
+.ak-hero-veu {
+    position: absolute; inset: 0;
     background:
-        linear-gradient(100deg, #fff 0%, rgba(255, 255, 255, .96) 38%, rgba(255, 255, 255, .55) 70%, rgba(255, 255, 255, .2) 100%),
-        var(--ak-fundo-marca) right bottom / cover no-repeat,
-        var(--ak-gelo);
+        radial-gradient(ellipse 52% 62% at 18% 42%, rgba(255, 255, 255, .92), rgba(255, 255, 255, .6) 60%, rgba(255, 255, 255, 0) 100%),
+        linear-gradient(100deg, rgba(255, 255, 255, .9) 0%, rgba(255, 255, 255, .7) 30%, rgba(255, 255, 255, .22) 58%, rgba(255, 255, 255, 0) 80%);
+}
+.ak-fita { fill: none; stroke-linecap: round; mix-blend-mode: multiply; }
+.ak-fita--1 { stroke: #e8202a; stroke-width: 30; opacity: .32; }
+.ak-fita--3 { stroke: #7a0f14; stroke-width: 22; opacity: .2; }
+.ak-respira { transform-origin: 1916px 821px; animation: ak-respira 24s ease-in-out infinite alternate; }
+@keyframes ak-respira {
+    0% { transform: scale(1) translate(0, 0); }
+    50% { transform: scale(1.045) translate(-10px, -4px); }
+    100% { transform: scale(1.025) translate(-22px, 4px); }
+}
+.ak-luz { fill: none; stroke: #fff; stroke-width: 6; stroke-linecap: round; stroke-dasharray: 120 880; animation: ak-luz-corre 6.5s linear infinite; }
+.ak-luz--1b { stroke: #ffe1e3; stroke-width: 4; stroke-dasharray: 60 940; animation-duration: 6.5s; animation-delay: -3.2s; }
+.ak-luz--3 { stroke: #fff; stroke-width: 5; stroke-dasharray: 130 870; animation-duration: 8s; animation-delay: -1.5s; opacity: .85; }
+.ak-luz--4 { stroke: #ff6b70; stroke-width: 3; stroke-dasharray: 90 910; animation-duration: 10s; animation-delay: -6s; opacity: .9; }
+.ak-luz--2 { stroke: #fff; stroke-width: 5; stroke-dasharray: 110 890; animation-duration: 9s; animation-delay: -2s; opacity: .85; }
+@keyframes ak-luz-corre { from { stroke-dashoffset: 1000; } to { stroke-dashoffset: 0; } }
+.ak-reflexo { mix-blend-mode: screen; opacity: .9; }
+.ak-faisca {
+    fill: #fff; opacity: 0; transform-box: fill-box; transform-origin: center;
+    animation: ak-faisca var(--dur, 6s) ease-in-out infinite; animation-delay: var(--atraso, 0s);
+    filter: drop-shadow(0 0 6px rgba(255, 255, 255, .9));
+}
+@keyframes ak-faisca {
+    0% { opacity: 0; transform: translate(0, 0) scale(.4); }
+    25% { opacity: .95; }
+    70% { opacity: .5; }
+    100% { opacity: 0; transform: translate(-18px, -70px) scale(1.1); }
+}
+.ak-hero--fora .ak-hero-vivo *, .ak-chamada--fora::after { animation-play-state: paused !important; }
+@media (max-width: 767.98px) {
+    /* no celular a arte ocupa só o começo do topo (sem virar um borrão vermelho) */
+    .ak-hero-vivo { bottom: auto; height: 640px; }
+    .ak-hero-veu { background: linear-gradient(180deg, rgba(255, 255, 255, .94) 0%, rgba(255, 255, 255, .86) 46%, rgba(255, 255, 255, .35) 78%, rgba(255, 255, 255, 0) 100%); }
+    .ak-hero-vivo::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 120px; background: linear-gradient(180deg, rgba(247, 247, 248, 0), var(--ak-gelo)); }
+    .ak-luz--1b, .ak-luz--4 { display: none; }
+    .ak-hero-camada { transform: none; transition: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .ak-respira, .ak-luz, .ak-faisca { animation: none !important; }
+    .ak-luz, .ak-faisca, .ak-reflexo, .ak-fitas { display: none; }
+    .ak-hero-camada { transform: none; transition: none; }
 }
 
 .ak-hero-grade {
@@ -334,11 +389,17 @@
     gap: 14px;
     padding: 60px 28px;
     border-radius: 34px;
-    background:
-        var(--ak-fundo-marca) center / cover no-repeat;
+    background: var(--ak-gelo);
     text-align: center;
     isolation: isolate;
 }
+.ak-chamada::after {
+    content: ""; position: absolute; inset: -6%; z-index: -2;
+    background: var(--ak-fundo-marca) center / cover no-repeat;
+    animation: ak-respira-chamada 26s ease-in-out infinite alternate;
+}
+@keyframes ak-respira-chamada { from { transform: scale(1) translateX(0); } to { transform: scale(1.08) translateX(-2%); } }
+@media (prefers-reduced-motion: reduce) { .ak-chamada::after { animation: none; } }
 
 .ak-chamada::before { content: ""; position: absolute; inset: 0; z-index: -1; background: rgba(255, 255, 255, .86); }
 .ak-chamada .ak-titulo { max-width: 760px; margin: 0; }
@@ -351,7 +412,7 @@
 }
 
 @media (max-width: 991.98px) {
-    .ak-hero { padding: 40px 0 56px; background-position: 70% bottom; }
+    .ak-hero { padding: 40px 0 56px; }
     .ak-hero-grade, .ak-processo-grade, .ak-insta, .ak-local { grid-template-columns: 1fr; }
     .ak-hero-grade { gap: 34px; }
     .ak-insta { padding: 28px; }

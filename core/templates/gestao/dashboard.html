@@ -1,14 +1,14 @@
 {% extends "gestao/base_gestao.html" %}
 {% load static artskala %}
 {% block titulo %}Painel{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="{% static 'gestao/graficos.css' %}?v=20261106">{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'gestao/graficos.css' %}?v=20261107">{% endblock %}
 
 {% block conteudo %}
 <div class="cabecalho-pagina">
     <div>
         <div class="eyebrow">Visão geral · {% now "F \d\e Y" %}</div>
         <h1 class="titulo-pagina">Olá, {{ request.user.first_name|default:request.user.username }}.</h1>
-        <div class="subtitulo-pagina">Receita, custo e lucro de orçamentos aprovados e pedidos da loja, o funil comercial e o que precisa de você hoje.</div>
+
     </div>
     <div class="acoes-linha">
         <div class="segmentos" role="group" aria-label="Período">
@@ -16,7 +16,6 @@
             <a href="?meses=12" class="{% if meses == 12 %}ativo{% endif %}">12 meses</a>
             <a href="?meses=24" class="{% if meses == 24 %}ativo{% endif %}">24 meses</a>
         </div>
-        <a class="btn btn-primario" href="{% url 'orcamentos' %}?novo=1">+ Novo orçamento</a>
     </div>
 </div>
 
@@ -44,12 +43,17 @@
     <div class="cartao-stat">
         <div class="rotulo">Ticket médio</div>
         <div class="valor">{{ kpis.ticket|brl }}</div>
-        <div class="apoio">Receita no período: {{ kpis.receita_periodo|brl }}</div>
+        <div class="apoio">Por venda no período</div>
     </div>
     <div class="cartao-stat {% if kpis.despachar %}vermelho{% else %}verde{% endif %}">
         <div class="rotulo">Pedidos a despachar</div>
         <div class="valor">{{ kpis.despachar }}</div>
         <div class="apoio"><a href="{% url 'gestao_pedidos' %}?status=PAGO">Pagos aguardando envio →</a></div>
+    </div>
+    <div class="cartao-stat verde">
+        <div class="rotulo">Receita em {{ meses }} meses</div>
+        <div class="valor">{{ kpis.receita_periodo|brl }}</div>
+        <div class="apoio">Lucro {{ kpis.lucro_periodo|brl }}</div>
     </div>
     <div class="cartao-stat azul">
         <div class="rotulo">Clientes</div>
@@ -58,78 +62,88 @@
     </div>
 </div>
 
-<div class="painel graf-painel" style="margin-bottom:20px">
-    <div class="graf-cabeca">
-        <div><h2 class="painel-titulo">Receita, custo e lucro</h2><p class="graf-sub">Orçamentos aprovados + pedidos pagos da loja, por mês.</p></div>
-        <div class="graf-legenda"><span><i style="background:#c9233c"></i>Receita</span><span><i style="background:#c7cfdc"></i>Custo</span><span><i class="linha" style="background:#167c5b"></i>Lucro</span></div>
+<div class="painel-grade">
+    <div class="painel graf-painel area-mensal">
+        <div class="graf-cabeca">
+            <div><h2 class="painel-titulo">Receita, custo e lucro</h2><p class="graf-sub">Orçamentos aprovados + pedidos pagos, por mês · {{ kpis.receita_periodo|brl }} no período</p></div>
+            <div class="graf-legenda"><span><i style="background:#c9233c"></i>Receita</span><span><i style="background:#c7cfdc"></i>Custo</span><span><i class="linha" style="background:#167c5b"></i>Lucro</span></div>
+        </div>
+        <div class="graf" data-grafico="mensal" style="--altura:292px"></div>
     </div>
-    <div class="graf" data-grafico="mensal" style="--altura:300px"></div>
-    <div class="graf-totais"><div><small>Receita no período</small><strong>{{ kpis.receita_periodo|brl }}</strong></div><div><small>Lucro no período</small><strong>{{ kpis.lucro_periodo|brl }}</strong></div></div>
-</div>
 
-<div class="graf-grade">
-    <div class="painel graf-painel">
-        <div class="graf-cabeca"><div><h2 class="painel-titulo">Funil de orçamentos</h2><p class="graf-sub">Quantos estão em cada etapa e quanto valem.</p></div><a class="ak-link" href="{% url 'orcamentos' %}">Abrir →</a></div>
-        <div class="graf" data-grafico="funil"></div>
-    </div>
-    <div class="painel graf-painel">
-        <div class="graf-cabeca"><div><h2 class="painel-titulo">Receita por categoria</h2><p class="graf-sub">De onde vem o dinheiro no período.</p></div></div>
-        <div class="graf" data-grafico="categorias"></div>
-    </div>
-    <div class="painel graf-painel">
-        <div class="graf-cabeca"><div><h2 class="painel-titulo">Campeões de venda</h2><p class="graf-sub">Produtos, projetos e serviços que mais faturaram.</p></div></div>
-        <div class="graf" data-grafico="top"></div>
-    </div>
-    <div class="painel graf-painel">
-        <div class="graf-cabeca"><div><h2 class="painel-titulo">Orçamentos e clientes</h2><p class="graf-sub">Criados × aprovados por mês e novos clientes cadastrados no site.</p></div>
-            <div class="graf-legenda"><span><i style="background:#286caf"></i>Criados</span><span><i style="background:#167c5b"></i>Aprovados</span><span><i class="linha" style="background:#b7791f"></i>Clientes</span></div></div>
-        <div class="graf" data-grafico="comercial" style="--altura:230px"></div>
-    </div>
-</div>
-
-<div class="duas-colunas" style="margin-top:20px">
-    <div class="painel">
-        <h2 class="painel-titulo">Precisa de você</h2>
+    <div class="painel area-fila">
+        <div class="graf-cabeca"><h2 class="painel-titulo">Precisa de você</h2>{% if fila %}<span class="contador">{{ fila|length }}</span>{% endif %}</div>
         {% if fila %}
             <ul class="fila">
                 {% for f in fila %}
                     <li class="fila-item {{ f.nivel }}">
                         <span class="fila-ponto" aria-hidden="true"></span>
-                        <div><strong>{{ f.titulo }}</strong><small>{{ f.detalhe }}</small></div>
-                        <a class="btn btn-secundario btn-mini" href="{% url f.url_nome f.pk %}">{{ f.acao }}</a>
+                        <a href="{% url f.url_nome f.pk %}"><strong>{{ f.titulo }}</strong><small>{{ f.detalhe }}</small></a>
+                        <a class="fila-acao" href="{% url f.url_nome f.pk %}">{{ f.acao }} →</a>
                     </li>
                 {% endfor %}
             </ul>
         {% else %}
-            <div class="vazio"><div class="fonte-display">Tudo em dia ✓</div>Nenhum pedido parado, entrega atrasada ou orçamento vencendo.</div>
+            <div class="vazio"><div class="fonte-display">Tudo em dia ✓</div>Nada parado ou atrasado.</div>
         {% endif %}
     </div>
 
-    <div>
-        <div class="painel" style="margin-bottom:20px">
-            <div class="graf-cabeca"><h2 class="painel-titulo">Orçamentos recentes</h2><a class="ak-link" href="{% url 'orcamentos' %}">Todos →</a></div>
-            <ul class="recentes">
-                {% for item in orcamentos_recentes %}
-                    <li><a href="{% url 'orcamento_detalhe' item.pk %}"><span><strong>{{ item.titulo }}</strong><small>{{ item.cliente_nome|default:"Sem cliente" }} · {{ item.criacao|date:"d/m" }}</small></span><span class="selo {% if item.esta_expirado %}EXPIRADO{% else %}{{ item.status }}{% endif %}">{% if item.esta_expirado %}Expirado{% else %}{{ item.get_status_display }}{% endif %}</span><b>{{ item.valor_total|brl }}</b></a></li>
-                {% empty %}
-                    <li class="recentes-vazio">Nenhum orçamento ainda.</li>
-                {% endfor %}
-            </ul>
+    <div class="painel graf-painel">
+        <div class="graf-cabeca"><div><h2 class="painel-titulo">Funil de orçamentos</h2><p class="graf-sub">Etapa · quantidade · valor</p></div><a class="ak-link" href="{% url 'orcamentos' %}">Abrir →</a></div>
+        <div class="graf" data-grafico="funil"></div>
+    </div>
+    <div class="painel graf-painel">
+        <div class="graf-cabeca"><div><h2 class="painel-titulo">Receita por categoria</h2><p class="graf-sub">De onde vem o dinheiro</p></div></div>
+        <div class="graf" data-grafico="categorias"></div>
+    </div>
+    <div class="painel graf-painel">
+        <div class="graf-cabeca"><div><h2 class="painel-titulo">Campeões de venda</h2><p class="graf-sub">O que mais faturou</p></div></div>
+        <div class="graf" data-grafico="top"></div>
+    </div>
+
+    <div class="painel graf-painel area-comercial">
+        <div class="graf-cabeca"><div><h2 class="painel-titulo">Orçamentos e clientes</h2><p class="graf-sub">Criados × aprovados e novos cadastros por mês</p></div>
+            <div class="graf-legenda"><span><i style="background:#286caf"></i>Criados</span><span><i style="background:#167c5b"></i>Aprovados</span><span><i class="linha" style="background:#b7791f"></i>Clientes</span></div></div>
+        <div class="graf" data-grafico="comercial" style="--altura:236px"></div>
+    </div>
+
+    <div class="painel area-recentes" data-abas>
+        <div class="graf-cabeca">
+            <div class="segmentos" role="tablist">
+                <button type="button" class="ativo" data-aba="orc" role="tab" aria-selected="true">Orçamentos recentes</button>
+                <button type="button" data-aba="ped" role="tab" aria-selected="false">Pedidos recentes</button>
+            </div>
+            <a class="ak-link" href="{% url 'orcamentos' %}" data-aba-link="orc">Todos →</a>
+            <a class="ak-link" href="{% url 'gestao_pedidos' %}" data-aba-link="ped" hidden>Todos →</a>
         </div>
-        <div class="painel">
-            <div class="graf-cabeca"><h2 class="painel-titulo">Pedidos recentes</h2><a class="ak-link" href="{% url 'gestao_pedidos' %}">Todos →</a></div>
-            <ul class="recentes">
-                {% for pedido in pedidos_recentes %}
-                    <li><a href="{% url 'gestao_pedido_detalhe' pedido.pk %}"><span><strong>#{{ pedido.id }} · {{ pedido.usuario.get_full_name|default:pedido.usuario.username }}</strong><small>{{ pedido.criacao|date:"d/m H:i" }}</small></span><span class="selo PEDIDO_{{ pedido.status }}">{{ pedido.get_status_display }}</span><b>{{ pedido.valor_total|brl }}</b></a></li>
-                {% empty %}
-                    <li class="recentes-vazio">Nenhum pedido ainda.</li>
-                {% endfor %}
-            </ul>
-        </div>
+        <ul class="recentes" data-aba-painel="orc">
+            {% for item in orcamentos_recentes %}
+                <li><a href="{% url 'orcamento_detalhe' item.pk %}"><span><strong>{{ item.titulo }}</strong><small>{{ item.cliente_nome|default:"Sem cliente" }} · {{ item.criacao|date:"d/m" }}</small></span><span class="selo {% if item.esta_expirado %}EXPIRADO{% else %}{{ item.status }}{% endif %}">{% if item.esta_expirado %}Expirado{% else %}{{ item.get_status_display }}{% endif %}</span><b>{{ item.valor_total|brl }}</b></a></li>
+            {% empty %}
+                <li class="recentes-vazio">Nenhum orçamento ainda.</li>
+            {% endfor %}
+        </ul>
+        <ul class="recentes" data-aba-painel="ped" hidden>
+            {% for pedido in pedidos_recentes %}
+                <li><a href="{% url 'gestao_pedido_detalhe' pedido.pk %}"><span><strong>#{{ pedido.id }} · {{ pedido.usuario.get_full_name|default:pedido.usuario.username }}</strong><small>{{ pedido.criacao|date:"d/m H:i" }}</small></span><span class="selo PEDIDO_{{ pedido.status }}">{{ pedido.get_status_display }}</span><b>{{ pedido.valor_total|brl }}</b></a></li>
+            {% empty %}
+                <li class="recentes-vazio">Nenhum pedido ainda.</li>
+            {% endfor %}
+        </ul>
     </div>
 </div>
 
 {{ graficos|json_script:"dados-graficos" }}
 {% endblock %}
 
-{% block extra_js %}<script src="{% static 'gestao/graficos.js' %}?v=20261106"></script>{% endblock %}
+{% block extra_js %}<script src="{% static 'gestao/graficos.js' %}?v=20261107"></script>
+<script>
+document.querySelectorAll("[data-abas]").forEach(caixa => {
+    caixa.querySelectorAll("[data-aba]").forEach(botao => botao.addEventListener("click", () => {
+        const aba = botao.dataset.aba;
+        caixa.querySelectorAll("[data-aba]").forEach(b => { b.classList.toggle("ativo", b === botao); b.setAttribute("aria-selected", String(b === botao)); });
+        caixa.querySelectorAll("[data-aba-painel]").forEach(p => { p.hidden = p.dataset.abaPainel !== aba; });
+        caixa.querySelectorAll("[data-aba-link]").forEach(l => { l.hidden = l.dataset.abaLink !== aba; });
+    }));
+});
+</script>{% endblock %}

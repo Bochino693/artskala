@@ -969,8 +969,8 @@ class GestaoDashboardView(SuperuserGestaoRequiredMixin, View):
             "graficos": painel["graficos"],
             "fila": painel["fila"],
             "meses": meses,
-            "orcamentos_recentes": _orcamentos_usuario(request).order_by("-criacao")[:6],
-            "pedidos_recentes": Pedido.objects.select_related("usuario").order_by("-criacao")[:6],
+            "orcamentos_recentes": _orcamentos_usuario(request).order_by("-criacao")[:5],
+            "pedidos_recentes": Pedido.objects.select_related("usuario").order_by("-criacao")[:5],
             "secao_ativa": "dashboard",
         }
         return render(request, "gestao/dashboard.html", ctx)

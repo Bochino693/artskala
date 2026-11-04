@@ -3,12 +3,64 @@
 
 {% block title %}ArtSkala | Fachadas, Toldos, Letreiros e Comunicação Visual{% endblock %}
 
-{% block extra_head %}<link href="{% static 'site/home.css' %}?v=20261106" rel="stylesheet">{% endblock %}
+{% block extra_head %}<link href="{% static 'site/home.css' %}?v=20261107" rel="stylesheet">{% endblock %}
 
 {% block content %}
 
 {# ============================== TOPO ============================== #}
 <section class="ak-hero" aria-labelledby="hero-titulo">
+    {% comment %}
+        Fundo com vida: a arte da marca respira devagar, luz corre pelas ondas
+        (como fita de LED), um reflexo desliza e faíscas sobem. Mesmo desenho e
+        mesmo enquadramento da imagem (viewBox da arte + "slice"), então a luz
+        anda em cima das ondas em qualquer tela. Para com "reduzir movimento".
+    {% endcomment %}
+    <div class="ak-hero-vivo" aria-hidden="true" data-hero-vivo>
+        <svg class="ak-hero-camada" viewBox="0 0 1916 821" preserveAspectRatio="xMaxYMax slice" focusable="false">
+            <g class="ak-respira"><image href="{% static 'images/back-art.webp' %}" width="1916" height="821" preserveAspectRatio="none"/></g>
+        </svg>
+        <div class="ak-hero-veu"></div>
+        <svg class="ak-hero-camada ak-hero-luzes" viewBox="0 0 1916 821" preserveAspectRatio="xMaxYMax slice" focusable="false">
+            <defs>
+                <filter id="ak-brilho" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+                <radialGradient id="ak-reflexo"><stop offset="0" stop-color="#fff" stop-opacity=".75"/><stop offset=".5" stop-color="#fff" stop-opacity=".18"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+                <path id="ak-onda-1" d="M880,760 C903,747 977,702 1020,684 C1063,666 1100,665 1140,650 C1180,635 1220,617 1260,596 C1300,575 1340,549 1380,524 C1420,499 1467,467 1500,444 C1533,421 1550,405 1580,388 C1610,371 1650,360 1680,342 C1710,324 1730,301 1760,282 C1790,263 1822,245 1860,226 C1898,207 1968,178 1990,168" pathLength="1000"/>
+                <path id="ak-onda-2" d="M-60,806 C-50,803 -30,797 0,788 C30,779 70,758 120,750 C170,742 240,741 300,742 C360,743 420,748 480,756 C540,764 600,778 660,788 C720,798 787,808 840,818 C893,828 957,841 980,846" pathLength="1000"/>
+                <path id="ak-onda-3" d="M1280,836 C1297,828 1343,810 1380,786 C1417,762 1460,729 1500,694 C1540,659 1580,606 1620,574 C1660,542 1700,526 1740,500 C1780,474 1818,447 1860,420 C1902,393 1968,353 1990,340" pathLength="1000"/>
+                <path id="ak-onda-4" d="M1160,650 C1200,628 1327,568 1400,520 C1473,472 1540,415 1600,360 C1660,305 1713,243 1760,190 C1807,137 1847,78 1880,40 C1913,2 1947,-27 1960,-40" pathLength="1000"/>
+            </defs>
+            <g class="ak-respira">
+                <g class="ak-fitas">
+                    <path class="ak-fita ak-fita--1" d="M880,760 C903,747 977,702 1020,684 C1063,666 1100,665 1140,650 C1180,635 1220,617 1260,596 C1300,575 1340,549 1380,524 C1420,499 1467,467 1500,444 C1533,421 1550,405 1580,388 C1610,371 1650,360 1680,342 C1710,324 1730,301 1760,282 C1790,263 1822,245 1860,226 C1898,207 1968,178 1990,168"><animate attributeName="d" dur="9s" repeatCount="indefinite" values="M880,760 C903,750 977,715 1020,697 C1063,680 1100,676 1140,657 C1180,639 1220,611 1260,586 C1300,562 1340,535 1380,512 C1420,488 1467,465 1500,447 C1533,429 1550,419 1580,402 C1610,385 1650,368 1680,346 C1710,325 1730,292 1760,270 C1790,249 1822,231 1860,215 C1898,199 1968,181 1990,174;M880,774 C903,760 977,710 1020,688 C1063,665 1100,655 1140,638 C1180,621 1220,604 1260,586 C1300,568 1340,552 1380,531 C1420,509 1467,481 1500,458 C1533,434 1550,410 1580,389 C1610,367 1650,348 1680,329 C1710,310 1730,290 1760,274 C1790,259 1822,251 1860,235 C1898,219 1968,190 1990,181;M880,760 C903,745 977,690 1020,671 C1063,651 1100,654 1140,643 C1180,632 1220,623 1260,606 C1300,588 1340,564 1380,536 C1420,509 1467,468 1500,441 C1533,414 1550,391 1580,374 C1610,357 1650,351 1680,338 C1710,324 1730,310 1760,294 C1790,277 1822,259 1860,237 C1898,215 1968,175 1990,162;M880,746 C903,735 977,694 1020,680 C1063,666 1100,674 1140,662 C1180,650 1220,630 1260,606 C1300,582 1340,547 1380,517 C1420,488 1467,452 1500,430 C1533,409 1550,400 1580,387 C1610,375 1650,371 1680,355 C1710,339 1730,313 1760,290 C1790,267 1822,239 1860,217 C1898,195 1968,166 1990,155;M880,760 C903,750 977,715 1020,697 C1063,680 1100,676 1140,657 C1180,639 1220,611 1260,586 C1300,562 1340,535 1380,512 C1420,488 1467,465 1500,447 C1533,429 1550,419 1580,402 C1610,385 1650,368 1680,346 C1710,325 1730,292 1760,270 C1790,249 1822,231 1860,215 C1898,199 1968,181 1990,174"/></path>
+                    <path class="ak-fita ak-fita--3" d="M1280,836 C1297,828 1343,810 1380,786 C1417,762 1460,729 1500,694 C1540,659 1580,606 1620,574 C1660,542 1700,526 1740,500 C1780,474 1818,447 1860,420 C1902,393 1968,353 1990,340"><animate attributeName="d" dur="11s" repeatCount="indefinite" values="M1280,836 C1297,830 1343,820 1380,798 C1417,775 1460,739 1500,700 C1540,662 1580,601 1620,566 C1660,531 1700,513 1740,489 C1780,466 1818,445 1860,423 C1902,400 1968,364 1990,352;M1280,848 C1297,838 1343,817 1380,789 C1417,762 1460,721 1500,684 C1540,646 1580,595 1620,565 C1660,536 1700,528 1740,506 C1780,483 1818,459 1860,432 C1902,404 1968,356 1990,341;M1280,836 C1297,826 1343,799 1380,774 C1417,750 1460,720 1500,688 C1540,656 1580,612 1620,582 C1660,553 1700,538 1740,511 C1780,483 1818,448 1860,417 C1902,387 1968,343 1990,328;M1280,824 C1297,817 1343,803 1380,783 C1417,763 1460,738 1500,704 C1540,671 1580,618 1620,583 C1660,548 1700,523 1740,494 C1780,465 1818,434 1860,408 C1902,382 1968,351 1990,339;M1280,836 C1297,830 1343,820 1380,798 C1417,775 1460,739 1500,700 C1540,662 1580,601 1620,566 C1660,531 1700,513 1740,489 C1780,466 1818,445 1860,423 C1902,400 1968,364 1990,352"/></path>
+                </g>
+                <g filter="url(#ak-brilho)">
+                    <use href="#ak-onda-1" class="ak-luz ak-luz--1"/>
+                    <use href="#ak-onda-1" class="ak-luz ak-luz--1b"/>
+                    <use href="#ak-onda-3" class="ak-luz ak-luz--3"/>
+                    <use href="#ak-onda-4" class="ak-luz ak-luz--4"/>
+                    <use href="#ak-onda-2" class="ak-luz ak-luz--2"/>
+                </g>
+                <ellipse class="ak-reflexo" rx="170" ry="46" fill="url(#ak-reflexo)">
+                    <animateMotion dur="11s" repeatCount="indefinite" rotate="auto" keyPoints="0;1" keyTimes="0;1" calcMode="spline" keySplines=".45 0 .55 1"><mpath href="#ak-onda-1"/></animateMotion>
+                </ellipse>
+                <g class="ak-faiscas">
+                <circle class="ak-faisca" cx="1300" cy="600" r="4" style="--atraso:-0.00s;--dur:5s"/>
+                <circle class="ak-faisca" cx="1430" cy="505" r="5" style="--atraso:-0.73s;--dur:6s"/>
+                <circle class="ak-faisca" cx="1540" cy="430" r="6" style="--atraso:-1.46s;--dur:7s"/>
+                <circle class="ak-faisca" cx="1650" cy="360" r="4" style="--atraso:-2.19s;--dur:8s"/>
+                <circle class="ak-faisca" cx="1720" cy="315" r="5" style="--atraso:-2.92s;--dur:5s"/>
+                <circle class="ak-faisca" cx="1800" cy="262" r="6" style="--atraso:-3.65s;--dur:6s"/>
+                <circle class="ak-faisca" cx="1880" cy="214" r="4" style="--atraso:-4.38s;--dur:7s"/>
+                <circle class="ak-faisca" cx="1500" cy="690" r="5" style="--atraso:-5.11s;--dur:8s"/>
+                <circle class="ak-faisca" cx="1640" cy="560" r="6" style="--atraso:-5.84s;--dur:5s"/>
+                <circle class="ak-faisca" cx="1780" cy="470" r="4" style="--atraso:-0.57s;--dur:6s"/>
+                <circle class="ak-faisca" cx="1880" cy="410" r="5" style="--atraso:-1.30s;--dur:7s"/>
+                <circle class="ak-faisca" cx="1100" cy="690" r="6" style="--atraso:-2.03s;--dur:8s"/>
+                </g>
+            </g>
+        </svg>
+    </div>
     <div class="container">
         <div class="ak-hero-grade">
             <div>
