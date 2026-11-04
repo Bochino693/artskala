@@ -12,6 +12,7 @@ def semear(apps, schema_editor):
         apps.get_model("core", "Produto"),
         apps.get_model("core", "CategoriaProdutos"),
         apps.get_model("core", "ImagemProduto"),
+        lotes=(1,),
     )
 
 

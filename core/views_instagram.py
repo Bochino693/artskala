@@ -68,6 +68,7 @@ class GestaoInstagramView(SuperuserGestaoRequiredMixin, View):
     template_name = "gestao/instagram.html"
 
     def get(self, request):
+        from .models import CategoriaProdutos
         config = configuracao()
         posts = PostInstagram.objects.order_by("-publicado_em", "-id")[:30]
         return render(request, self.template_name, {
@@ -76,6 +77,7 @@ class GestaoInstagramView(SuperuserGestaoRequiredMixin, View):
             "token_final": config.token[-4:] if config.token else "",
             "posts": posts,
             "no_site": PostInstagram.objects.filter(ativo=True).exclude(imagem="").exclude(imagem__isnull=True).count(),
+            "categorias_json": list(CategoriaProdutos.objects.filter(ativo=True).order_by("nome_categoria").values_list("nome_categoria", flat=True)),
         })
 
     def post(self, request):
@@ -113,6 +115,9 @@ class GestaoInstagramView(SuperuserGestaoRequiredMixin, View):
                 )
                 messages.success(request, "Post adicionado ao bloco do Instagram.")
 
+        elif acao == "print_item":
+            return self._item_do_print(request)
+
         elif acao == "alternar":
             post = get_object_or_404(PostInstagram, pk=request.POST.get("post"))
             post.ativo = not post.ativo
@@ -120,3 +125,49 @@ class GestaoInstagramView(SuperuserGestaoRequiredMixin, View):
             messages.success(request, "Post " + ("mostrado" if post.ativo else "escondido") + " no site.")
 
         return redirect("gestao_instagram")
+
+    def _item_do_print(self, request):
+        """Uma foto recortada do print (feito no navegador) vira produto
+        "sob consulta" ou projeto do portfólio. Responde em JSON."""
+        from django.http import JsonResponse
+        from django.utils.text import slugify
+
+        from .models import CategoriaProdutos, ImagemProduto, ImagemProjeto, Produto, Projeto
+        from .vitrine import melhorar_foto
+
+        tipo = request.POST.get("tipo", "produto")
+        nome = request.POST.get("nome", "").strip()[:150]
+        foto = request.FILES.get("foto")
+        if not nome:
+            return JsonResponse({"ok": False, "erro": "Dê um nome ao item."}, status=400)
+        if not foto or foto.size > 8 * 1024 * 1024:
+            return JsonResponse({"ok": False, "erro": "Foto ausente ou grande demais."}, status=400)
+        try:
+            arquivo = melhorar_foto(foto, nome=f"print-{slugify(nome)[:60] or 'foto'}.jpg")
+        except ValueError as erro:
+            return JsonResponse({"ok": False, "erro": str(erro)}, status=400)
+        descricao = request.POST.get("descricao", "").strip()
+
+        if tipo == "projeto":
+            if Projeto.objects.filter(titulo=nome).exists():
+                return JsonResponse({"ok": False, "erro": f'Já existe o projeto "{nome}".'}, status=409)
+            projeto = Projeto.objects.create(
+                titulo=nome, cliente=request.POST.get("cliente", "").strip()[:150],
+                descricao=descricao or "Projeto de comunicação visual criado, produzido e instalado pela ArtSkala.",
+            )
+            ImagemProjeto.objects.create(projeto=projeto, imagem=arquivo)
+            return JsonResponse({"ok": True, "tipo": "projeto", "id": projeto.pk})
+
+        if Produto.objects.filter(nome_produto=nome).exists():
+            return JsonResponse({"ok": False, "erro": f'Já existe o produto "{nome}".'}, status=409)
+        nome_categoria = (request.POST.get("categoria_nova", "").strip() or request.POST.get("categoria", "").strip())[:120]
+        if not nome_categoria:
+            return JsonResponse({"ok": False, "erro": "Escolha a categoria."}, status=400)
+        categoria = CategoriaProdutos.objects.filter(nome_categoria__iexact=nome_categoria).first() \
+            or CategoriaProdutos.objects.create(nome_categoria=nome_categoria)
+        produto = Produto.objects.create(
+            categoria=categoria, nome_produto=nome, preco=0, custo=0, estoque=0,
+            descricao_produto=(descricao or "Produzido sob medida pela ArtSkala, com acabamento profissional. Orçamento sob consulta.")[:500],
+        )
+        ImagemProduto.objects.create(produto=produto, imagem=arquivo)
+        return JsonResponse({"ok": True, "tipo": "produto", "id": produto.pk})

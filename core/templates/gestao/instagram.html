@@ -16,6 +16,17 @@
     .ig-passos { margin: 0 0 14px; padding-left: 20px; line-height: 1.6; }
     .ig-status { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; background: #fff1f1; color: #a3131a; }
     .ig-status.ok { background: #e8f7ee; color: #0f6b3c; }
+    .ig-recortes { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; margin-top: 14px; }
+    .ig-recorte { border: 1px solid rgba(0, 0, 0, .1); border-radius: 16px; background: #fff; overflow: hidden; }
+    .ig-recorte.desligado { opacity: .45; }
+    .ig-recorte img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; background: #f2f2f4; }
+    .ig-recorte-corpo { display: grid; gap: 8px; padding: 10px 12px 12px; font-size: 13px; }
+    .ig-recorte-corpo input, .ig-recorte-corpo select, .ig-recorte-corpo textarea { width: 100%; padding: 8px 10px; border: 1px solid #e2e2e6; border-radius: 10px; font: inherit; }
+    .ig-recorte-corpo label.marcar { display: flex; gap: 8px; align-items: center; font-weight: 700; }
+    .ig-recorte-corpo label.marcar input { width: auto; }
+    .ig-recorte-res { font-weight: 700; }
+    .ig-recorte-res.ok { color: #0f6b3c; }
+    .ig-recorte-res.erro { color: #a3131a; }
 </style>
 
 <div class="cabecalho-pagina">
@@ -112,6 +123,25 @@
     </div>
 </div>
 
+<div class="painel" style="margin-top:22px" id="painel-prints">
+    <h2 class="painel-titulo">3. Criar itens a partir de prints do perfil</h2>
+    <p class="subtitulo-pagina" style="margin:0 0 14px">
+        Tire print da grade de fotos do Instagram (no computador) e envie aqui: cada foto é recortada sozinha.
+        Desmarque as que tiverem o efeito do mouse por cima, balões ou cortes. Produtos entram como
+        <strong>Sob consulta</strong> (sem preço); projetos vão para o portfólio.
+    </p>
+    <div class="campo">
+        <label for="prints">Prints da grade do Instagram</label>
+        <input type="file" id="prints" accept="image/*" multiple>
+    </div>
+    <div class="ig-recortes" id="recortes"></div>
+    <div class="acoes-linha" style="margin-top:14px">
+        <button type="button" class="btn btn-primario" id="criar-recortes" hidden>Criar itens marcados</button>
+        <span id="status-recortes" class="subtitulo-pagina"></span>
+    </div>
+    {{ categorias_json|json_script:"dados-categorias" }}
+</div>
+
 <div class="painel" style="margin-top:22px">
     <h2 class="painel-titulo">Posts</h2>
     {% if posts %}
@@ -140,4 +170,170 @@
         </div>
     {% endif %}
 </div>
+
+<script>
+(function () {
+    "use strict";
+    const entrada = document.getElementById("prints");
+    const grade = document.getElementById("recortes");
+    const botao = document.getElementById("criar-recortes");
+    const status = document.getElementById("status-recortes");
+    const categorias = JSON.parse(document.getElementById("dados-categorias").textContent || "[]");
+    const csrf = document.querySelector("[name=csrfmiddlewaretoken]");
+    const escapar = function (texto) {
+        return String(texto).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; });
+    };
+    let recortes = [];
+
+    function carregar(arquivo) {
+        return new Promise(function (ok, falha) {
+            const img = new Image();
+            img.onload = function () { ok(img); };
+            img.onerror = falha;
+            img.src = URL.createObjectURL(arquivo);
+        });
+    }
+
+    // Linhas da grade do Instagram: colunas/linhas quase inteiras de branco (ou preto, no modo escuro).
+    function ehSeparador(dados, largura, fixo, de, ate, vertical, claro) {
+        let conta = 0, total = 0;
+        for (let i = de; i < ate; i += 3) {
+            const x = vertical ? fixo : i, y = vertical ? i : fixo;
+            const p = (y * largura + x) * 4;
+            const r = dados[p], g = dados[p + 1], b = dados[p + 2];
+            if (claro ? (r > 232 && g > 232 && b > 232) : (r < 22 && g < 22 && b < 22)) conta++;
+            total++;
+        }
+        return total && conta / total >= 0.85;
+    }
+
+    function trechos(marcas, minimo) {
+        const lista = [];
+        let inicio = null;
+        for (let i = 0; i <= marcas.length; i++) {
+            if (i < marcas.length && !marcas[i]) { if (inicio === null) inicio = i; }
+            else if (inicio !== null) { if (i - inicio >= minimo) lista.push([inicio, i]); inicio = null; }
+        }
+        return lista;
+    }
+
+    function fatiar(img) {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0);
+        const w = canvas.width, h = canvas.height;
+        const dados = ctx.getImageData(0, 0, w, h).data;
+        for (const claro of [true, false]) {
+            let colunas = trechos(Array.from({ length: w }, function (_, x) { return ehSeparador(dados, w, x, 0, h, true, claro); }), 90);
+            if (colunas.length < 2) continue;
+            // As fotos da grade têm a mesma largura: um pedaço com o dobro (linha branca
+            // que não apareceu no print) é dividido em partes iguais.
+            const padrao = Math.min.apply(null, colunas.map(function (c) { return c[1] - c[0]; }));
+            colunas = colunas.flatMap(function (c) {
+                const partes = Math.round((c[1] - c[0]) / padrao);
+                if (partes < 2) return [c];
+                const passo = (c[1] - c[0]) / partes;
+                return Array.from({ length: partes }, function (_, i) {
+                    return [Math.round(c[0] + i * passo + (i ? 1 : 0)), Math.round(c[0] + (i + 1) * passo - (i < partes - 1 ? 1 : 0))];
+                });
+            });
+            const x0 = colunas[0][0], x1 = colunas[colunas.length - 1][1];
+            const linhas = trechos(Array.from({ length: h }, function (_, y) { return ehSeparador(dados, w, y, x0, x1, false, claro); }), 90);
+            const pedacos = [];
+            linhas.forEach(function (l) { colunas.forEach(function (c) { pedacos.push([c[0], l[0], c[1] - c[0], l[1] - l[0]]); }); });
+            if (pedacos.length) return pedacos.map(function (r) {
+                const parte = document.createElement("canvas");
+                parte.width = r[2]; parte.height = r[3];
+                parte.getContext("2d").drawImage(canvas, r[0], r[1], r[2], r[3], 0, 0, r[2], r[3]);
+                return parte;
+            });
+        }
+        return [canvas];   // não achou a grade: usa o print inteiro
+    }
+
+    function opcoesCategoria() {
+        return categorias.map(function (c) { return '<option value="' + escapar(c) + '">' + escapar(c) + "</option>"; }).join("") +
+            '<option value="__nova">Outra categoria…</option>';
+    }
+
+    function cartao(blob, numero) {
+        const div = document.createElement("div");
+        div.className = "ig-recorte";
+        div.innerHTML =
+            '<img alt="Recorte ' + numero + '">' +
+            '<div class="ig-recorte-corpo">' +
+            '<label class="marcar"><input type="checkbox" data-usar checked> Usar esta foto</label>' +
+            '<select data-tipo><option value="produto">Produto (sob consulta)</option><option value="projeto">Projeto realizado</option></select>' +
+            '<input data-nome placeholder="Nome (ex.: Letreiro em ACM)" maxlength="150">' +
+            '<select data-categoria>' + opcoesCategoria() + '</select>' +
+            '<input data-categoria-nova placeholder="Nome da nova categoria" hidden maxlength="120">' +
+            '<input data-cliente placeholder="Cliente (opcional)" hidden maxlength="150">' +
+            '<textarea data-descricao rows="2" placeholder="Descrição (opcional)"></textarea>' +
+            '<span class="ig-recorte-res" data-res></span>' +
+            "</div>";
+        div.querySelector("img").src = URL.createObjectURL(blob);
+        const tipo = div.querySelector("[data-tipo]"), cat = div.querySelector("[data-categoria]");
+        const nova = div.querySelector("[data-categoria-nova]"), cliente = div.querySelector("[data-cliente]");
+        const atualizar = function () {
+            const projeto = tipo.value === "projeto";
+            cat.hidden = projeto;
+            nova.hidden = projeto || cat.value !== "__nova";
+            cliente.hidden = !projeto;
+        };
+        tipo.addEventListener("change", atualizar);
+        cat.addEventListener("change", atualizar);
+        div.querySelector("[data-usar]").addEventListener("change", function (e) { div.classList.toggle("desligado", !e.target.checked); });
+        atualizar();
+        return div;
+    }
+
+    entrada.addEventListener("change", async function () {
+        grade.innerHTML = ""; recortes = []; status.textContent = "Recortando…";
+        for (const arquivo of entrada.files) {
+            try {
+                const img = await carregar(arquivo);
+                for (const parte of fatiar(img)) {
+                    const blob = await new Promise(function (ok) { parte.toBlob(ok, "image/jpeg", 0.93); });
+                    const div = cartao(blob, recortes.length + 1);
+                    recortes.push({ blob: blob, div: div });
+                    grade.appendChild(div);
+                }
+            } catch (_) { /* arquivo que não abre: ignora */ }
+        }
+        status.textContent = recortes.length ? recortes.length + " foto(s) recortada(s). Dê nome às que quer usar." : "Não consegui ler esse arquivo.";
+        botao.hidden = !recortes.length;
+    });
+
+    botao.addEventListener("click", async function () {
+        const marcados = recortes.filter(function (r) { return r.div.querySelector("[data-usar]").checked && !r.feito; });
+        if (!marcados.length) { status.textContent = "Marque ao menos uma foto."; return; }
+        botao.disabled = true;
+        let feitos = 0;
+        for (let i = 0; i < marcados.length; i++) {
+            const r = marcados[i], d = r.div, res = d.querySelector("[data-res]");
+            status.textContent = "Criando " + (i + 1) + " de " + marcados.length + "…";
+            const dados = new FormData();
+            dados.append("csrfmiddlewaretoken", csrf.value);
+            dados.append("acao", "print_item");
+            dados.append("tipo", d.querySelector("[data-tipo]").value);
+            dados.append("nome", d.querySelector("[data-nome]").value);
+            const cat = d.querySelector("[data-categoria]").value;
+            dados.append("categoria", cat === "__nova" ? "" : cat);
+            dados.append("categoria_nova", cat === "__nova" ? d.querySelector("[data-categoria-nova]").value : "");
+            dados.append("cliente", d.querySelector("[data-cliente]").value);
+            dados.append("descricao", d.querySelector("[data-descricao]").value);
+            dados.append("foto", r.blob, "recorte.jpg");
+            try {
+                const resposta = await fetch(window.location.pathname, { method: "POST", body: dados, credentials: "same-origin" });
+                const json = await resposta.json().catch(function () { return {}; });
+                if (json.ok) { r.feito = true; feitos++; res.className = "ig-recorte-res ok"; res.textContent = "✓ Criado"; }
+                else { res.className = "ig-recorte-res erro"; res.textContent = json.erro || "Não deu certo."; }
+            } catch (_) { res.className = "ig-recorte-res erro"; res.textContent = "Sem conexão."; }
+        }
+        status.textContent = feitos + " item(ns) criado(s). Confira no site em Produtos e Projetos.";
+        botao.disabled = false;
+    });
+})();
+</script>
 {% endblock %}
