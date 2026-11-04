@@ -862,7 +862,7 @@ body.ak-sem-rolagem { overflow: hidden; }
     padding: 4px 10px;
     border-radius: 999px;
     background: var(--ak-vermelho);
-    font-size: .7rem;
+    font-size: .75rem;
     font-weight: 900;
     letter-spacing: .04em;
     text-transform: uppercase;
@@ -1053,6 +1053,7 @@ body.ak-sem-rolagem { overflow: hidden; }
 .ak-pedido small { color: var(--ak-texto-suave); font-weight: 600; }
 .ak-pedido-total { font-weight: 900; font-size: 1.1rem; }
 
+.ak-tabela-rolagem { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .ak-linhas { width: 100%; border-collapse: collapse; }
 .ak-linhas th { padding: 12px; color: var(--ak-texto-suave); font-size: .75rem; font-weight: 900; text-transform: uppercase; letter-spacing: .05em; border-bottom: 1px solid var(--ak-borda); }
 .ak-linhas td { padding: 14px 12px; border-bottom: 1px solid var(--ak-borda); vertical-align: middle; }
@@ -1095,6 +1096,9 @@ body.ak-sem-rolagem { overflow: hidden; }
 }
 
 .ak-galeria button:first-child { grid-column: span 2; grid-row: span 2; aspect-ratio: auto; }
+/* uma ou duas fotos: sem a foto gigante de destaque */
+.ak-galeria button:only-child { grid-column: 1 / -1; grid-row: auto; aspect-ratio: 16 / 10; }
+.ak-galeria button:first-child:nth-last-child(2) { grid-column: auto; grid-row: auto; aspect-ratio: 4 / 3; }
 .ak-galeria img { width: 100%; height: 100%; object-fit: cover; transition: transform .4s ease; }
 .ak-galeria button:hover img { transform: scale(1.04); }
 
@@ -1217,6 +1221,12 @@ body.ak-sem-rolagem { overflow: hidden; }
     .ak-rodape-grade { grid-template-columns: 1fr 1fr; }
 }
 
+/* tablet em pé: barra de baixo centralizada, sem esticar na tela toda */
+@media (min-width: 576px) and (max-width: 991.98px) {
+    .ak-barra-app { left: 50%; right: auto; width: min(520px, calc(100% - 32px)); transform: translateX(-50%); }
+    .ak-cabeca-secao .ak-link-seta { margin-left: auto; }
+}
+
 @media (max-width: 575.98px) {
     .ak-topo-linha { gap: 8px; }
     .ak-topo-icone { width: 40px; height: 40px; }
@@ -1234,6 +1244,8 @@ body.ak-sem-rolagem { overflow: hidden; }
     .ak-pedido { grid-template-columns: auto 1fr; }
     .ak-pedido-total, .ak-pedido .ak-status { grid-column: 2; justify-self: start; }
     .ak-galeria { grid-template-columns: 1fr 1fr; }
+    .ak-so-largo { display: none; }
+    .ak-linhas th, .ak-linhas td { padding: 12px 8px; }
     .ak-galeria button:first-child { grid-column: span 2; grid-row: auto; aspect-ratio: 4 / 3; }
     .ak-cabeca-secao { margin-bottom: 26px; }
 }

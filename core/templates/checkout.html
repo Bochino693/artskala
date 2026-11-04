@@ -24,7 +24,7 @@
                 <div class="ak-caixa">
                     <div class="ak-caixa-corpo">
                         <h2 class="h5 fw-black mb-3">Itens do pedido</h2>
-                        <table class="ak-linhas">
+                        <div class="ak-tabela-rolagem"><table class="ak-linhas">
                             <thead><tr><th>Produto</th><th class="text-center">Qtd.</th><th class="text-end">Subtotal</th></tr></thead>
                             <tbody>
                             {% for item in itens %}
@@ -42,7 +42,7 @@
                                 </tr>
                             {% endfor %}
                             </tbody>
-                        </table>
+                        </table></div>
                     </div>
                 </div>
 

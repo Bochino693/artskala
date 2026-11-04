@@ -49,3 +49,26 @@ certo e gratuito é a exportação oficial da própria conta:
 VERIFICAÇÃO
 python manage.py test core  -> 17 testes (inclui o importador e as páginas novas).
 Conferido no navegador em 1440 px e 390 px (celular).
+
+ÁREA INTERNA — interno.artskala.com.br
+O sistema já responde em interno.artskala.com.br (o endereço antigo
+innterno.artskala.com continua aceito). Falta só apontar o domínio:
+1. Vercel > projeto artskala > Settings > Domains > Add > interno.artskala.com.br.
+2. No DNS do artskala.com.br (Registro.br ou onde o domínio estiver), crie o
+   registro que a Vercel mostrar: CNAME "interno" apontando para o destino
+   indicado (normalmente cname.vercel-dns.com).
+3. Quando a Vercel mostrar o domínio como "Valid", /gestao/ no site passa a
+   levar para o interno. Enquanto o DNS não propagar, coloque
+   INTERNAL_SITE_ENABLED=false nas variáveis da Vercel para seguir usando
+   /gestao/ no próprio site.
+Variáveis opcionais: INTERNAL_HOST (outro subdomínio) e SITE_URL (endereço
+do site público; padrão https://artskala.com.br).
+O acesso à gestão exige usuário superusuário; o login do interno é separado
+do login do site.
+
+MIGRAÇÕES DO BANCO (erro 500 na página de projeto)
+O erro 500 ao abrir um projeto vinha do banco de produção sem a migração
+0004 (tabelas de vídeos, promoções e cupons). Agora o site aplica sozinho as
+migrações pendentes quando sobe na Vercel, com trava para duas instâncias não
+migrarem ao mesmo tempo. Para desligar: MIGRAR_AO_INICIAR=false.
+Erros 500 passam a aparecer com o motivo em Vercel > Deployments > Logs.

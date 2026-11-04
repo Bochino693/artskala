@@ -7,7 +7,7 @@ class InternalDomainMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        request.is_interno = request.get_host().split(':', 1)[0].lower() == settings.INTERNAL_HOST
+        request.is_interno = request.get_host().split(':', 1)[0].lower() in settings.INTERNAL_HOSTS
         if request.is_interno:
             request.urlconf = 'core.urls_interno'
         if not request.is_interno and settings.INTERNAL_SITE_ENABLED and request.path.startswith('/gestao/'):
