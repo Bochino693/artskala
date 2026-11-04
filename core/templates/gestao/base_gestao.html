@@ -890,6 +890,10 @@
                 Σ Relatórios
             </a>
 
+            <a href="{% url 'gestao_instagram' %}" class="nav-item {% if secao_ativa == 'instagram' %}ativo{% endif %}">
+                ◎ Instagram
+            </a>
+
             <a href="{% url 'gestao_perfil' %}" class="nav-item {% if secao_ativa == 'gestao_perfil' %}ativo{% endif %}">
                 ● Perfil
             </a>
@@ -937,6 +941,11 @@
             <a href="{% url 'gestao_relatorio' %}" class="nav-item {% if secao_ativa == 'relatorio' %}ativo{% endif %}">
                 <span class="nav-icone">Σ</span>
                 Relatórios
+            </a>
+
+            <a href="{% url 'gestao_instagram' %}" class="nav-item {% if secao_ativa == 'instagram' %}ativo{% endif %}">
+                <span class="nav-icone">◎</span>
+                Instagram
             </a>
 
             <div class="nav-secao">Conta</div>

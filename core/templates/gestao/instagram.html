@@ -1,0 +1,143 @@
+{% extends "gestao/base_gestao.html" %}
+{% load artskala %}
+{% block titulo %}Instagram{% endblock %}
+
+{% block conteudo %}
+<style>
+    .ig-grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 14px; }
+    .ig-post { position: relative; overflow: hidden; border: 1px solid rgba(0, 0, 0, .08); border-radius: 16px; background: #fff; }
+    .ig-post img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; }
+    .ig-post.oculto img { filter: grayscale(1); opacity: .45; }
+    .ig-post-corpo { padding: 10px 12px 12px; font-size: 13px; }
+    .ig-post-corpo p { margin: 0 0 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .ig-post-numeros { color: #6b6b72; font-size: 12px; margin-bottom: 8px; }
+    .ig-post form { margin: 0; }
+    .ig-post .btn { width: 100%; padding: 7px 10px; min-height: 0; font-size: 12px; }
+    .ig-passos { margin: 0 0 14px; padding-left: 20px; line-height: 1.6; }
+    .ig-status { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; background: #fff1f1; color: #a3131a; }
+    .ig-status.ok { background: #e8f7ee; color: #0f6b3c; }
+</style>
+
+<div class="cabecalho-pagina">
+    <div>
+        <div class="eyebrow">Site · home</div>
+        <h1 class="titulo-pagina">Instagram</h1>
+        <div class="subtitulo-pagina">
+            Os 6 posts mais recentes aparecem no bloco "Acompanhe no Instagram" da home, com link direto,
+            legenda e curtidas ao passar o mouse.
+        </div>
+    </div>
+</div>
+
+<div class="grade-cartoes">
+    <div class="cartao-stat">
+        <div class="rotulo">Conexão</div>
+        <div class="valor" style="font-size:20px">{% if config.token %}<span class="ig-status ok">Conectado · …{{ token_final }}</span>{% else %}<span class="ig-status">Não conectado</span>{% endif %}</div>
+    </div>
+    <div class="cartao-stat verde">
+        <div class="rotulo">Posts no site</div>
+        <div class="valor">{{ no_site }}</div>
+    </div>
+    <div class="cartao-stat azul">
+        <div class="rotulo">Última busca</div>
+        <div class="valor" style="font-size:16px">{% if config.ultima_sincronizacao %}{{ config.ultima_sincronizacao|date:"d/m H:i" }}{% else %}—{% endif %}</div>
+    </div>
+    <div class="cartao-stat">
+        <div class="rotulo">Token vale até</div>
+        <div class="valor" style="font-size:16px">{% if config.expira_em %}{{ config.expira_em|date:"d/m/Y" }}{% else %}—{% endif %}</div>
+    </div>
+</div>
+
+{% if config.ultimo_resultado %}
+    <p class="subtitulo-pagina" style="margin:14px 0 0">Resultado da última busca: <strong>{{ config.ultimo_resultado }}</strong></p>
+{% endif %}
+
+<div class="duas-colunas" style="margin-top:22px">
+    <div class="painel">
+        <h2 class="painel-titulo">1. Conectar automático (recomendado)</h2>
+        <ol class="ig-passos">
+            <li>A conta @artskalaa precisa ser <strong>profissional</strong> (Empresa ou Criador).</li>
+            <li>Em <a href="https://developers.facebook.com/apps/" target="_blank" rel="noopener">developers.facebook.com</a>: Criar app → caso de uso <em>Instagram</em> → <em>Configuração da API com login do Instagram</em> → adicione a @artskalaa → <strong>Gerar token</strong>.</li>
+            <li>Cole o token abaixo. Os posts entram na hora e, depois, todo dia sozinhos (o token é renovado automaticamente).</li>
+        </ol>
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="acao" value="token">
+            <div class="campo">
+                <label for="token">Token de acesso do Instagram</label>
+                <input type="password" id="token" name="token" autocomplete="off" placeholder="IGAA…" required>
+            </div>
+            <div class="acoes-linha" style="margin-top:12px">
+                <button type="submit" class="btn btn-primario">Salvar e buscar posts</button>
+            </div>
+        </form>
+        {% if config.token %}
+            <form method="post" style="margin-top:12px">
+                {% csrf_token %}
+                <input type="hidden" name="acao" value="sincronizar">
+                <button type="submit" class="btn btn-secundario">Buscar posts novos agora</button>
+            </form>
+        {% endif %}
+    </div>
+
+    <div class="painel">
+        <h2 class="painel-titulo">2. Ou adicione um post à mão</h2>
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="acao" value="manual">
+            <div class="campo">
+                <label for="link">Link do post</label>
+                <input type="url" id="link" name="link" placeholder="https://www.instagram.com/p/…" required>
+            </div>
+            <div class="campo">
+                <label for="imagem">Foto (quadrada fica melhor)</label>
+                <input type="file" id="imagem" name="imagem" accept="image/*" required>
+            </div>
+            <div class="campo">
+                <label for="legenda">Legenda</label>
+                <textarea id="legenda" name="legenda" rows="3" placeholder="Texto que aparece ao passar o mouse"></textarea>
+            </div>
+            <div class="linha-campos">
+                <div class="campo"><label for="curtidas">Curtidas</label><input type="number" min="0" id="curtidas" name="curtidas"></div>
+                <div class="campo"><label for="comentarios">Comentários</label><input type="number" min="0" id="comentarios" name="comentarios"></div>
+                <div class="campo">
+                    <label for="tipo">Tipo</label>
+                    <select id="tipo" name="tipo"><option value="IMAGE">Foto</option><option value="CAROUSEL_ALBUM">Carrossel</option><option value="VIDEO">Vídeo / Reels</option></select>
+                </div>
+            </div>
+            <div class="acoes-linha" style="margin-top:12px">
+                <button type="submit" class="btn btn-primario">Adicionar ao site</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="painel" style="margin-top:22px">
+    <h2 class="painel-titulo">Posts</h2>
+    {% if posts %}
+        <div class="ig-grade">
+            {% for post in posts %}
+                <div class="ig-post {% if not post.ativo %}oculto{% endif %}">
+                    <a href="{{ post.link }}" target="_blank" rel="noopener">
+                        {% if post.imagem %}<img src="{{ post.imagem.url|tamanho:'340x340' }}" alt="" loading="lazy">{% endif %}
+                    </a>
+                    <div class="ig-post-corpo">
+                        <p>{{ post.legenda|default:"(sem legenda)" }}</p>
+                        <div class="ig-post-numeros">♥ {{ post.curtidas|default:"—" }} · 💬 {{ post.comentarios|default:"—" }}{% if post.publicado_em %} · {{ post.publicado_em|date:"d/m/Y" }}{% endif %}</div>
+                        <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="acao" value="alternar">
+                            <input type="hidden" name="post" value="{{ post.pk }}">
+                            <button type="submit" class="btn {% if post.ativo %}btn-secundario{% else %}btn-primario{% endif %}">{% if post.ativo %}Esconder do site{% else %}Mostrar no site{% endif %}</button>
+                        </form>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="vazio" style="padding:28px 18px;">
+            Nenhum post ainda. Enquanto isso, o bloco da home mostra as fotos dos projetos.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

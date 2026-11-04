@@ -76,19 +76,20 @@ Erros 500 passam a aparecer com o motivo em Vercel > Deployments > Logs.
 INSTAGRAM AUTOMÁTICO (posts novos entram sozinhos no site)
 O bloco "Acompanhe no Instagram" da home mostra os 6 posts mais recentes do
 @artskalaa: cada foto leva direto para o post e, ao passar o mouse, mostra a
-legenda, as curtidas e os comentários. Para ligar (uma vez só):
+legenda, as curtidas e os comentários. Enquanto não houver posts, o bloco
+mostra as fotos dos projetos (sem curtidas, que só o Instagram tem).
+
+Tudo se faz na gestão, em "Instagram" (interno.artskala.com.br/instagram/ ou
+/gestao/instagram/), sem mexer na Vercel:
 1. A conta @artskalaa precisa ser profissional (Empresa ou Criador de
    conteúdo): Instagram > Configurações > Tipo de conta e ferramentas.
-2. Em developers.facebook.com: Meus apps > Criar app > caso de uso
-   "Gerenciar mensagens e conteúdo no Instagram" > "Configuração da API com
-   login do Instagram" > adicione a conta @artskalaa > "Gerar token".
-3. Na Vercel (Settings > Environment Variables, Production):
-     INSTAGRAM_TOKEN = o token gerado
-     CRON_SECRET     = uma senha longa qualquer (protege a sincronização)
-   e faça Redeploy.
-Pronto: todo dia às 08:17 (Brasília) o site busca os posts novos (vercel.json).
-Para buscar na hora: /system/ > Posts do Instagram > ação "Buscar posts novos
-no Instagram agora", ou "python manage.py sincronizar_instagram".
-O token vale 60 dias e é renovado sozinho; o resultado da última busca fica em
-/system/ > Configuração do Instagram. Para esconder um post, desmarque "ativo".
-Enquanto não houver posts sincronizados, o bloco mostra as fotos dos projetos.
+2. Em developers.facebook.com: Meus apps > Criar app > caso de uso Instagram
+   > "Configuração da API com login do Instagram" > adicione a @artskalaa >
+   "Gerar token".
+3. Cole o token em Gestão > Instagram > "Salvar e buscar posts". Os posts
+   entram na hora; depois, todo dia às 08:17 (Brasília) o site busca os novos
+   sozinho, e o token de 60 dias é renovado automaticamente.
+Na mesma tela dá para esconder um post do site ou adicionar um post à mão
+(link, foto, legenda, curtidas) se preferir não conectar a conta.
+Opcional: CRON_SECRET na Vercel deixa a busca diária protegida por senha;
+sem ele, só o agendador da Vercel pode chamar, no máximo uma vez por hora.

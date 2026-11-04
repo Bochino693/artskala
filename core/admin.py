@@ -667,7 +667,7 @@ class PostInstagramAdmin(admin.ModelAdmin):
     list_filter = ("ativo", "tipo")
     list_editable = ("ativo",)
     search_fields = ("legenda",)
-    readonly_fields = ("instagram_id", "link", "publicado_em", "curtidas", "comentarios")
+    readonly_fields = ("instagram_id",)
     actions = ["sincronizar_agora"]
 
     @admin.action(description="Buscar posts novos no Instagram agora")

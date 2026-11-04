@@ -272,8 +272,8 @@ class MigracaoAutomaticaTests(TestCase):
         migrate.assert_called_once_with('migrate', interactive=False, verbosity=1)
 
 
-class InstagramAutomaticoTests(TestCase):
-    """Posts trazidos pela API oficial do Instagram (requisições simuladas)."""
+class _InstagramSimulado:
+    """Mídia em pasta temporária e respostas falsas da API do Instagram."""
 
     def setUp(self):
         import shutil
@@ -311,6 +311,10 @@ class InstagramAutomaticoTests(TestCase):
                 r.json.side_effect = ValueError
             return r
         return mock.patch('core.instagram.requests.get', side_effect=falso_get)
+
+
+class InstagramAutomaticoTests(_InstagramSimulado, TestCase):
+    """Posts trazidos pela API oficial do Instagram (requisições simuladas)."""
 
     def test_sincroniza_sem_duplicar_e_renova_token(self):
         from .instagram import sincronizar
@@ -388,3 +392,62 @@ class PaginaProdutoTests(TestCase):
         resposta = self.client.get('/products/%s/' % self.produto.pk)
         self.assertNotContains(resposta, 'class="ak-form-carrinho"')
         self.assertContains(resposta, 'Pedir orçamento deste produto')
+
+
+class GestaoInstagramTests(_InstagramSimulado, TestCase):
+    """Tela Gestão > Instagram: colar o token, buscar na hora e post à mão."""
+
+    def setUp(self):
+        super().setUp()
+        self.gestor = get_user_model().objects.create_superuser('equipe', 'e@example.com', 'senha-forte-123')
+        self.client.force_login(self.gestor)
+
+    def test_colar_token_ja_busca_os_posts(self):
+        from .models import ConfigInstagram, PostInstagram
+        with self.settings(INSTAGRAM_TOKEN=''):
+            self.assertContains(self.client.get('/gestao/instagram/'), 'Não conectado')
+            with self.respostas():
+                self.client.post('/gestao/instagram/', {'acao': 'token', 'token': 'IGAA' + 'x' * 40})
+        self.assertEqual(PostInstagram.objects.count(), 2)
+        self.assertTrue(ConfigInstagram.objects.get().token)
+        pagina = self.client.get('/instagram/', HTTP_HOST='interno.artskala.com.br')
+        self.assertContains(pagina, 'Conectado')
+        self.assertContains(pagina, 'Fachada em ACM pronta!')
+
+    def test_post_manual_aparece_com_curtidas(self):
+        import io
+        from PIL import Image
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from .models import PostInstagram
+        foto = io.BytesIO()
+        Image.new('RGB', (50, 50), (236, 50, 55)).save(foto, 'JPEG')
+        self.client.post('/gestao/instagram/', {
+            'acao': 'manual', 'link': 'https://www.instagram.com/p/MANUAL1/', 'legenda': 'Letreiro novo na Mooca',
+            'curtidas': '87', 'comentarios': '5', 'tipo': 'IMAGE',
+            'imagem': SimpleUploadedFile('foto.jpg', foto.getvalue(), content_type='image/jpeg'),
+        })
+        post = PostInstagram.objects.get()
+        self.assertTrue(post.instagram_id.startswith('manual-'))
+        home = self.client.get('/')
+        self.assertContains(home, 'href="https://www.instagram.com/p/MANUAL1/"')
+        self.assertContains(home, 'Letreiro novo na Mooca')
+        self.assertContains(home, '87')
+        self.client.post('/gestao/instagram/', {'acao': 'alternar', 'post': post.pk})
+        self.assertNotContains(self.client.get('/'), 'MANUAL1')
+
+    def test_link_que_nao_e_do_instagram_e_recusado(self):
+        from .models import PostInstagram
+        self.client.post('/gestao/instagram/', {'acao': 'manual', 'link': 'https://exemplo.com/x'})
+        self.assertFalse(PostInstagram.objects.exists())
+
+    def test_cliente_comum_nao_entra(self):
+        self.client.force_login(get_user_model().objects.create_user('cliente', password='senha-forte-123'))
+        self.assertEqual(self.client.get('/gestao/instagram/').status_code, 302)
+
+
+class CronSemSegredoTests(_InstagramSimulado, TestCase):
+    def test_agendador_da_vercel_uma_vez_por_hora(self):
+        with self.settings(CRON_SECRET=''), self.respostas():
+            self.assertEqual(self.client.get('/api/instagram/sincronizar/', HTTP_USER_AGENT='vercel-cron/1.0').status_code, 200)
+            self.assertEqual(self.client.get('/api/instagram/sincronizar/', HTTP_USER_AGENT='vercel-cron/1.0').status_code, 403)
+            self.assertEqual(self.client.get('/api/instagram/sincronizar/', HTTP_USER_AGENT='curl/8').status_code, 403)
