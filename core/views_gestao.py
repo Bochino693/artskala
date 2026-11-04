@@ -467,7 +467,17 @@ class EquipeView(SuperuserGestaoRequiredMixin, View):
                 "n_pedidos": c.n_pedidos, "gasto": c.gasto or Decimal("0"),
                 "whatsapp": f"https://wa.me/{digitos}" if len(digitos) >= 12 else "",
             })
+        from .google import endereco_de_retorno, google_ativo, ids_com_google
+        com_google = ids_com_google()
+        for linha in lista_clientes:
+            linha["google"] = linha["u"].pk in com_google
         ctx = {
+            "google": {
+                "ativo": google_ativo(),
+                "total": User.objects.filter(pk__in=com_google, is_staff=False, is_superuser=False).count(),
+                "retorno": endereco_de_retorno(),
+                "origem": settings.SITE_URL,
+            },
             "aba": aba,
             "busca": busca,
             "funcoes": FUNCOES,
