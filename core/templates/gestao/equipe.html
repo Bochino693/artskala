@@ -28,12 +28,14 @@
 
 <div class="painel">
     {% if equipe %}
+    <div class="acoes-linha" style="justify-content:flex-end;margin-bottom:10px"><button type="button" class="btn btn-secundario btn-mini" data-todas-linhas="#tabela-equipe">Abrir todos</button></div>
     <div class="tabela-responsiva">
-        <table class="ledger tabela-cartoes">
-            <thead><tr><th>Pessoa</th><th>Função</th><th>Situação</th><th>Último acesso</th><th></th></tr></thead>
+        <table class="ledger tabela-cartoes" id="tabela-equipe">
+            <thead><tr><th class="col-chevron"></th><th>Pessoa</th><th>Função</th><th>Situação</th><th>Último acesso</th><th></th></tr></thead>
             <tbody>
             {% for p in equipe %}
-                <tr class="{% if not p.u.is_active %}inativo{% endif %}">
+                <tr data-expansivel class="{% if not p.u.is_active %}inativo{% endif %}">
+                    <td class="col-chevron"><button type="button" class="chevron" data-linha-alternar aria-expanded="false" aria-label="Ver detalhes"></button></td>
                     <td data-rotulo="Pessoa">
                         <div class="pessoa">
                             <span class="avatar-inicial">{{ p.u.first_name|default:p.u.username|slice:":1"|upper }}</span>
@@ -41,7 +43,14 @@
                         </div>
                     </td>
                     <td data-rotulo="Função">{% for f in funcoes %}{% if f.codigo == p.funcao %}<span class="funcao-selo funcao-{{ f.codigo }}">{{ f.icone }} {{ f.titulo }}</span>{% endif %}{% endfor %}{% if not p.funcao %}<span class="texto-fraco">Sem função</span>{% endif %}</td>
-                    <td data-rotulo="Situação"><span class="selo {% if p.u.is_active %}APROVADO{% else %}RECUSADO{% endif %}">{% if p.u.is_active %}Ativo{% else %}Inativo{% endif %}</span></td>
+                    <td data-rotulo="Situação">
+                        {% if p.u != request.user %}
+                        <form method="post" class="form-interruptor" data-sem-aviso>
+                            {% csrf_token %}<input type="hidden" name="acao" value="alternar"><input type="hidden" name="pk" value="{{ p.u.pk }}">
+                            <label class="interruptor" title="{% if p.u.is_active %}Desligar o acesso{% else %}Religar o acesso{% endif %}"><input type="checkbox" {% if p.u.is_active %}checked{% endif %} data-nome="{{ p.u.get_full_name|default:p.u.username }}" aria-label="Acesso de {{ p.u.get_full_name|default:p.u.username }}"><span class="interruptor-trilho"></span><span>{% if p.u.is_active %}Ativo{% else %}Inativo{% endif %}</span></label>
+                        </form>
+                        {% else %}<span class="selo APROVADO">Ativo · você</span>{% endif %}
+                    </td>
                     <td data-rotulo="Último acesso">{{ p.u.last_login|date:"d/m/Y H:i"|default:"Nunca entrou" }}</td>
                     <td class="col-num">
                         <div class="acoes-linha">
@@ -49,15 +58,23 @@
                                 data-pk="{{ p.u.pk }}" data-first_name="{{ p.u.first_name }}" data-last_name="{{ p.u.last_name }}"
                                 data-username="{{ p.u.username }}" data-email="{{ p.u.email }}" data-funcao="{{ p.funcao }}"
                                 data-ativo="{% if p.u.is_active %}1{% else %}0{% endif %}" data-eu="{% if p.u == request.user %}1{% endif %}">Editar</button>
-                            {% if p.u != request.user %}
-                            <form method="post" data-sem-aviso>
-                                {% csrf_token %}<input type="hidden" name="acao" value="alternar"><input type="hidden" name="pk" value="{{ p.u.pk }}">
-                                <button type="submit" class="btn {% if p.u.is_active %}btn-perigo{% else %}btn-secundario{% endif %} btn-mini">{% if p.u.is_active %}Desativar{% else %}Reativar{% endif %}</button>
-                            </form>
-                            {% endif %}
                         </div>
                     </td>
                 </tr>
+                <tr class="linha-detalhe" hidden><td colspan="7"><div class="detalhe">
+                    <div><h5>Conta</h5>
+                        <p>Usuário: <strong>{{ p.u.username }}</strong></p>
+                        <p>{{ p.u.email|default:"Sem e-mail" }}</p>
+                        <p class="texto-fraco">Criada em {{ p.u.date_joined|date:"d/m/Y" }}</p>
+                    </div>
+                    <div><h5>O que esta pessoa abre</h5>
+                        <p>{% for t in p.telas %}{{ t }}{% if not forloop.last %} · {% endif %}{% empty %}Nenhuma tela{% endfor %}</p>
+                    </div>
+                    <div><h5>Acesso</h5>
+                        <p>Último acesso: {{ p.u.last_login|date:"d/m/Y H:i"|default:"nunca entrou" }}</p>
+                        <p>Situação: {% if p.u.is_active %}ativa{% else %}desativada{% endif %}</p>
+                    </div>
+                </div></td></tr>
             {% endfor %}
             </tbody>
         </table>
@@ -88,7 +105,7 @@
                 <label class="funcao-opcao"><input type="radio" name="funcao" value="{{ f.codigo }}" {% if forloop.counter == 2 %}checked{% endif %}><span><strong>{{ f.icone }} {{ f.titulo }}</strong><small>{{ f.descricao }}</small></span></label>
             {% endfor %}
         </fieldset>
-        <label class="check-linha" data-linha-ativo><input type="checkbox" name="ativo" value="1" checked> Conta ativa (pode entrar)</label>
+        <label class="interruptor" data-linha-ativo><input type="checkbox" name="ativo" value="1" checked><span class="interruptor-trilho"></span><span>Conta ativa (pode entrar)</span></label>
         <div class="acoes-linha" style="margin-top:16px"><button type="submit" class="btn btn-primario">Salvar</button><button type="button" class="btn btn-secundario" data-fechar>Cancelar</button></div>
     </form>
 </dialog>
@@ -128,22 +145,49 @@
         <input type="hidden" name="aba" value="clientes">
         <div class="campo" style="flex:1;min-width:220px;margin-bottom:0"><label for="q">Buscar cliente</label><input id="q" name="q" value="{{ busca }}" placeholder="Nome, e-mail, telefone ou cidade"></div>
         <button class="btn btn-secundario" type="submit">Buscar</button>
+        <button type="button" class="btn btn-secundario" data-todas-linhas="#tabela-clientes">Abrir todos</button>
     </form>
     {% if clientes %}
     <div class="tabela-responsiva">
-        <table class="ledger tabela-cartoes">
-            <thead><tr><th>Cliente</th><th>Contato</th><th>Cidade</th><th class="num">Pedidos</th><th class="num">Total comprado</th><th>Cliente desde</th><th></th></tr></thead>
+        <table class="ledger tabela-cartoes" id="tabela-clientes">
+            <thead><tr><th class="col-chevron"></th><th>Cliente</th><th>Contato</th><th>Cidade</th><th class="num">Pedidos</th><th class="num">Total comprado</th><th>Cliente desde</th><th></th></tr></thead>
             <tbody>
             {% for c in clientes %}
-                <tr>
+                <tr data-expansivel>
+                    <td class="col-chevron"><button type="button" class="chevron" data-linha-alternar aria-expanded="false" aria-label="Ver detalhes"></button></td>
                     <td data-rotulo="Cliente"><div class="pessoa"><span class="avatar-inicial cliente">{{ c.u.first_name|default:c.u.username|slice:":1"|upper }}</span><span><strong>{{ c.u.get_full_name|default:c.u.username }}{% if c.google %} <span class="selo-google" title="Cadastro feito com o Google">Google</span>{% endif %}</strong><small>{{ c.u.username }}</small></span></div></td>
                     <td data-rotulo="Contato">{% if c.u.email %}<a href="mailto:{{ c.u.email }}">{{ c.u.email }}</a>{% endif %}{% if c.telefone %}<br><small class="texto-fraco">{{ c.telefone }}</small>{% endif %}</td>
                     <td data-rotulo="Cidade">{{ c.cidade|default:"—" }}</td>
                     <td class="num" data-rotulo="Pedidos">{{ c.n_pedidos }}</td>
                     <td class="num" data-rotulo="Total comprado"><strong>{{ c.gasto|brl }}</strong></td>
                     <td data-rotulo="Cliente desde">{{ c.u.date_joined|date:"d/m/Y" }}</td>
-                    <td class="col-num"><div class="acoes-linha">{% if c.n_pedidos %}<a class="btn btn-secundario btn-mini" href="{% url 'gestao_pedidos' %}?q={{ c.u.email|default:c.u.username|urlencode }}">Pedidos</a>{% endif %}{% if c.whatsapp %}<a class="btn btn-secundario btn-mini" href="{{ c.whatsapp }}" target="_blank" rel="noopener">WhatsApp</a>{% endif %}</div></td>
+                    <td class="col-num"><div class="acoes-linha"><button type="button" class="btn btn-secundario btn-mini" data-ficha="{% url 'gestao_cliente_ficha' c.u.pk %}" data-ficha-titulo="Cliente">Ficha</button>{% if c.whatsapp %}<a class="btn btn-secundario btn-mini" href="{{ c.whatsapp }}" target="_blank" rel="noopener">WhatsApp</a>{% endif %}</div></td>
                 </tr>
+                <tr class="linha-detalhe" hidden><td colspan="8"><div class="detalhe">
+                    <div><h5>Contato</h5>
+                        <p>{% if c.u.email %}<a href="mailto:{{ c.u.email }}">{{ c.u.email }}</a>{% else %}Sem e-mail{% endif %}</p>
+                        <p>{{ c.telefone|default:"Sem telefone" }}</p>
+                        {% if c.cpf %}<p class="texto-fraco">CPF/CNPJ {{ c.cpf }}</p>{% endif %}
+                    </div>
+                    <div><h5>Endereço</h5>
+                        <p>{{ c.endereco|default:"Não informado" }}</p>
+                        <p class="texto-fraco">{{ c.cidade }}{% if c.cep %} · CEP {{ c.cep }}{% endif %}</p>
+                    </div>
+                    <div><h5>Compras</h5><ul>
+                        <li><span>Pedidos</span><span>{{ c.n_pedidos }}</span></li>
+                        <li><span>Total</span><span>{{ c.gasto|brl }}</span></li>
+                        <li><span>Ticket médio</span><span>{{ c.ticket|brl }}</span></li>
+                        <li><span>Última compra</span><span>{{ c.ultimo_pedido|date:"d/m/Y"|default:"—" }}</span></li>
+                    </ul></div>
+                    <div><h5>Conta</h5>
+                        <p>Entrou no site em {{ c.u.date_joined|date:"d/m/Y" }}{% if c.google %} pelo <span class="selo-google">Google</span>{% endif %}</p>
+                        <p class="texto-fraco">Último acesso: {{ c.u.last_login|date:"d/m/Y H:i"|default:"nunca" }}</p>
+                    </div>
+                    <div class="detalhe-acoes">
+                        <button type="button" class="btn btn-primario btn-mini" data-ficha="{% url 'gestao_cliente_ficha' c.u.pk %}" data-ficha-titulo="Cliente">Abrir ficha completa</button>
+                        {% if c.n_pedidos %}<a class="btn btn-secundario btn-mini" href="{% url 'gestao_pedidos' %}?q={{ c.u.email|default:c.u.username|urlencode }}">Ver pedidos</a>{% endif %}
+                    </div>
+                </div></td></tr>
             {% endfor %}
             </tbody>
         </table>
@@ -157,6 +201,16 @@
 
 {% block extra_js %}
 <script>
+document.querySelectorAll(".form-interruptor input[type=checkbox]").forEach(caixa => {
+    caixa.addEventListener("change", async () => {
+        const form = caixa.closest("form");
+        if (!caixa.checked) {
+            const sim = await Gestao.confirmar({ titulo: "Desligar o acesso?", texto: caixa.dataset.nome + " não vai mais conseguir entrar na gestão. Você pode religar quando quiser.", ok: "Desligar acesso" });
+            if (!sim) { caixa.checked = true; return; }
+        }
+        form.submit();
+    });
+});
 (function () {
     const modal = document.getElementById("modal-pessoa");
     if (!modal) return;

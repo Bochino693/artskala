@@ -995,7 +995,7 @@ class GestaoProdutosView(SuperuserGestaoRequiredMixin, View):
                 ativo=True,
             )
 
-        qs_todos = Produto.objects.filter(ativo=True).select_related("categoria")
+        qs_todos = Produto.objects.filter(ativo=True).select_related("categoria").prefetch_related("imagens")
         stats = _stats_produtos(qs_todos)
 
         produtos = qs_todos.order_by("nome_produto")
@@ -1108,7 +1108,7 @@ class GestaoProjetosView(SuperuserGestaoRequiredMixin, View):
                 ativo=True,
             )
 
-        qs_todos = Projeto.objects.filter(ativo=True)
+        qs_todos = Projeto.objects.filter(ativo=True).prefetch_related("imagens")
         stats = _stats_projetos(qs_todos)
 
         projetos = qs_todos.order_by("-criacao")

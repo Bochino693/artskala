@@ -144,24 +144,53 @@
         <div class="campo" style="flex:1; min-width:220px; margin-bottom:0;"><label for="q">Buscar</label><input type="text" id="q" name="q" value="{{ busca }}" placeholder="Título ou cliente"></div>
         <div class="campo" style="min-width:190px; margin-bottom:0;"><label for="status">Status</label><select id="status" name="status"><option value="">Todos</option>{% for chave, rotulo in status_choices %}<option value="{{ chave }}" {% if status_filtro == chave %}selected{% endif %}>{{ rotulo }}</option>{% endfor %}</select></div>
         <button type="submit" class="btn btn-secundario">Filtrar</button>
+        <button type="button" class="btn btn-secundario" data-todas-linhas="#tabela-orcamentos">Abrir todos</button>
     </form>
 </div>
 
 <div class="painel">
     {% if orcamentos %}
     <div class="tabela-responsiva tabela-desktop">
-        <table class="ledger">
-            <thead><tr><th>Título</th><th>Cliente</th><th>Tipo</th><th>Status</th><th>Validade</th><th class="num">Total</th></tr></thead>
+        <table class="ledger" id="tabela-orcamentos">
+            <thead><tr><th class="col-chevron"></th><th>Título</th><th>Cliente</th><th>Tipo</th><th>Status</th><th>Validade</th><th class="num">Total</th><th></th></tr></thead>
             <tbody>
             {% for item in orcamentos %}
-                <tr onclick="window.location='{% url 'orcamento_detalhe' item.pk %}'" style="cursor:pointer;">
-                    <td>{{ item.titulo }}</td>
+                <tr data-expansivel>
+                    <td class="col-chevron"><button type="button" class="chevron" data-linha-alternar aria-expanded="false" aria-label="Ver detalhes"></button></td>
+                    <td><strong>{{ item.titulo }}</strong><br><code class="codigo-mini">{{ item|codigo }}</code></td>
                     <td>{{ item.cliente_nome|default:"—" }}</td>
                     <td>{{ item.get_tipo_display }}</td>
                     <td><span class="selo {% if item.esta_expirado %}EXPIRADO{% else %}{{ item.status }}{% endif %}">{% if item.esta_expirado %}Expirado{% else %}{{ item.get_status_display }}{% endif %}</span></td>
                     <td>{{ item.data_validade|date:"d/m/Y"|default:"—" }}</td>
-                    <td class="num">{{ item.valor_total|brl }}</td>
+                    <td class="num"><strong>{{ item.valor_total|brl }}</strong></td>
+                    <td class="col-num"><div class="acoes-linha"><a class="btn btn-secundario btn-mini" href="{% url 'orcamento_detalhe' item.pk %}" data-ficha="{% url 'orcamento_ficha' item.pk %}" data-ficha-titulo="Orçamento #{{ item.pk }}">Abrir</a></div></td>
                 </tr>
+                <tr class="linha-detalhe" hidden><td colspan="9"><div class="detalhe">
+                    <div><h5>Itens</h5><ul>{% for i in item.itens.all %}<li><span>{{ i.quantidade }}× {{ i.nome_display }}</span><span>{{ i.subtotal|brl }}</span></li>{% empty %}<li><span>Sem itens</span><span>—</span></li>{% endfor %}</ul></div>
+                    <div><h5>Valores</h5><ul>
+                        <li><span>Total</span><span>{{ item.valor_total|brl }}</span></li>
+                        <li><span>Custo</span><span>{{ item.custo_total|brl }}</span></li>
+                        <li><span>Lucro</span><span>{{ item.lucro_estimado|brl }}</span></li>
+                        <li><span>Margem</span><span>{{ item.margem_lucro_percentual|pct }}</span></li>
+                    </ul></div>
+                    <div><h5>Cliente e local</h5>
+                        <p><strong>{{ item.cliente_nome|default:"Sem cliente" }}</strong></p>
+                        {% if item.cliente_telefone %}<p>{{ item.cliente_telefone }}</p>{% endif %}
+                        {% if item.endereco_completo %}<p>{{ item.endereco_completo }}</p>{% endif %}
+                        {% if item.distancia_km %}<p class="texto-fraco">{{ item.distancia_km|numero_br:1 }} km da ArtSkala{% if item.tempo_deslocamento_min %} · ~{{ item.tempo_deslocamento_min }} min{% endif %}</p>{% endif %}
+                    </div>
+                    <div><h5>Condições</h5>
+                        <p>Pagamento: {{ item.get_forma_pagamento_display }}</p>
+                        {% if item.prazo_execucao %}<p>Prazo: {{ item.prazo_execucao }}</p>{% endif %}
+                        {% if item.data_prevista_entrega %}<p>Entrega: {{ item.data_prevista_entrega|date:"d/m/Y" }}</p>{% endif %}
+                        {% if item.observacoes %}<p class="texto-fraco">{{ item.observacoes|truncatechars:120 }}</p>{% endif %}
+                    </div>
+                    <div class="detalhe-acoes">
+                        <a class="btn btn-primario btn-mini" href="{% url 'orcamento_detalhe' item.pk %}">Editar</a>
+                        <a class="btn btn-secundario btn-mini" href="{% url 'proposta_impressao' item.pk %}" target="_blank" rel="noopener">Imprimir proposta</a>
+                        <a class="btn btn-secundario btn-mini" href="{% url 'gestao_etiquetas' %}?tipo=orcamento&ids={{ item.pk }}">Etiqueta de produção</a>
+                    </div>
+                </div></td></tr>
             {% endfor %}
             </tbody>
         </table>
@@ -374,10 +403,12 @@
 
     const btnExcluir = document.getElementById("btn-excluir");
     if (btnExcluir) {
-        btnExcluir.addEventListener("click", function () {
-            if (!confirm("Remover este orçamento?")) return;
+        btnExcluir.addEventListener("click", async function () {
+            const sim = await Gestao.confirmar({ titulo: "Excluir este orçamento?", texto: "Ele sai da lista e dos relatórios. Essa ação não pode ser desfeita.", ok: "Excluir orçamento" });
+            if (!sim) return;
             fetch(URL_ORCAMENTO, { method: "DELETE", headers: { "X-CSRFToken": csrftoken } })
-            .then((r) => r.json()).then((dados) => { if (dados.success) window.location = dados.redirect; });
+            .then((r) => r.json()).then((dados) => { if (dados.success) { Gestao.aviso("Orçamento excluído."); setTimeout(() => { window.location = dados.redirect; }, 500); } })
+            .catch(() => Gestao.aviso("Não foi possível excluir. Tente de novo.", "erro"));
         });
     }
 })();

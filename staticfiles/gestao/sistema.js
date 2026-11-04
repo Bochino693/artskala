@@ -352,7 +352,210 @@
         input.dispatchEvent(new Event("input", { bubbles: true }));
     }
 
-    window.Gestao = { lerNumero, formatarBRL, formatarNumero, definirValor, aplicar };
+    /* ------------------------------------------------ avisos flutuantes */
+    // Gestao.aviso("Salvo!", "ok" | "erro" | "info"). As mensagens do Django viram avisos também.
+    function pilhaDeAvisos() {
+        let pilha = $("#gestao-avisos");
+        if (!pilha) {
+            pilha = document.createElement("div");
+            pilha.id = "gestao-avisos";
+            pilha.className = "avisos";
+            pilha.setAttribute("aria-live", "polite");
+            document.body.appendChild(pilha);
+        }
+        return pilha;
+    }
+    function aviso(texto, tipo = "ok", ms = 5200) {
+        const caixa = document.createElement("div");
+        caixa.className = "aviso aviso--" + tipo;
+        caixa.setAttribute("role", tipo === "erro" ? "alert" : "status");
+        const icone = document.createElement("span");
+        icone.className = "aviso-icone";
+        icone.setAttribute("aria-hidden", "true");
+        icone.textContent = tipo === "erro" ? "!" : tipo === "info" ? "i" : "✓";
+        const msg = document.createElement("span");
+        msg.className = "aviso-texto";
+        msg.textContent = texto;
+        const x = document.createElement("button");
+        x.type = "button";
+        x.className = "aviso-x";
+        x.setAttribute("aria-label", "Fechar aviso");
+        x.textContent = "×";
+        caixa.append(icone, msg, x);
+        const sair = () => { caixa.classList.add("saindo"); setTimeout(() => caixa.remove(), 260); };
+        x.addEventListener("click", sair);
+        pilhaDeAvisos().appendChild(caixa);
+        requestAnimationFrame(() => caixa.classList.add("entrou"));
+        if (ms) setTimeout(sair, ms);
+        return caixa;
+    }
+    function mensagensDoDjango() {
+        $$(".mensagens .mensagem").forEach(m => {
+            const tags = m.className;
+            aviso(m.textContent.trim(), /error|danger/.test(tags) ? "erro" : /info|warning/.test(tags) ? "info" : "ok", 6500);
+        });
+        $$(".mensagens").forEach(m => m.remove());
+    }
+
+    /* -------------------------------------------- confirmação (modal) */
+    // await Gestao.confirmar({ titulo, texto, ok, perigo }) -> true | false
+    function dialogoConfirmar() {
+        let d = $("#gestao-confirmar");
+        if (d) return d;
+        d = document.createElement("dialog");
+        d.id = "gestao-confirmar";
+        d.className = "modal";
+        d.setAttribute("aria-labelledby", "gc-titulo");
+        d.innerHTML = `<form method="dialog" class="modal-caixa modal-caixa--pequena">
+            <div class="modal-icone" data-gc-icone aria-hidden="true">!</div>
+            <h2 id="gc-titulo" data-gc-titulo>Confirmar</h2>
+            <p data-gc-texto></p>
+            <div class="modal-acoes"><button type="submit" value="nao" class="btn btn-secundario" data-gc-cancelar>Cancelar</button><button type="submit" value="sim" class="btn btn-perigo" data-gc-ok>Confirmar</button></div>
+        </form>`;
+        document.body.appendChild(d);
+        d.addEventListener("click", e => { if (e.target === d) d.close("nao"); });
+        return d;
+    }
+    function confirmar({ titulo = "Tem certeza?", texto = "", ok = "Confirmar", cancelar = "Cancelar", perigo = true } = {}) {
+        const d = dialogoConfirmar();
+        if (typeof d.showModal !== "function") return Promise.resolve(window.confirm(texto || titulo));
+        $("[data-gc-titulo]", d).textContent = titulo;
+        $("[data-gc-texto]", d).textContent = texto;
+        const botao = $("[data-gc-ok]", d);
+        botao.textContent = ok;
+        botao.className = "btn " + (perigo ? "btn-perigo" : "btn-primario");
+        $("[data-gc-cancelar]", d).textContent = cancelar;
+        d.classList.toggle("modal--perigo", perigo);
+        $("[data-gc-icone]", d).textContent = perigo ? "!" : "?";
+        return new Promise(resolver => {
+            const fim = () => { d.removeEventListener("close", fim); resolver(d.returnValue === "sim"); };
+            d.addEventListener("close", fim);
+            d.returnValue = "nao";
+            d.showModal();
+            setTimeout(() => botao.focus(), 30);
+        });
+    }
+    // data-confirmar="texto" em <form> (envio), <button> ou <a> (clique)
+    function ligarConfirmacoes() {
+        document.addEventListener("submit", async e => {
+            const form = e.target.closest("form[data-confirmar]");
+            if (!form || form.dataset.confirmado) return;
+            e.preventDefault();
+            const sim = await confirmar({ titulo: form.dataset.confirmarTitulo || "Tem certeza?", texto: form.dataset.confirmar, ok: form.dataset.confirmarOk || "Confirmar", perigo: form.dataset.confirmarPerigo !== "nao" });
+            if (sim) { form.dataset.confirmado = "1"; form.requestSubmit ? form.requestSubmit(e.submitter || undefined) : form.submit(); }
+        }, true);
+        document.addEventListener("click", async e => {
+            const el = e.target.closest("button[data-confirmar]:not(form button), a[data-confirmar]");
+            if (!el || el.closest("form[data-confirmar]")) return;
+            e.preventDefault();
+            const sim = await confirmar({ titulo: el.dataset.confirmarTitulo || "Tem certeza?", texto: el.dataset.confirmar, ok: el.dataset.confirmarOk || "Confirmar", perigo: el.dataset.confirmarPerigo !== "nao" });
+            if (!sim) return;
+            if (el.tagName === "A") window.location.href = el.href;
+            else el.dispatchEvent(new CustomEvent("confirmado", { bubbles: true }));
+        });
+    }
+
+    /* ------------------------------------------- ficha em modal (HTML) */
+    // <a data-ficha="/interno/clientes/3/ficha/" data-ficha-titulo="Cliente">: busca o pedaço de HTML e mostra num modal.
+    function dialogoFicha() {
+        let d = $("#gestao-ficha");
+        if (d) return d;
+        d = document.createElement("dialog");
+        d.id = "gestao-ficha";
+        d.className = "modal";
+        d.setAttribute("aria-labelledby", "gf-titulo");
+        d.innerHTML = `<div class="modal-caixa modal-caixa--grande">
+            <header class="modal-topo"><h2 id="gf-titulo" data-gf-titulo>Detalhes</h2><button type="button" class="modal-x" data-gf-fechar aria-label="Fechar">×</button></header>
+            <div class="modal-corpo" data-gf-corpo></div></div>`;
+        document.body.appendChild(d);
+        $("[data-gf-fechar]", d).addEventListener("click", () => d.close());
+        d.addEventListener("click", e => { if (e.target === d) d.close(); });
+        return d;
+    }
+    function abrirFicha(url, titulo = "Detalhes") {
+        const d = dialogoFicha();
+        const corpo = $("[data-gf-corpo]", d);
+        $("[data-gf-titulo]", d).textContent = titulo;
+        corpo.innerHTML = '<div class="modal-carregando"><span class="giro" aria-hidden="true"></span>Carregando…</div>';
+        if (!d.open) d.showModal();
+        const alvo = url + (url.includes("?") ? "&" : "?") + "modal=1";
+        return fetch(alvo, { headers: { "X-Requested-With": "fetch" }, credentials: "same-origin" })
+            .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
+            .then(html => {
+                const t = document.createElement("template");
+                t.innerHTML = html.trim();
+                corpo.replaceChildren(t.content);
+                const h = $("[data-ficha-titulo]", corpo);
+                if (h) { $("[data-gf-titulo]", d).textContent = h.dataset.fichaTitulo; }
+                aplicar(corpo);
+                ligarStatus(corpo);
+                $("[data-ficha-fechar]", corpo) && $$("[data-ficha-fechar]", corpo).forEach(b => b.addEventListener("click", () => d.close()));
+            })
+            .catch(() => { corpo.innerHTML = '<div class="modal-carregando erro">Não foi possível abrir agora. Tente de novo.</div>'; });
+    }
+    function ligarFichas() {
+        document.addEventListener("click", e => {
+            const el = e.target.closest("[data-ficha]");
+            if (!el || e.ctrlKey || e.metaKey || e.shiftKey) return;
+            e.preventDefault();
+            abrirFicha(el.dataset.ficha, el.dataset.fichaTitulo || "Detalhes");
+        });
+    }
+
+    /* ---------------------------- status por <select data-status-url> */
+    function csrf() { const c = document.cookie.split("; ").find(l => l.startsWith("csrftoken=")); return c ? decodeURIComponent(c.split("=")[1]) : ""; }
+    function ligarStatus(raiz = document) {
+        $$("select[data-status-url]", raiz).forEach(sel => {
+            if (sel.dataset.statusLigado) return;
+            sel.dataset.statusLigado = "1";
+            let anterior = sel.value;
+            sel.addEventListener("change", () => {
+                sel.disabled = true;
+                fetch(sel.dataset.statusUrl, { method: "PUT", headers: { "Content-Type": "application/json", "X-CSRFToken": csrf() }, body: JSON.stringify({ status: sel.value }) })
+                    .then(r => r.json())
+                    .then(d => {
+                        if (!d.success) throw new Error(d.erro || "erro");
+                        const base = sel.dataset.statusClasse, prefixo = sel.dataset.statusPrefixo || "";
+                        if (base) sel.className = base + " " + prefixo + d.status;
+                        else sel.className = sel.className.replace(/PEDIDO_\w+/, "PEDIDO_" + d.status);
+                        anterior = sel.value;
+                        aviso("Status: " + (d.status_display || sel.options[sel.selectedIndex].text), "ok", 2800);
+                    })
+                    .catch(() => { sel.value = anterior; aviso("Não foi possível mudar o status. Tente de novo.", "erro"); })
+                    .finally(() => { sel.disabled = false; });
+            });
+        });
+    }
+
+    /* ------------------------------------------- linhas que abrem */
+    // <button data-linha-alternar> na linha; a linha seguinte (.linha-detalhe) guarda os detalhes.
+    function ligarLinhas() {
+        const alternar = (linha, forcar) => {
+            const detalhe = linha.nextElementSibling;
+            if (!detalhe || !detalhe.classList.contains("linha-detalhe")) return;
+            const abrir = forcar === undefined ? detalhe.hidden : forcar;
+            detalhe.hidden = !abrir;
+            linha.classList.toggle("aberta", abrir);
+            const b = $("[data-linha-alternar]", linha);
+            if (b) b.setAttribute("aria-expanded", String(abrir));
+        };
+        document.addEventListener("click", e => {
+            const botao = e.target.closest("[data-linha-alternar]");
+            if (botao) { alternar(botao.closest("tr"), undefined); return; }
+            const linha = e.target.closest("tr[data-expansivel]");
+            if (!linha || e.target.closest("a, button, select, input, label, textarea, summary")) return;
+            alternar(linha, undefined);
+        });
+        $$("[data-todas-linhas]").forEach(b => b.addEventListener("click", () => {
+            const tabela = $(b.dataset.todasLinhas) || document;
+            const abrir = b.dataset.estado !== "aberto";
+            $$("tr[data-expansivel]", tabela).forEach(l => alternar(l, abrir));
+            b.dataset.estado = abrir ? "aberto" : "fechado";
+            b.textContent = abrir ? "Fechar todos" : "Abrir todos";
+        }));
+    }
+
+    window.Gestao = { lerNumero, formatarBRL, formatarNumero, definirValor, aplicar, aviso, confirmar, abrirFicha };
 
     /* ------------------------- alterações não salvas e Ctrl+S salva */
     function prepararFormularios() {
@@ -477,8 +680,49 @@
         });
     }
 
+    /* ----------------------------------------------------------- menu */
+    // Computador: o menu vira um trilho de ícones e a escolha fica guardada.
+    // Celular: gaveta por cima da tela. Esc, o fundo escuro e qualquer item fecham.
+    function menuLateral() {
+        const html = document.documentElement;
+        const botoes = $$("[data-menu-alternar]");
+        if (!botoes.length) return;
+        const celular = window.matchMedia("(max-width: 860px)");
+        const aberto = () => (celular.matches ? html.classList.contains("menu-aberto") : !html.classList.contains("menu-recolhido"));
+        const sincronizar = () => botoes.forEach(b => {
+            b.setAttribute("aria-expanded", String(aberto()));
+            b.setAttribute("aria-label", aberto() ? "Fechar o menu" : "Abrir o menu");
+        });
+        const alternar = () => {
+            if (celular.matches) {
+                html.classList.toggle("menu-aberto");
+            } else {
+                html.classList.toggle("menu-recolhido");
+                try { localStorage.setItem("ak-menu", html.classList.contains("menu-recolhido") ? "recolhido" : "aberto"); } catch (e) { /* */ }
+            }
+            sincronizar();
+        };
+        const fecharGaveta = () => { if (html.classList.contains("menu-aberto")) { html.classList.remove("menu-aberto"); sincronizar(); } };
+        botoes.forEach(b => b.addEventListener("click", alternar));
+        $$("[data-menu-fechar]").forEach(el => el.addEventListener("click", fecharGaveta));
+        $$("#menu-lateral a").forEach(a => a.addEventListener("click", () => { if (celular.matches) html.classList.remove("menu-aberto"); }));
+        document.addEventListener("keydown", e => {
+            if (e.key === "Escape") fecharGaveta();
+            const digitando = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName) || document.activeElement.isContentEditable;
+            if (e.key === "[" && !digitando && !e.ctrlKey && !e.metaKey) alternar();
+        });
+        (celular.addEventListener ? celular.addEventListener.bind(celular, "change") : celular.addListener.bind(celular))(() => { html.classList.remove("menu-aberto"); sincronizar(); });
+        sincronizar();
+    }
+
     /* ------------------------------------------------------- início */
     function iniciar() {
+        menuLateral();
+        ligarConfirmacoes();
+        ligarFichas();
+        ligarStatus();
+        ligarLinhas();
+        mensagensDoDjango();
         aplicar(document);
         prepararFormularios();
         buscaRapida();
@@ -487,8 +731,6 @@
             registros.forEach(r => r.addedNodes.forEach(no => { if (no.nodeType === 1) aplicar(no); }));
             prepararFormularios();
         }).observe(document.body, { childList: true, subtree: true });
-        // avisos somem sozinhos
-        $$(".mensagem").forEach((aviso, i) => setTimeout(() => aviso.classList.add("saindo"), 6000 + i * 500));
     }
     if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", iniciar); else iniciar();
 })();

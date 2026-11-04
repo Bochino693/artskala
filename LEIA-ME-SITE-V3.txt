@@ -47,7 +47,7 @@ certo e gratuito é a exportação oficial da própria conta:
      --tipo produto --categoria "Fachadas"   cria produtos em vez de projetos
 
 VERIFICAÇÃO
-python manage.py test core  -> 56 testes (importador, Instagram, vitrine, área interna, gestão, páginas).
+python manage.py test core  -> 64 testes (importador, Instagram, vitrine, área interna, gestão, Google, páginas).
 Conferido no navegador em 1440 px e 390 px (celular).
 
 ÁREA INTERNA — artskala.com.br/interno/ (sem subdomínio)
@@ -197,3 +197,22 @@ login e cadastro com a apresentação curta em cima e o formulário em 2 colunas
 A home no celular caiu de ~12.000 px para ~8.900 px de altura e a lista de
 projetos de ~8.500 para ~4.100 px. Conferido em 360, 390 e 414 px, sem rolagem
 lateral em nenhuma página.
+
+GESTÃO: MENU QUE FECHA E ABRE, MODAIS E LINHAS QUE ABREM
+- Menu lateral: no computador o botão ☰ (ou a tecla [) recolhe o menu para só os
+  ícones e abre de novo; a escolha fica lembrada. No celular ele vira uma gaveta
+  que abre pelo ☰ do topo e fecha ao tocar fora, no X ou com Esc.
+- Avisos: as mensagens do sistema ("Pessoa criada", "Status alterado") viram
+  avisos modernos no canto da tela, que somem sozinhos.
+- Confirmações: excluir produto/projeto e desligar o acesso de alguém abre uma
+  janela de confirmação (em vez do alerta feio do navegador). Cancelar devolve o
+  interruptor ao estado anterior.
+- Linhas que abrem (setinha ou clique na linha): em Produtos e Projetos mostram
+  fotos, preço, custo e margem; em Pedidos os itens e o cliente; em Orçamentos o
+  resumo e a validade; em Equipe as telas que a função abre; em Clientes
+  contato, endereço, ticket médio e último pedido. "Abrir todos" no topo.
+- Fichas em janela: pedido, orçamento e cliente abrem num modal sem sair da
+  lista (o status do pedido pode ser trocado ali mesmo).
+- Interruptores no lugar de botões "Ativar/Desativar" na equipe.
+Conferido em 1440 px e 390 px; na tabela de equipe e clientes o celular mostra
+cartões que abrem ao toque.

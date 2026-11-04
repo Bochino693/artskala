@@ -39,10 +39,12 @@ from .views_instagram import GestaoInstagramView, sincronizar_instagram
 from .views_interno import LoginEquipeView, SairEquipeView
 from .views_gestao import (
     BuscaRapidaView,
+    ClienteFichaView,
     EquipeView,
     EtiquetasView,
     GestaoPedidoDetalheView,
     GestaoPedidosView,
+    OrcamentoFichaView,
     QrCodeView,
 )
 
@@ -101,6 +103,8 @@ ROTAS_INTERNAS = [
     ("etiquetas/", EtiquetasView.as_view(), "gestao_etiquetas"),
     ("etiquetas/qr.svg", QrCodeView.as_view(), "gestao_qrcode"),
     ("equipe/", EquipeView.as_view(), "gestao_equipe"),
+    ("clientes/<int:pk>/ficha/", ClienteFichaView.as_view(), "gestao_cliente_ficha"),
+    ("orcamentos/<int:pk>/ficha/", OrcamentoFichaView.as_view(), "orcamento_ficha"),
     ("instagram/", GestaoInstagramView.as_view(), "gestao_instagram"),
     ("relatorio/", RelatorioOrcamentosView.as_view(), "gestao_relatorio"),
     # Produtos: sem pk = lista + formulário de novo produto (GET) / criação (POST)

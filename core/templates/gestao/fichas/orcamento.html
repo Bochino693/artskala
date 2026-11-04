@@ -1,0 +1,51 @@
+{% load artskala %}<span hidden data-ficha-titulo="Orçamento #{{ o.pk }} · {{ o.titulo }}"></span>
+<div class="ficha-cabeca">
+    <div style="flex:1">
+        <h3>{{ o.titulo }} <code class="codigo-mini">{{ o|codigo }}</code></h3>
+        <small>{{ o.cliente_nome|default:"Sem cliente" }} · criado em {{ o.criacao|date:"d/m/Y" }}{% if o.data_validade %} · válido até {{ o.data_validade|date:"d/m/Y" }}{% endif %}</small>
+    </div>
+    <select class="selo-select {{ o.status }}" data-status-url="{% url 'orcamento_detalhe' o.pk %}" data-status-classe="selo-select" aria-label="Status do orçamento">
+        {% for chave, rotulo in o.STATUS %}<option value="{{ chave }}" {% if o.status == chave %}selected{% endif %}>{{ rotulo }}</option>{% endfor %}
+    </select>
+</div>
+
+<div class="ficha-numeros">
+    <div class="ficha-numero"><small>Total</small><strong>{{ o.valor_total|brl }}</strong></div>
+    <div class="ficha-numero"><small>Custo</small><strong>{{ o.custo_total|brl }}</strong></div>
+    <div class="ficha-numero"><small>Lucro</small><strong>{{ o.lucro_estimado|brl }}</strong></div>
+    <div class="ficha-numero"><small>Margem</small><strong>{{ o.margem_lucro_percentual|pct }}</strong></div>
+</div>
+
+<div class="ficha-bloco">
+    <h4>Itens</h4>
+    <ul class="ficha-itens">
+        {% for item in itens %}
+            <li><span><strong>{{ item.quantidade }}×</strong> {{ item.nome_display }}<small>{{ item.valor_unitario|brl }} cada{% if item.data_referencia %} · previsto {{ item.data_referencia|date:"d/m" }}{% endif %}</small></span><b>{{ item.subtotal|brl }}</b></li>
+        {% endfor %}
+    </ul>
+    <div class="ficha-totais">
+        <div><span>Subtotal</span><span>{{ o.valor_bruto|brl }}</span></div>
+        {% if o.desconto_percentual %}<div><span>Desconto {{ o.desconto_percentual|pct }}</span><span>− {{ o.valor_desconto|brl }}</span></div>{% endif %}
+        <div class="total"><span>Total</span><span>{{ o.valor_total|brl }}</span></div>
+    </div>
+</div>
+
+<div class="ficha-bloco">
+    <h4>Cliente e entrega</h4>
+    <dl class="ficha-lista">
+        <dt>Cliente</dt><dd>{{ o.cliente_nome|default:"—" }}{% if o.cliente_documento %} · {{ o.cliente_documento }}{% endif %}</dd>
+        <dt>Contato</dt><dd>{{ o.cliente_telefone|default:"—" }}{% if o.cliente_email %} · {{ o.cliente_email }}{% endif %}</dd>
+        {% if o.endereco_completo %}<dt>Local</dt><dd>{{ o.endereco_completo }}</dd>{% endif %}
+        {% if o.distancia_km %}<dt>Distância</dt><dd>{{ o.distancia_km|numero_br:1 }} km da ArtSkala{% if o.tempo_deslocamento_min %} · ~{{ o.tempo_deslocamento_min }} min de carro{% endif %}</dd>{% endif %}
+        <dt>Pagamento</dt><dd>{{ o.get_forma_pagamento_display }}</dd>
+        {% if o.prazo_execucao %}<dt>Prazo</dt><dd>{{ o.prazo_execucao }}</dd>{% endif %}
+        {% if o.data_prevista_entrega %}<dt>Entrega</dt><dd>{{ o.data_prevista_entrega|date:"d/m/Y" }}</dd>{% endif %}
+        {% if o.observacoes %}<dt>Observações</dt><dd>{{ o.observacoes|linebreaksbr }}</dd>{% endif %}
+    </dl>
+</div>
+
+<div class="ficha-acoes">
+    <a class="btn btn-primario" href="{% url 'orcamento_detalhe' o.pk %}">Editar orçamento</a>
+    <a class="btn btn-secundario" href="{% url 'proposta_impressao' o.pk %}" target="_blank" rel="noopener">Imprimir proposta</a>
+    <a class="btn btn-secundario" href="{% url 'gestao_etiquetas' %}?tipo=orcamento&ids={{ o.pk }}">Etiqueta de produção</a>
+</div>
