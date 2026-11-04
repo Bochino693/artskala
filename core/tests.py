@@ -451,3 +451,39 @@ class CronSemSegredoTests(_InstagramSimulado, TestCase):
             self.assertEqual(self.client.get('/api/instagram/sincronizar/', HTTP_USER_AGENT='vercel-cron/1.0').status_code, 200)
             self.assertEqual(self.client.get('/api/instagram/sincronizar/', HTTP_USER_AGENT='vercel-cron/1.0').status_code, 403)
             self.assertEqual(self.client.get('/api/instagram/sincronizar/', HTTP_USER_AGENT='curl/8').status_code, 403)
+
+
+class VitrineInstagramTests(TestCase):
+    """Itens "sob consulta" feitos com as fotos do Instagram (core/vitrine)."""
+
+    def setUp(self):
+        import shutil
+        import tempfile
+        self.pasta = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.pasta, ignore_errors=True)
+        self.media = self.settings(MEDIA_ROOT=self.pasta)
+        self.media.enable()
+        self.addCleanup(self.media.disable)
+
+    def test_cria_itens_sob_consulta_com_foto_sem_duplicar(self):
+        from .models import CategoriaProdutos, ImagemProduto, Produto
+        from .vitrine import ITENS, semear
+        self.assertFalse(Produto.objects.exists())          # a migração não roda nos testes
+        loja = Produto.objects.create(categoria=CategoriaProdutos.objects.create(nome_categoria='Banners'),
+                                      nome_produto='Banner em lona', preco=89, estoque=10)
+        self.assertEqual(semear(Produto, CategoriaProdutos, ImagemProduto), len(ITENS))
+        self.assertEqual(semear(Produto, CategoriaProdutos, ImagemProduto), 0)
+        novos = Produto.objects.exclude(pk=loja.pk)
+        self.assertEqual(novos.count(), len(ITENS))
+        self.assertFalse(novos.exclude(preco=0).exists())
+        self.assertFalse(novos.exclude(estoque=0).exists())
+        self.assertEqual(ImagemProduto.objects.count(), len(ITENS))
+        self.assertTrue(CategoriaProdutos.objects.filter(nome_categoria='Letreiros').exists())
+        fachada = Produto.objects.get(nome_produto='Fachada em ACM com letreiro')
+        pagina = self.client.get('/products/%s/' % fachada.pk)
+        self.assertContains(pagina, 'Sob consulta')
+        self.assertContains(pagina, 'Pedir orçamento deste produto')
+        self.assertNotContains(pagina, 'class="ak-form-carrinho"')
+        catalogo = self.client.get('/products/')
+        self.assertContains(catalogo, 'R$ 89,00')                 # item da loja continua com preço
+        self.assertContains(catalogo, 'Luminoso recortado com LED neon')
