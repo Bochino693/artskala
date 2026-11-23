@@ -676,3 +676,27 @@ class ConfigInstagram(models.Model):
 
     def __str__(self):
         return "Instagram @artskalaa"
+
+
+class ArquivoNoBanco(models.Model):
+    """Foto (ou arquivo) guardada no próprio banco do site (core/midia.py).
+
+    O nome começa com "banco/" + o caminho original do envio (ex.:
+    "banco/produtos/fachada_k3j9x2a.webp"); as cópias das fotos antigas do
+    Cloudinary ficam como "banco/<nome antigo>". O endereço público é
+    /midia/<nome>, servido com cache longo pela Vercel."""
+
+    nome = models.CharField(max_length=255, unique=True)
+    conteudo = models.BinaryField()
+    tipo = models.CharField(max_length=100, default="application/octet-stream")
+    tamanho = models.PositiveIntegerField(default=0)
+    sha256 = models.CharField(max_length=64)
+    criado_em = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Arquivo no banco"
+        verbose_name_plural = "Arquivos no banco (fotos)"
+        ordering = ["-criado_em"]
+
+    def __str__(self):
+        return self.nome

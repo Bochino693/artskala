@@ -1,21 +1,48 @@
 """Filtros de template do site.
 
-{{ url|tamanho:"600x600" }} pede ao Cloudinary a foto já no tamanho de
-exibição (recorte inteligente, qualidade e formato automáticos); com um número
-só ({{ url|tamanho:"1600" }}) limita a largura sem recortar. Fica nítida e
-leve; fora do Cloudinary devolve o endereço como veio.
+{{ url|tamanho:"600x600" }} pede a foto já no tamanho de exibição; com um
+número só ({{ url|tamanho:"1600" }}) limita a largura sem recortar.
+
+- Fotos do banco do site (/midia/banco/...): ganham ?w= (e ?h=), e o próprio
+  site entrega uma versão menor em WebP (core/views_midia.py). Com largura e
+  altura a foto cobre a caixa inteira; o recorte fica com o CSS.
+- Fotos antigas do Cloudinary: transformação do Cloudinary (recorte
+  inteligente, qualidade e formato automáticos).
+- Outros endereços voltam como vieram.
 """
+from urllib.parse import urlencode
+
 from django import template
 
+from core.midia import URL_BASE, PREFIXO, medida_permitida
+
 register = template.Library()
+
+_URL_BANCO = URL_BASE + PREFIXO     # "/midia/banco/"
+
+
+def _tamanho_banco(url, medida):
+    try:
+        if "x" in medida:
+            largura, altura = (int(n) for n in medida.split("x"))
+            parametros = {"w": medida_permitida(largura), "h": medida_permitida(altura)}
+        else:
+            parametros = {"w": medida_permitida(int(medida))}
+    except ValueError:
+        return url
+    if "?" in url:
+        return url  # já tem medida
+    return f"{url}?{urlencode(parametros)}"
 
 
 @register.filter
 def tamanho(url, medida="800x600"):
     url = str(url or "")
+    medida = str(medida).lower()
+    if _URL_BANCO in url:
+        return _tamanho_banco(url, medida)
     if "res.cloudinary.com" not in url or "/image/upload/" not in url:
         return url
-    medida = str(medida).lower()
     try:
         if "x" in medida:   # recorta no formato pedido (cartões, mosaico)
             largura, altura = (int(n) for n in medida.split("x"))

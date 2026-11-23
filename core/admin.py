@@ -684,3 +684,36 @@ class PostInstagramAdmin(admin.ModelAdmin):
 class ConfigInstagramAdmin(admin.ModelAdmin):
     list_display = ("__str__", "expira_em", "ultima_sincronizacao", "ultimo_resultado")
     readonly_fields = ("expira_em", "ultima_sincronizacao", "ultimo_resultado")
+
+
+# ============================================================
+# FOTOS NO BANCO DO SITE (core/midia.py) — só consulta
+# ============================================================
+from .models import ArquivoNoBanco  # noqa: E402
+
+
+@admin.register(ArquivoNoBanco)
+class ArquivoNoBancoAdmin(admin.ModelAdmin):
+    list_display = ("nome", "tipo", "tamanho_kb", "criado_em", "abrir")
+    search_fields = ("nome",)
+    list_filter = ("tipo",)
+    fields = ("nome", "tipo", "tamanho", "sha256", "criado_em", "abrir")
+    readonly_fields = fields
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).defer("conteudo")   # a lista não carrega as fotos
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    @admin.display(description="Tamanho")
+    def tamanho_kb(self, obj):
+        return f"{obj.tamanho / 1024:.0f} KB"
+
+    @admin.display(description="Ver")
+    def abrir(self, obj):
+        from .midia import MidiaNoBanco
+        return format_html('<a href="{}" target="_blank" rel="noopener">abrir</a>', MidiaNoBanco().url(obj.nome))

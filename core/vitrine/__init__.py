@@ -338,6 +338,25 @@ PROJETOS = [
 ]
 
 
+def _sem_tabela_de_fotos():
+    from django.db import connection
+
+    from core.midia import midia_no_banco_ativa
+    return midia_no_banco_ativa() and "core_arquivonobanco" not in connection.introspection.table_names()
+
+
+def _foto(instancia, nome, arquivo):
+    """Guarda uma foto da vitrine. Num banco NOVO com as fotos no banco do site,
+    a tabela delas (migração 0011) ainda não existe quando as migrações 0007 a
+    0009 rodam: aí só o nome fica gravado, e a 0012 traz a foto deste
+    repositório (core/restauracao.py)."""
+    if _sem_tabela_de_fotos():
+        instancia.imagem.name = instancia._meta.get_field("imagem").generate_filename(instancia, nome)
+        instancia.save()
+    else:
+        instancia.imagem.save(nome, arquivo, save=True)
+
+
 def _salvar_fotos(nomes, criar_foto):
     for nome in nomes:
         caminho = PASTA_FOTOS / nome
@@ -365,7 +384,7 @@ def semear(Produto, CategoriaProdutos, ImagemProduto, lotes=(1,)):
             custo=0,
             estoque=0,
         )
-        _salvar_fotos(item["fotos"], lambda nome, arquivo: ImagemProduto(produto=produto).imagem.save(nome, arquivo, save=True))
+        _salvar_fotos(item["fotos"], lambda nome, arquivo: _foto(ImagemProduto(produto=produto), nome, arquivo))
         criados += 1
     return criados
 
@@ -377,7 +396,7 @@ def semear_projetos(Projeto, ImagemProjeto, lotes=(2,)):
         if item.get("lote", 1) not in lotes or Projeto.objects.filter(titulo=item["titulo"]).exists():
             continue
         projeto = Projeto.objects.create(titulo=item["titulo"], cliente=item["cliente"], descricao=item["descricao"])
-        _salvar_fotos(item["fotos"], lambda nome, arquivo: ImagemProjeto(projeto=projeto).imagem.save(nome, arquivo, save=True))
+        _salvar_fotos(item["fotos"], lambda nome, arquivo: _foto(ImagemProjeto(projeto=projeto), nome, arquivo))
         criados += 1
     return criados
 
@@ -396,7 +415,7 @@ def semear_fotos_extras(Produto, ImagemProduto, lotes=(3,)):
             ja_tem = ImagemProduto.objects.filter(produto=produto, imagem__contains=Path(nome).stem).exists()
             if ja_tem or not (PASTA_FOTOS / nome).exists():
                 continue
-            _salvar_fotos([nome], lambda n, arquivo: ImagemProduto(produto=produto).imagem.save(n, arquivo, save=True))
+            _salvar_fotos([nome], lambda n, arquivo: _foto(ImagemProduto(produto=produto), n, arquivo))
             criadas += 1
     return criadas
 

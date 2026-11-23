@@ -9,8 +9,10 @@ from django.views.generic import RedirectView
 from .urls import ROTAS_INTERNAS
 from .views import GestaoDashboardView
 from .views_interno import LoginEquipeView, SairEquipeView
+from .views_midia import midia_banco
 
-urlpatterns = [path("", GestaoDashboardView.as_view(), name="home"), path("system/", admin.site.urls)]
+urlpatterns = [path("", GestaoDashboardView.as_view(), name="home"), path("system/", admin.site.urls),
+               path("midia/banco/<path:caminho>", midia_banco, name="midia_banco")]
 urlpatterns += [path(rota, view, name=nome) for rota, view, nome in ROTAS_INTERNAS]
 urlpatterns += [
     path("login/", LoginEquipeView.as_view(), name="login"),

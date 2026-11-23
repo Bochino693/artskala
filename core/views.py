@@ -977,6 +977,38 @@ class GestaoDashboardView(SuperuserGestaoRequiredMixin, View):
 
 
 # ============================================================
+# FOTOS ENVIADAS NA GESTÃO
+# ============================================================
+
+def _salvar_fotos(request, criar):
+    """Guarda cada foto enviada sozinha: se uma falhar (banco fora do ar, foto
+    corrompida), as outras e o resto do cadastro ficam salvos. Devolve
+    [(nome do arquivo, motivo)] das que não entraram."""
+    from .midia import ErroMidia
+
+    falhas = []
+    for imagem in request.FILES.getlist("imagens"):
+        if not imagem:
+            continue
+        try:
+            with transaction.atomic():
+                criar(imagem)
+        except ErroMidia as erro:
+            falhas.append((imagem.name, str(erro)))
+    return falhas
+
+
+def _avisar_fotos(request, sucesso, falhas):
+    if not falhas:
+        messages.success(request, sucesso)
+        return
+    messages.warning(request, sucesso.rstrip("!") + ", mas " + (
+        "1 foto não entrou." if len(falhas) == 1 else f"{len(falhas)} fotos não entraram."))
+    for nome, motivo in falhas:
+        messages.error(request, f"{nome}: {motivo}")
+
+
+# ============================================================
 # ÁREA INTERNA — PRODUTOS
 # ============================================================
 
@@ -1069,11 +1101,9 @@ class GestaoProdutosView(SuperuserGestaoRequiredMixin, View):
                     produto=produto,
                 ).delete()
 
-            for imagem in request.FILES.getlist("imagens"):
-                if imagem:
-                    ImagemProduto.objects.create(produto=produto, imagem=imagem)
+            falhas = _salvar_fotos(request, lambda imagem: ImagemProduto.objects.create(produto=produto, imagem=imagem))
 
-        messages.success(request, "Produto salvo com sucesso!")
+        _avisar_fotos(request, "Produto salvo com sucesso!", falhas)
         return redirect("gestao_produto_detalhe", pk=produto.pk)
 
     def delete(self, request, pk):
@@ -1164,11 +1194,9 @@ class GestaoProjetosView(SuperuserGestaoRequiredMixin, View):
                     projeto=projeto,
                 ).delete()
 
-            for imagem in request.FILES.getlist("imagens"):
-                if imagem:
-                    ImagemProjeto.objects.create(projeto=projeto, imagem=imagem)
+            falhas = _salvar_fotos(request, lambda imagem: ImagemProjeto.objects.create(projeto=projeto, imagem=imagem))
 
-        messages.success(request, "Projeto salvo com sucesso!")
+        _avisar_fotos(request, "Projeto salvo com sucesso!", falhas)
         return redirect("gestao_projeto_detalhe", pk=projeto.pk)
 
     def delete(self, request, pk):
