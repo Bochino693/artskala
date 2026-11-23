@@ -36,6 +36,7 @@ from .views import (
 
 from .ofertas import promocoes
 from .views_instagram import GestaoInstagramView, sincronizar_instagram
+from .views_midia import GestaoFotosView, espelhar_midia_cron, midia_banco
 from .views_interno import LoginEquipeView, SairEquipeView
 from .views_gestao import (
     BuscaRapidaView,
@@ -51,6 +52,9 @@ from .views_gestao import (
 urlpatterns = [
     path("promocoes/", promocoes, name="promocoes"),
     path("api/instagram/sincronizar/", sincronizar_instagram, name="instagram_sincronizar"),
+    # Fotos guardadas no banco do site (core/midia.py) e a cópia automática das antigas.
+    path("midia/banco/<path:caminho>", midia_banco, name="midia_banco"),
+    path("api/midia/espelhar/", espelhar_midia_cron, name="midia_espelhar"),
     path("", HomeView.as_view(), name="home"),
 
     path("products/", ProductsView.as_view(), name="products"),
@@ -106,6 +110,7 @@ ROTAS_INTERNAS = [
     ("clientes/<int:pk>/ficha/", ClienteFichaView.as_view(), "gestao_cliente_ficha"),
     ("orcamentos/<int:pk>/ficha/", OrcamentoFichaView.as_view(), "orcamento_ficha"),
     ("instagram/", GestaoInstagramView.as_view(), "gestao_instagram"),
+    ("fotos/", GestaoFotosView.as_view(), "gestao_fotos"),
     ("relatorio/", RelatorioOrcamentosView.as_view(), "gestao_relatorio"),
     # Produtos: sem pk = lista + formulário de novo produto (GET) / criação (POST)
     # com pk = edição (GET/POST) e exclusão lógica (DELETE)

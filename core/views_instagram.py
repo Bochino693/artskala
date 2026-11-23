@@ -49,7 +49,10 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views import View
 
+from django.db import transaction
+
 from .instagram import configuracao
+from .midia import ErroMidia
 from .models import PostInstagram
 from .views import SuperuserGestaoRequiredMixin
 
@@ -108,13 +111,18 @@ class GestaoInstagramView(SuperuserGestaoRequiredMixin, View):
             elif not foto:
                 messages.error(request, "Envie a foto do post.")
             else:
-                PostInstagram.objects.create(
-                    link=link, imagem=foto, legenda=request.POST.get("legenda", "").strip(),
-                    curtidas=_numero(request.POST.get("curtidas")), comentarios=_numero(request.POST.get("comentarios")),
-                    tipo=request.POST.get("tipo") if request.POST.get("tipo") in {"IMAGE", "VIDEO", "CAROUSEL_ALBUM"} else "IMAGE",
-                    publicado_em=timezone.now(),
-                )
-                messages.success(request, "Post adicionado ao bloco do Instagram.")
+                try:
+                    with transaction.atomic():
+                        PostInstagram.objects.create(
+                            link=link, imagem=foto, legenda=request.POST.get("legenda", "").strip(),
+                            curtidas=_numero(request.POST.get("curtidas")), comentarios=_numero(request.POST.get("comentarios")),
+                            tipo=request.POST.get("tipo") if request.POST.get("tipo") in {"IMAGE", "VIDEO", "CAROUSEL_ALBUM"} else "IMAGE",
+                            publicado_em=timezone.now(),
+                        )
+                except ErroMidia as erro:
+                    messages.error(request, f"A foto não foi salva: {erro}")
+                else:
+                    messages.success(request, "Post adicionado ao bloco do Instagram.")
 
         elif acao == "print_item":
             return self._item_do_print(request)
@@ -133,7 +141,6 @@ class GestaoInstagramView(SuperuserGestaoRequiredMixin, View):
         from django.http import JsonResponse
         from django.utils.text import slugify
 
-        from .models import CategoriaProdutos, ImagemProduto, ImagemProjeto, Produto, Projeto
         from .vitrine import melhorar_foto
 
         tipo = request.POST.get("tipo", "produto")
@@ -148,6 +155,17 @@ class GestaoInstagramView(SuperuserGestaoRequiredMixin, View):
         except ValueError as erro:
             return JsonResponse({"ok": False, "erro": str(erro)}, status=400)
         descricao = request.POST.get("descricao", "").strip()
+
+        try:
+            with transaction.atomic():   # se a foto não for guardada, o item também não fica pela metade
+                return self._criar_item(request, tipo, nome, descricao, arquivo)
+        except ErroMidia as erro:
+            return JsonResponse({"ok": False, "erro": f"A foto não foi salva: {erro}"}, status=503)
+
+    def _criar_item(self, request, tipo, nome, descricao, arquivo):
+        from django.http import JsonResponse
+
+        from .models import CategoriaProdutos, ImagemProduto, ImagemProjeto, Produto, Projeto
 
         if tipo == "projeto":
             if Projeto.objects.filter(titulo=nome).exists():

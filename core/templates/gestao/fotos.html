@@ -1,0 +1,157 @@
+{% extends "gestao/base_gestao.html" %}
+{% load static %}
+{% block titulo %}Restaurar fotos{% endblock %}
+
+{% block conteudo %}
+<style>
+    .rf-zona { display: grid; gap: 12px; padding: 22px; border: 2px dashed #e3c3c5; border-radius: 18px; background: #fffafa; text-align: center; }
+    .rf-zona.arrastando { border-color: #d81f27; background: #fff1f1; }
+    .rf-zona strong { font-size: 16px; }
+    .rf-zona .acoes-linha { justify-content: center; flex-wrap: wrap; }
+    .rf-zona input[type=file] { display: none; }
+    .rf-barra { height: 10px; border-radius: 999px; background: #f1f1f3; overflow: hidden; }
+    .rf-barra span { display: block; height: 100%; width: 0; background: #d81f27; transition: width .2s ease; }
+    .rf-contas { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 0; }
+    .rf-conta { padding: 5px 11px; border-radius: 999px; font-size: 12.5px; font-weight: 800; background: #f1f1f3; color: #3b3b42; }
+    .rf-conta.ok { background: #e8f7ee; color: #0f6b3c; }
+    .rf-conta.alerta { background: #fff6e5; color: #8a5a00; }
+    .rf-conta.erro { background: #fff1f1; color: #a3131a; }
+    .rf-lista { max-height: 340px; overflow: auto; margin: 12px 0 0; padding: 0; list-style: none; font-size: 13px; border: 1px solid #ececef; border-radius: 12px; }
+    .rf-lista:empty { display: none; }
+    .rf-lista li { display: flex; gap: 10px; justify-content: space-between; padding: 7px 12px; border-bottom: 1px solid #f2f2f4; }
+    .rf-lista li:last-child { border-bottom: 0; }
+    .rf-lista code { overflow-wrap: anywhere; }
+    .rf-lista .ok { color: #0f6b3c; font-weight: 800; }
+    .rf-lista .alerta { color: #8a5a00; font-weight: 700; }
+    .rf-lista .erro { color: #a3131a; font-weight: 800; }
+    .rf-passos { margin: 0 0 14px; padding-left: 20px; line-height: 1.65; }
+    .rf-faltando td code { font-size: 12px; overflow-wrap: anywhere; }
+    .rf-aviso { padding: 12px 14px; border-radius: 12px; background: #fff6e5; color: #6b4600; font-size: 13.5px; }
+</style>
+
+<div class="cabecalho-pagina">
+    <div>
+        <div class="eyebrow">Site · fotos</div>
+        <h1 class="titulo-pagina">Restaurar fotos</h1>
+        <div class="subtitulo-pagina">
+            As fotos novas ficam no próprio banco do site e não dependem de serviço de fora. As antigas, que
+            estavam no Cloudinary, voltam aqui: pelo nome de cada arquivo, cada foto volta para o lugar certo.
+        </div>
+    </div>
+</div>
+
+{% if not no_banco_ativo %}
+    <p class="rf-aviso">Neste ambiente as fotos ficam na pasta <code>media/</code> (computador de desenvolvimento). A restauração vale para o site no ar.</p>
+{% endif %}
+
+<div class="grade-cartoes">
+    <div class="cartao-stat verde">
+        <div class="rotulo">No banco do site</div>
+        <div class="valor">{{ stats.no_banco }}</div>
+        <div class="apoio">{{ stats.megabytes }} MB guardados</div>
+    </div>
+    <div class="cartao-stat {% if faltando_total %}vermelho{% else %}verde{% endif %}">
+        <div class="rotulo">Ainda faltando</div>
+        <div class="valor" data-faltando>{{ faltando_total }}</div>
+        <div class="apoio">lugares com foto antiga</div>
+    </div>
+    <div class="cartao-stat azul">
+        <div class="rotulo">Cópia automática</div>
+        <div class="valor" style="font-size:16px">{% if cron_ligado %}Ligada · todo dia{% else %}Desligada{% endif %}</div>
+        <div class="apoio">{% if cron_ligado %}tenta o Cloudinary e o Instagram{% else %}crie CRON_SECRET na Vercel{% endif %}</div>
+    </div>
+    <div class="cartao-stat">
+        <div class="rotulo">Cloudinary (legado)</div>
+        <div class="valor" style="font-size:16px">{{ cloudinary_nome|default:"—" }}</div>
+        <div class="apoio">{% if cloudinary_nome %}só para as fotos antigas{% else %}sem CLOUDINARY_CLOUD_NAME{% endif %}</div>
+    </div>
+</div>
+
+<div class="painel" style="margin-top:22px">
+    <h2 class="painel-titulo">1. Enviar as fotos baixadas do Cloudinary</h2>
+    <ol class="rf-passos">
+        <li>Em <a href="https://console.cloudinary.com/" target="_blank" rel="noopener">console.cloudinary.com</a> &gt; <strong>Media Library</strong>, abra a pasta <code>media</code>, selecione tudo e escolha <strong>Download</strong> (vem um ZIP).</li>
+        <li>Escolha aqui o ZIP (ou as fotos soltas, ou a pasta extraída). O navegador abre o ZIP e manda <strong>uma foto por vez</strong> (a Vercel aceita no máximo ~4,5 MB por envio; fotos maiores são reduzidas antes, em até 2000 px).</li>
+        <li>Cada arquivo volta para todos os produtos, projetos e posts que usavam aquela foto. Arquivos que nenhuma foto do site usa são só ignorados; nada é trocado por engano.</li>
+    </ol>
+    <div class="rf-zona" id="rf-zona" data-limite="{{ tamanho_por_envio }}" data-endereco="{% url 'gestao_fotos' %}">
+        {% csrf_token %}
+        <strong>Arraste aqui o ZIP ou as fotos</strong>
+        <span class="subtitulo-pagina" style="margin:0">ZIP, JPG, PNG, WebP ou GIF — quantos quiser</span>
+        <div class="acoes-linha">
+            <label class="btn btn-primario" for="rf-arquivos">Escolher ZIP ou fotos</label>
+            <label class="btn btn-secundario" for="rf-pasta">Escolher uma pasta</label>
+        </div>
+        <input type="file" id="rf-arquivos" multiple accept=".zip,application/zip,image/*">
+        <input type="file" id="rf-pasta" webkitdirectory multiple>
+    </div>
+    <div id="rf-progresso" hidden style="margin-top:14px">
+        <div class="rf-barra" aria-hidden="true"><span></span></div>
+        <p class="subtitulo-pagina" id="rf-status" role="status" style="margin:8px 0 0"></p>
+        <div class="rf-contas">
+            <span class="rf-conta ok">Restauradas: <b data-conta="restaurada">0</b></span>
+            <span class="rf-conta">Já estavam: <b data-conta="ja_restaurada">0</b></span>
+            <span class="rf-conta alerta">Sem uso no site: <b data-conta="sem_referencia">0</b></span>
+            <span class="rf-conta alerta">Ambíguas: <b data-conta="ambigua">0</b></span>
+            <span class="rf-conta erro">Com erro: <b data-conta="erro">0</b></span>
+        </div>
+        <ul class="rf-lista" id="rf-lista" aria-live="polite"></ul>
+        <div class="acoes-linha" style="margin-top:12px" id="rf-fim" hidden>
+            <a class="btn btn-secundario" href="{% url 'gestao_fotos' %}">Atualizar a lista do que falta</a>
+        </div>
+    </div>
+</div>
+
+<div class="duas-colunas" style="margin-top:22px">
+    <div class="painel">
+        <h2 class="painel-titulo">2. Buscar de novo no site e no Instagram</h2>
+        <p class="subtitulo-pagina" style="margin:0 0 12px">
+            Usa as cópias que já estão no próprio site (fotos da vitrine e imagens fixas) e baixa de novo do
+            Instagram as fotos dos posts trazidos pela conexão automática. Pode clicar quantas vezes quiser.
+        </p>
+        <form method="post" data-sem-aviso>
+            {% csrf_token %}
+            <input type="hidden" name="acao" value="buscar">
+            <button type="submit" class="btn btn-primario">Buscar agora</button>
+        </form>
+    </div>
+    <div class="painel">
+        <h2 class="painel-titulo">3. Tentar o Cloudinary</h2>
+        <p class="subtitulo-pagina" style="margin:0 0 12px">
+            Quando a conta do Cloudinary voltar, as fotos são copiadas para cá sozinhas (todo dia, com o
+            CRON_SECRET na Vercel). Este botão tenta agora; se a conta ainda estiver desativada, nada muda.
+        </p>
+        <form method="post" data-sem-aviso>
+            {% csrf_token %}
+            <input type="hidden" name="acao" value="cloudinary">
+            <button type="submit" class="btn btn-secundario">Tentar o Cloudinary agora</button>
+        </form>
+    </div>
+</div>
+
+<div class="painel" style="margin-top:22px">
+    <h2 class="painel-titulo">O que ainda falta ({{ faltando_total }})</h2>
+    {% if faltando %}
+        <div class="tabela-responsiva">
+            <table class="ledger tabela-cartoes rf-faltando">
+                <thead><tr><th>Onde</th><th>Item</th><th>Nº</th><th>Nome antigo (Cloudinary)</th></tr></thead>
+                <tbody>
+                {% for linha in faltando %}
+                    <tr>
+                        <td data-rotulo="Onde">{{ linha.rotulo|capfirst }} <span class="texto-fraco">· {{ linha.campo }}</span></td>
+                        <td data-rotulo="Item">{% if linha.link %}<a href="{{ linha.link }}">{{ linha.item }}</a>{% else %}{{ linha.item|default:"—" }}{% endif %}</td>
+                        <td data-rotulo="Nº">#{{ linha.pk }}</td>
+                        <td data-rotulo="Nome antigo"><code>{{ linha.nome }}</code></td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if faltando_total > faltando|length %}<p class="subtitulo-pagina">Mostrando {{ faltando|length }} de {{ faltando_total }}. A lista completa: <code>python manage.py restaurar_midia --relatorio</code>.</p>{% endif %}
+    {% else %}
+        <div class="vazio" style="padding:28px 18px;">Nenhuma foto faltando: todas estão no banco do site.</div>
+    {% endif %}
+</div>
+
+<script src="{% static 'gestao/fotos.js' %}?v=20261123"></script>
+{% endblock %}

@@ -1,5 +1,6 @@
 {
   "crons": [
-    { "path": "/api/instagram/sincronizar/", "schedule": "17 11 * * *" }
+    { "path": "/api/instagram/sincronizar/", "schedule": "17 11 * * *" },
+    { "path": "/api/midia/espelhar/", "schedule": "41 6 * * *" }
   ]
 }

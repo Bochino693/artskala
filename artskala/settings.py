@@ -4,7 +4,8 @@ Django settings for artskala.
 Ambientes:
 - Local: SQLite e DEBUG=True por padrão.
 - Vercel: PostgreSQL/Supabase via DATABASE_URL e DEBUG=False.
-- Arquivos de mídia: Cloudinary em produção.
+- Arquivos de mídia (fotos): no próprio banco do site em produção
+  (core/midia.py); Cloudinary só para as fotos antigas.
 - Arquivos estáticos: WhiteNoise.
 """
 
@@ -143,6 +144,7 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
+    "core.middleware.ErroDeMidiaMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
@@ -279,7 +281,23 @@ STATICFILES_DIRS = (
 
 
 # ============================================================
-# CLOUDINARY / ARQUIVOS DE MÍDIA
+# FOTOS E ARQUIVOS ENVIADOS (MÍDIA)
+# ============================================================
+#
+# PRODUÇÃO (Vercel): as fotos ficam no próprio banco do site, o mesmo
+# PostgreSQL do Supabase (core/midia.py, tabela ArquivoNoBanco), e são
+# servidas em /midia/banco/... com cache de um ano na Vercel. Nada de serviço
+# de fora: se o site está no ar, as fotos estão no ar.
+#
+# CLOUDINARY: só legado. As fotos antigas (nomes sem "banco/") continuam com
+# o endereço do Cloudinary até serem copiadas (comando espelhar_midia, o cron
+# /api/midia/espelhar/ e Gestão > Restaurar fotos). As variáveis são
+# opcionais: o site sobe e funciona sem elas. Para montar os endereços
+# antigos basta CLOUDINARY_CLOUD_NAME (ou CLOUDINARY_URL).
+#
+# LOCAL: sem DATABASE_URL, as fotos vão para a pasta media/ (como sempre).
+# Com DATABASE_URL (ex.: rodar um comando contra o banco de produção), vão
+# para o banco, como no site. MIDIA_NO_BANCO=0/1 força um ou outro.
 # ============================================================
 
 CLOUDINARY_CLOUD_NAME = os.environ.get(
@@ -305,6 +323,17 @@ USE_CLOUDINARY = all(
     ]
 )
 
+
+def _nuvem_da_url(url: str) -> str:
+    # CLOUDINARY_URL=cloudinary://<chave>:<segredo>@<nome-da-conta>
+    return url.rsplit("@", 1)[-1].split("/", 1)[0].strip() if "@" in url else ""
+
+
+# Nome da conta do Cloudinary: só para montar o endereço das fotos antigas.
+MIDIA_CLOUDINARY_LEGADO = CLOUDINARY_CLOUD_NAME or _nuvem_da_url(
+    os.environ.get("CLOUDINARY_URL", "").strip()
+)
+
 if USE_CLOUDINARY:
     import cloudinary
 
@@ -321,45 +350,34 @@ if USE_CLOUDINARY:
         "API_SECRET": CLOUDINARY_API_SECRET,
     }
 
-    STORAGES = {
-        "default": {
-            "BACKEND": (
-                "cloudinary_storage.storage."
-                "MediaCloudinaryStorage"
-            ),
-        },
-        "staticfiles": {
-            "BACKEND": (
-                "whitenoise.storage."
-                "CompressedStaticFilesStorage"
-            ),
-        },
-    }
+MIDIA_NO_BANCO = env_bool("MIDIA_NO_BANCO", IS_PRODUCTION or bool(DATABASE_URL))
 
-    MEDIA_URL = "/media/"
-
-elif EXIGIR_VARIAVEIS:
-    raise RuntimeError(
-        "Cloudinary não configurado. Adicione "
-        "CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY e "
-        "CLOUDINARY_API_SECRET nas Environment Variables da Vercel."
-    )
-
+if MIDIA_NO_BANCO:
+    _armazenamento = "core.midia.MidiaNoBanco"
+elif USE_CLOUDINARY:
+    _armazenamento = "cloudinary_storage.storage.MediaCloudinaryStorage"
 else:
-    STORAGES = {
-        "default": {
-            "BACKEND": "django.core.files.storage.FileSystemStorage",
-        },
-        "staticfiles": {
-            "BACKEND": (
-                "whitenoise.storage."
-                "CompressedStaticFilesStorage"
-            ),
-        },
-    }
+    _armazenamento = "django.core.files.storage.FileSystemStorage"
 
-    MEDIA_URL = "/media/"
-    MEDIA_ROOT = BASE_DIR / "media"
+STORAGES = {
+    "default": {
+        "BACKEND": _armazenamento,
+    },
+    "staticfiles": {
+        "BACKEND": (
+            "whitenoise.storage."
+            "CompressedStaticFilesStorage"
+        ),
+    },
+}
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
+# Cópia automática das fotos antigas (cron /api/midia/espelhar/): quanto
+# tempo cada chamada pode trabalhar e quantas fotos no máximo.
+MIDIA_ESPELHO_SEGUNDOS = float(os.environ.get("MIDIA_ESPELHO_SEGUNDOS", "8") or 8)
+MIDIA_ESPELHO_LIMITE = int(os.environ.get("MIDIA_ESPELHO_LIMITE", "40") or 40)
 
 
 # ============================================================

@@ -1,0 +1,19 @@
+{% load static %}{# Foto que não carrega (endereço antigo, fora do ar) vira um quadro limpo "Foto em atualização", nunca o ícone de imagem quebrada. Fica no <head> para pegar até as primeiras fotos da página. #}
+<script>
+(function () {
+    "use strict";
+    var reserva = "{% static 'images/foto-em-atualizacao.svg' %}";
+    function trocar(img) {
+        if (!img || img.tagName !== "IMG" || !img.getAttribute("src")) return;
+        if ((img.currentSrc || img.src || "").indexOf(reserva) !== -1) return;   // a própria reserva: não repete
+        img.removeAttribute("srcset");
+        img.removeAttribute("sizes");
+        img.classList.add("ak-foto-reserva");
+        img.src = reserva;
+    }
+    // "error" de imagem não sobe pela página, mas passa pela captura do document.
+    document.addEventListener("error", function (evento) { trocar(evento.target); }, true);
+    window.akFotoReserva = trocar;
+})();
+</script>
+<style>img.ak-foto-reserva { object-fit: cover; background: #fff1f1; }</style>

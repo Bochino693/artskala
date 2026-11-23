@@ -31,7 +31,8 @@ from django.conf import settings
 if settings.GOOGLE_LOGIN_ENABLED:
     urlpatterns.insert(0, path('accounts/', include('allauth.urls')))
 
-# Fotos enviadas no computador de desenvolvimento (sem Cloudinary).
-if settings.DEBUG and not getattr(settings, "USE_CLOUDINARY", False):
+# Fotos enviadas no computador de desenvolvimento (pasta media/). As do banco
+# do site têm rota própria: /midia/banco/... (core/urls.py).
+if settings.DEBUG:
     from django.conf.urls.static import static
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

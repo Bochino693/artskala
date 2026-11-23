@@ -868,6 +868,8 @@
     <link rel="stylesheet" href="{% static 'gestao/modern.css' %}">
     <link rel="stylesheet" href="{% static 'gestao/sistema.css' %}?v=20261108">
     <script src="{% static 'gestao/sistema.js' %}?v=20261108"></script>
+    <script src="{% static 'gestao/envio-fotos.js' %}?v=20261123"></script>
+    {% include "partials/foto_reserva.html" %}
     <script>try { if (window.matchMedia("(min-width: 861px)").matches && localStorage.getItem("ak-menu") === "recolhido") document.documentElement.classList.add("menu-recolhido"); } catch (e) { /* sem armazenamento */ }</script>
 </head>
 
@@ -935,6 +937,9 @@
             </a>{% endif %}
 
             {% if pode.instagram %}<a title="Instagram" href="{% url 'gestao_instagram' %}" class="nav-item {% if secao_ativa == 'instagram' %}ativo{% endif %}"><span class="nav-icone">◎</span><span class="nav-texto">Instagram</span>
+            </a>{% endif %}
+
+            {% if pode.fotos %}<a title="Restaurar fotos" href="{% url 'gestao_fotos' %}" class="nav-item {% if secao_ativa == 'fotos' %}ativo{% endif %}"><span class="nav-icone">▨</span><span class="nav-texto">Restaurar fotos</span>
             </a>{% endif %}
 
             <div class="nav-secao">Conta</div>

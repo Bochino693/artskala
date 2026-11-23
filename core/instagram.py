@@ -6,9 +6,13 @@ renovado sozinho quando faltam menos de 15 dias, e o novo fica salvo no banco
 (ConfigInstagram), então a variável INSTAGRAM_TOKEN só precisa ser colada
 uma vez.
 
-A foto de cada post é copiada para o nosso armazenamento (Cloudinary em
-produção): os links de mídia do Instagram expiram, e a cópia sai nítida no
-tamanho certo. Vídeos (Reels) entram pela capa.
+A foto de cada post é copiada para o nosso armazenamento (o próprio banco do
+site em produção, core/midia.py): os links de mídia do Instagram expiram, e a
+cópia sai nítida no tamanho certo. Vídeos (Reels) entram pela capa.
+
+Fotos de posts que ficaram presas no Cloudinary (conta desativada) são
+baixadas de novo do próprio Instagram: na busca diária (posts recentes) e em
+restaurar_fotos() (qualquer post trazido pela API, pelo id).
 """
 import logging
 from datetime import timedelta
@@ -19,6 +23,7 @@ from django.core.files.base import ContentFile
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 
+from .midia import ErroMidia, eh_do_banco, midia_no_banco_ativa
 from .models import ConfigInstagram, PostInstagram
 
 logger = logging.getLogger(__name__)
@@ -78,6 +83,16 @@ def _baixar(url):
     return resposta.content
 
 
+def precisa_foto(post):
+    """Sem foto, ou (em produção) com a foto antiga que ficou no Cloudinary."""
+    nome = post.imagem.name if post.imagem else ""
+    return not nome or (midia_no_banco_ativa() and not eh_do_banco(nome))
+
+
+def _guardar_foto(post, url_foto):
+    post.imagem.save(f"ig-{post.instagram_id}.jpg", ContentFile(_baixar(url_foto)), save=False)
+
+
 def sincronizar(limite=18):
     """Busca os posts mais recentes e grava os novos. Devolve um resumo em texto."""
     config = configuracao()
@@ -105,10 +120,10 @@ def sincronizar(limite=18):
         post.publicado_em = parse_datetime(item.get("timestamp") or "") or post.publicado_em
         post.curtidas = item.get("like_count")
         post.comentarios = item.get("comments_count")
-        if not post.imagem and url_foto:
+        if url_foto and precisa_foto(post):
             try:
-                post.imagem.save(f"ig-{post.instagram_id}.jpg", ContentFile(_baixar(url_foto)), save=False)
-            except (ErroInstagram, requests.RequestException) as erro:
+                _guardar_foto(post, url_foto)
+            except (ErroInstagram, ErroMidia, requests.RequestException) as erro:
                 logger.warning("Post %s sem foto: %s", post.instagram_id, erro)
                 sem_foto += 1
         post.save()
@@ -122,6 +137,46 @@ def sincronizar(limite=18):
     config.ultimo_resultado = resumo
     config.save(update_fields=["ultima_sincronizacao", "ultimo_resultado"])
     return resumo
+
+
+def restaurar_fotos(limite=30, segundos=None):
+    """Baixa de novo, pelo id, a foto dos posts trazidos pela API que ficou no
+    Cloudinary (ou que nunca veio). Posts manuais não têm como: esses voltam
+    pela tela Restaurar fotos. Devolve um resumo em texto."""
+    import time
+
+    if not midia_no_banco_ativa():
+        return "nada a fazer (as fotos não estão no banco neste ambiente)"
+    alvos = [post for post in PostInstagram.objects.exclude(instagram_id__startswith="manual-").order_by("-publicado_em", "-id")
+             if precisa_foto(post)]
+    if not alvos:
+        return "nenhuma foto do Instagram faltando"
+    config = configuracao()
+    if not config.token:
+        raise ErroInstagram(f"{len(alvos)} foto(s) de posts esperando, mas falta o token do Instagram (Gestão > Instagram).")
+    inicio, trazidas, falhas, seguidas = time.monotonic(), 0, 0, 0
+    for post in alvos[:limite]:
+        if segundos and time.monotonic() - inicio > segundos:
+            break
+        try:
+            dados = _get(post.instagram_id, fields="media_type,media_url,thumbnail_url", access_token=config.token)
+            url_foto = dados.get("thumbnail_url") if dados.get("media_type") == "VIDEO" else dados.get("media_url")
+            if not url_foto:
+                raise ErroInstagram("o post não tem foto")
+            _guardar_foto(post, url_foto)
+            post.save(update_fields=["imagem", "modificado"])
+        except (ErroInstagram, ErroMidia, requests.RequestException) as erro:
+            logger.warning("Foto do post %s não voltou: %s", post.instagram_id, erro)
+            falhas += 1
+            seguidas += 1
+            if seguidas >= 3:          # token vencido ou API fora: tenta outro dia
+                break
+            continue
+        trazidas += 1
+        seguidas = 0
+    faltam = len(alvos) - trazidas
+    return f"{trazidas} foto(s) trazida(s) de novo do Instagram" + (f", {falhas} com erro" if falhas else "") + \
+        (f", faltam {faltam}" if faltam else "")
 
 
 def registrar_erro(erro):

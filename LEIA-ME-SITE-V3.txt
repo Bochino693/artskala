@@ -30,8 +30,8 @@ certo e gratuito é a exportação oficial da própria conta:
    marque "Conteúdo" > Baixar no dispositivo > Formato: JSON >
    Qualidade da mídia: Alta > Criar arquivos.
 2. O Instagram manda um e-mail com o link do ZIP (pode levar algumas horas).
-3. No computador, com o ambiente do projeto ativo (e as variáveis do banco e do
-   Cloudinary de produção, para as fotos irem direto para o site):
+3. No computador, com o ambiente do projeto ativo (e a variável DATABASE_URL
+   de produção: as fotos vão direto para o banco do site):
 
      python manage.py importar_instagram C:\caminho\instagram-artskalaa.zip --simular
      python manage.py importar_instagram C:\caminho\instagram-artskalaa.zip
@@ -47,7 +47,8 @@ certo e gratuito é a exportação oficial da própria conta:
      --tipo produto --categoria "Fachadas"   cria produtos em vez de projetos
 
 VERIFICAÇÃO
-python manage.py test core  -> 64 testes (importador, Instagram, vitrine, área interna, gestão, Google, páginas).
+python manage.py test core  -> 111 testes (importador, Instagram, vitrine, área interna, gestão, Google,
+páginas e fotos no banco do site).
 Conferido no navegador em 1440 px e 390 px (celular).
 
 ÁREA INTERNA — artskala.com.br/interno/ (sem subdomínio)
@@ -216,3 +217,80 @@ GESTÃO: MENU QUE FECHA E ABRE, MODAIS E LINHAS QUE ABREM
 - Interruptores no lugar de botões "Ativar/Desativar" na equipe.
 Conferido em 1440 px e 390 px; na tabela de equipe e clientes o celular mostra
 cartões que abrem ao toque.
+
+FOTOS NO BANCO DO SITE (o Cloudinary não derruba mais nada)
+A conta do Cloudinary foi desativada (responde 401 "disabled" para tudo): as
+fotos que estavam lá sumiram do site e nenhum envio de foto funcionava. Agora
+as fotos ficam no próprio banco do site, o mesmo PostgreSQL do Supabase que
+guarda produtos e pedidos. Se o site está no ar, as fotos estão no ar.
+
+COMO FICOU
+- Toda foto enviada (gestão, admin, Instagram, prints, importador) vai para a
+  tabela "Arquivos no banco" e abre em artskala.com.br/midia/banco/... A Vercel
+  guarda cada foto em cache por um ano: depois da primeira visita ela sai
+  direto da Vercel, sem tocar no banco.
+- Fotos grandes (mais de 2000 px ou de 600 KB) viram WebP de até 2000 px, em
+  boa qualidade e sem o GPS do celular. Cada tela pede o tamanho que mostra
+  (cartão, miniatura, zoom) e o site entrega a foto já reduzida.
+- Na gestão, a foto do celular é reduzida no próprio navegador antes de
+  enviar (a Vercel recusa envios acima de ~4,5 MB). Se mesmo assim passar,
+  aparece o aviso para salvar em partes.
+- Envio nunca dá erro 500 por causa de foto: se uma foto não for guardada, o
+  resto do cadastro é salvo e aparece o motivo ("1 foto não entrou: ...").
+- Foto que não carrega (endereço antigo do Cloudinary) mostra um quadro limpo
+  "Foto em atualização", nunca o ícone de imagem quebrada.
+- Ao apagar uma foto na gestão, o espaço dela no banco é liberado (a não ser
+  que outro produto ou projeto use a mesma foto).
+- O site sobe e funciona sem nenhuma variável do Cloudinary.
+- No computador (sem DATABASE_URL) nada muda: as fotos vão para media/.
+
+AS FOTOS ANTIGAS: COMO ELAS VOLTAM
+Nada é trocado por engano: cada foto volta pelo nome exato que tinha (ou pelo
+nome do arquivo, quando só um serve). Na dúvida, fica como está e aparece na
+lista do que falta. Nada é apagado do Cloudinary.
+1. Sozinhas, no deploy: as fotos da vitrine (que estão no próprio repositório,
+   core/vitrine/fotos) e as imagens fixas do site voltam quando o site sobe
+   (migração 0012). Não depende do Cloudinary.
+2. Instagram: os posts trazidos pela conexão automática têm a foto baixada de
+   novo do próprio Instagram (na busca diária e no botão "Buscar agora").
+3. Exportação do Cloudinary (se conseguir baixar as fotos de lá):
+   Gestão > Restaurar fotos (artskala.com.br/interno/fotos/):
+   a) console.cloudinary.com > Media Library > pasta "media" > selecione tudo
+      > Download (vem um ZIP);
+   b) escolha o ZIP (ou as fotos soltas, ou a pasta extraída). O navegador
+      abre o ZIP e manda uma foto por vez (limite de ~4,5 MB por envio da
+      Vercel; fotos maiores são reduzidas antes, em até 2000 px);
+   c) a tela mostra: restauradas, já estavam, sem uso no site, ambíguas.
+   No computador, direto no banco de produção (com DATABASE_URL no ambiente):
+     python manage.py restaurar_midia --zip C:\caminho\cloudinary.zip
+     python manage.py restaurar_midia --pasta C:\caminho\pasta-extraida
+     python manage.py restaurar_midia --local        (repositório + Instagram)
+   (--simular mostra o que faria, sem gravar.)
+4. Quando a conta do Cloudinary voltar: a cópia é automática, todo dia às
+   03:41 (Brasília), um pouco por dia (precisa do CRON_SECRET, abaixo). Para
+   copiar tudo de uma vez:
+     python manage.py espelhar_midia --simular
+     python manage.py espelhar_midia
+   (com DATABASE_URL e CLOUDINARY_CLOUD_NAME de produção no ambiente) ou o
+   botão "Tentar o Cloudinary agora" em Gestão > Restaurar fotos. Se a conta
+   ainda estiver desativada, ele para na primeira resposta e avisa.
+O QUE AINDA FALTA: Gestão > Restaurar fotos mostra a lista (produto ou projeto,
+nº e nome antigo), ou: python manage.py restaurar_midia --relatorio
+
+VARIÁVEIS NA VERCEL (Settings > Environment Variables)
+- CRON_SECRET: uma senha longa qualquer (ex.: 40 letras e números). Liga a
+  cópia automática diária das fotos antigas e protege a busca do Instagram;
+  a Vercel manda a senha sozinha para o agendador. Sem ela, a cópia
+  automática não faz nada.
+- CLOUDINARY_CLOUD_NAME: deixe enquanto houver fotos antigas (só serve para
+  montar os endereços delas). CLOUDINARY_API_KEY e CLOUDINARY_API_SECRET não
+  são mais necessárias. Quando "Ainda faltando" chegar a 0, pode apagar todas.
+- Opcionais: MIDIA_ESPELHO_SEGUNDOS (tempo de cada rodada da cópia, padrão 8)
+  e MIDIA_ESPELHO_LIMITE (fotos por rodada, padrão 40). MIDIA_NO_BANCO=0 volta
+  ao jeito antigo (não recomendado).
+
+ESPAÇO NO BANCO (Supabase)
+O plano gratuito do Supabase tem 500 MB de banco. Cada foto ocupa em média
+150 a 400 KB, então ~1.000 fotos dão ~300 MB. Gestão > Restaurar fotos mostra
+quanto já está guardado ("No banco do site"). Perto do limite: plano Pro do
+Supabase (8 GB) ou apagar fotos que não são mais usadas.

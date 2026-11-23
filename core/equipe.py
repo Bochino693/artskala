@@ -29,6 +29,7 @@ ACESSO = {
     "relatorio": {"gestao"},
     "instagram": {"gestao"},
     "equipe": {"gestao"},
+    "fotos": {"gestao", "vendas", "producao"},
 }
 
 
@@ -74,7 +75,7 @@ def definir_funcao(user, codigo):
 ROTULOS_TELAS = {
     "dashboard": "Painel", "orcamentos": "Orçamentos", "pedidos": "Pedidos do site", "produtos": "Produtos",
     "projetos": "Projetos", "etiquetas": "Etiquetas", "relatorio": "Relatórios", "instagram": "Instagram",
-    "equipe": "Equipe e clientes", "perfil": "Perfil",
+    "equipe": "Equipe e clientes", "perfil": "Perfil", "fotos": "Restaurar fotos",
 }
 
 
